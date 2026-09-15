@@ -259,7 +259,7 @@ export default function HomeView() {
       </header>
 
       <main
-        className="mx-auto max-w-250 px-4 pb-16 pt-8 md:px-4 md:pb-16 md:pt-8"
+        className="mx-auto max-w-270 px-4 pb-16 pt-8 md:px-4 md:pb-16 md:pt-8"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
