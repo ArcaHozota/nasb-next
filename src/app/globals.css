@@ -71,6 +71,7 @@ button:not(:disabled) {
 .card-row {
   display: flex;
   flex-wrap: nowrap;
+  justify-content: center;
   gap: 16px;
   overflow-x: auto;
   padding-bottom: 4px;
