@@ -1,0 +1,549 @@
+@import "tailwindcss";
+
+/*
+ * 旧 theme.ts (MUI createTheme) の palette をそのまま踏襲。
+ * primary: #800020, secondary: #003399, success: #355E3B,
+ * warning: #f6c91c, info: #353542
+ */
+/* ブラウザの既定スタイルでは<button>はcursor:defaultのまま
+   (<a>と違い自動でpointerにはならない)。旧MUIのButtonは内部でこれを
+   設定していたので、アプリ全体に同じ挙動を持たせる。 */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+@theme {
+  --color-primary: #800020;
+  --color-secondary: #003399;
+  --color-success: #355e3b;
+  --color-warning: #f6c91c;
+  --color-info: #353542;
+}
+
+/* 旧 src/index.css より。ロゴ(HomeView)のみが使用するグローバルスタイル。 */
+.effect-shine {
+  font-family: "Niconne", cursive;
+  font-size: 1.8rem;
+  color: #800020;
+  transition: 500ms;
+}
+
+.effect-shine:hover {
+  animation: shine 1500ms infinite alternate;
+}
+
+@keyframes shine {
+  from {
+    color: #fff;
+    text-shadow:
+      0 0 5px #03e9f4,
+      0 0 25px #03e9f4,
+      0 0 50px #03e9f4,
+      0 0 100px #03e9f4;
+  }
+
+  to {
+    color: #fff;
+    text-shadow:
+      0 0 2px #03e9f4,
+      0 0 5px #03e9f4,
+      0 0 7px #03e9f4,
+      0 0 10px #03e9f4;
+  }
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotate-border {
+  to {
+    --angle: 360deg;
+  }
+}
+
+/* ===== HomeView ===== */
+.card-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  transition: opacity 0.15s ease;
+}
+
+@media (max-width: 1100px) {
+  .card-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .card-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card-row--loading {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.glass-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 330px;
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.33);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.glass-card.is-burgundy {
+  background: rgba(128, 0, 32, 0.42);
+}
+
+.glass-card.is-naples {
+  background: rgba(246, 201, 28, 0.42);
+}
+
+.glass-card.is-cadmium {
+  background: rgba(13, 92, 51, 0.42);
+}
+
+@media (max-width: 700px) {
+  .glass-card {
+    min-height: 28.5vh;
+  }
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    transparent 270deg,
+    #800020 320deg,
+    #c0405f 350deg,
+    #800020 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.glass-card.is-naples::before {
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    transparent 270deg,
+    #b8860b 320deg,
+    #f6c91c 350deg,
+    #b8860b 360deg
+  );
+}
+
+.glass-card.is-cadmium::before {
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    transparent 270deg,
+    #0d5c33 320deg,
+    #2ecc71 350deg,
+    #0d5c33 360deg
+  );
+}
+
+.glass-card:hover::before {
+  opacity: 1;
+  animation: rotate-border 2250ms linear infinite;
+}
+
+.glass-card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.song-name {
+  font-family: "Noto Serif JP", serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: #fff;
+  text-decoration: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.66);
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+
+.song-name:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.score-btn {
+  align-self: flex-end;
+  margin-top: 12px;
+  font-size: 1.8rem;
+  line-height: 1;
+  color: #fff;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.66);
+  position: relative;
+  z-index: 1;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.score-btn:hover {
+  transform: scale(1.2);
+  opacity: 0.85;
+}
+
+.pager-glass {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 14px;
+  padding: 2px 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.pager-item {
+  min-width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  color: #353542;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pager-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pager-item.is-selected {
+  background-color: #800020;
+  color: #fff;
+}
+
+.pager-ellipsis {
+  min-width: 32px;
+  text-align: center;
+  color: #353542;
+}
+
+.search-row {
+  max-width: 520px;
+  margin: 0 auto 28px;
+  position: relative;
+}
+
+.search-row::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  padding: 3px;
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    transparent 270deg,
+    #800020 320deg,
+    #c0405f 350deg,
+    #800020 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.search-row.search-loading::before {
+  opacity: 1;
+  animation: rotate-border 3300ms linear infinite;
+}
+
+/* ===== 共通ガラスカード(HymnList/HymnForm/RandomFive/BookAddition/StudentEdition) ===== */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.glass-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.glass-panel:hover::before {
+  opacity: 1;
+  animation: rotate-border 3300ms linear infinite;
+}
+
+.glass-panel--gray::before {
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    transparent 270deg,
+    #353542 320deg,
+    #6e6e80 350deg,
+    #353542 360deg
+  );
+}
+
+.glass-panel--burgundy::before {
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    transparent 270deg,
+    #800020 320deg,
+    #c0405f 350deg,
+    #800020 360deg
+  );
+}
+
+.glass-panel--green::before {
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    transparent 270deg,
+    #006400 320deg,
+    #4caf50 350deg,
+    #006400 360deg
+  );
+}
+
+.glass-panel--gold::before {
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0deg,
+    transparent 270deg,
+    #b8860b 320deg,
+    #f6c91c 350deg,
+    #b8860b 360deg
+  );
+}
+
+/* ===== HymnList ===== */
+.col-name {
+  word-break: break-all;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.hymn-text-sm {
+  font-size: 0.67em !important;
+}
+
+.hymn-text-xs {
+  font-size: 0.33em !important;
+}
+
+.hymn-table .row-burgundy {
+  background-color: #ffebee;
+}
+
+.hymn-table .row-naples {
+  background-color: #fffde7;
+}
+
+.hymn-table .row-cadmium {
+  background-color: #e8f5e9;
+}
+
+.hymn-table tr:hover {
+  filter: brightness(0.97);
+}
+
+/* ===== HymnForm / StudentEdition: トグルスイッチ ===== */
+.toggle-switch {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.toggle-track {
+  display: block;
+  width: 60px;
+  height: 34px;
+  border-radius: 999px;
+  background-color: #d1d5db;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.peer:checked ~ .toggle-track .toggle-thumb {
+  transform: translateX(26px);
+}
+
+.peer:checked ~ .toggle-track.is-primary {
+  background-color: #800020;
+}
+
+.peer:checked ~ .toggle-track.is-success {
+  background-color: #006400;
+}
+
+.peer:checked ~ .toggle-track.is-warning {
+  background-color: #f6c91c;
+}
+
+/* ===== RandomFive ===== */
+.glass-table {
+  width: 100%;
+  background: transparent;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+
+.glass-table caption {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.6);
+  padding-bottom: 4px;
+}
+
+.header-row-mint th {
+  background: rgba(168, 230, 196, 0.5);
+  padding: 8px;
+}
+
+.body-row-glass td {
+  background: rgba(255, 255, 255, 0.33);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 10px;
+}
+
+.record-link {
+  color: #006b3c;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.record-link:hover {
+  text-decoration: underline;
+}
+
+/* ===== RedLetterEditor ===== */
+.noto-serif,
+.noto-serif * {
+  font-family: "Noto Serif JP", serif !important;
+}
+
+.noto-sans,
+.noto-sans * {
+  font-family: "Noto Sans JP", sans-serif !important;
+}
+
+.red-letter-editor {
+  padding: 16.5px 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.23);
+  font-size: 1rem;
+  line-height: 1.4375;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #fff;
+}
+
+.red-letter-editor.is-error {
+  border-color: #d32f2f;
+}
+
+.red-letter-editor:focus {
+  border-color: #c62828;
+  border-width: 2px;
+  padding: 15.5px 13px;
+}
+
+.red-letter-editor:empty:before {
+  content: attr(data-placeholder);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.red-letter-editor .red-letter {
+  color: #c62828;
+}
+
+/* ===== HymnScoreModal ===== */
+.score-modal {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+/* ===== AdminLayout: メインエリアのスクロールバーを隠す ===== */
+.admin-main-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* 旧Edge/IE */
+}
+
+.admin-main-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/新Edge */
+}
