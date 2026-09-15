@@ -74,7 +74,7 @@ export default function MainMenu() {
               className="absolute bottom-0 w-full bg-black/35 py-3 text-center text-white transition-colors duration-200"
               style={{ ["--hover-color" as string]: card.color }}
             >
-              <h2 className="text-xl group-hover:!text-[var(--hover-color)]">
+              <h2 className="text-xl group-hover:text-(--hover-color)!">
                 {card.title}
               </h2>
             </div>
