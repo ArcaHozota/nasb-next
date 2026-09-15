@@ -259,7 +259,7 @@ export default function HomeView() {
       </header>
 
       <main
-        className="mx-auto max-w-[1000px] px-4 pb-16 pt-8 md:px-4 md:pb-16 md:pt-8"
+        className="mx-auto max-w-250 px-4 pb-16 pt-8 md:px-4 md:pb-16 md:pt-8"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
@@ -287,7 +287,7 @@ export default function HomeView() {
           className={`card-row ${isFetching ? "card-row--loading" : EMPTY_STRING}`}
         >
           {!isFetching && records.length === 0 && (
-            <div className="loading col-span-full py-10 text-center text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
+            <div className="loading w-full py-10 text-center text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
               該当データなし
             </div>
           )}

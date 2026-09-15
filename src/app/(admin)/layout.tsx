@@ -24,7 +24,11 @@ import { DELAY_APOLOGY, EMPTY_STRING } from "@/lib/constants";
 
 const SESSION_CHECK_INTERVAL_MS = 15_000;
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuthStore();
@@ -115,7 +119,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   const onLogout = async () => {
-    const ok = await feedback.confirm("ログアウトしてよろしいでしょうか。", "警告");
+    const ok = await feedback.confirm(
+      "ログアウトしてよろしいでしょうか。",
+      "警告",
+    );
     if (!ok) return;
     await auth.logout();
     // 旧実装同様、状態を完全にリセットするためフルリロードする
@@ -193,8 +200,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     直角が実際に生じるストライプの左端に合わせたまま変更しない。 */}
                 {item.isActive && (
                   <>
-                    <span className="pointer-events-none absolute right-1.5 top-0 h-[22px] w-[22px] -translate-y-full bg-[radial-gradient(circle_at_top_left,#111827_22px,white_22px)]" />
-                    <span className="pointer-events-none absolute right-1.5 bottom-0 h-[22px] w-[22px] translate-y-full bg-[radial-gradient(circle_at_bottom_left,#111827_22px,white_22px)]" />
+                    <span className="pointer-events-none absolute right-1.5 top-0 h-5.5 w-5.5 -translate-y-full bg-[radial-gradient(circle_at_top_left,#111827_22px,white_22px)]" />
+                    <span className="pointer-events-none absolute right-1.5 bottom-0 h-5.5 w-5.5 translate-y-full bg-[radial-gradient(circle_at_bottom_left,#111827_22px,white_22px)]" />
                   </>
                 )}
                 <Icon className="h-5 w-5 shrink-0" />
@@ -212,7 +219,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             className="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-white/10"
             onClick={() => setUserMenuOpen((v) => !v)}
           >
-            <span className="inline-flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white/20 text-xs">
+            <span className="inline-flex h-7.5 w-7.5 items-center justify-center rounded-full bg-white/20 text-xs">
               {auth.username?.slice(0, 1)}
             </span>
             <span className="flex-1 text-[0.9rem]">{auth.username}</span>
@@ -284,7 +291,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* ===== 各画面(ここだけがスクロールする) ===== */}
-        <main className="admin-main-scroll flex-1 overflow-y-auto p-[3px]">
+        <main className="admin-main-scroll flex-1 overflow-y-auto p-0.75">
           {children}
         </main>
       </div>
