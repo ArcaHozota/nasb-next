@@ -101,7 +101,9 @@ export default function HomeView() {
   const records = data?.records ?? [];
   const totalRecords = data?.totalRecords ?? 0;
   const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
-  const currentBg = isMobile ? "/assets/home-bg2.webp" : "/assets/home-bg3.webp";
+  const currentBg = isMobile
+    ? "/assets/home-bg2.webp"
+    : "/assets/home-bg3.webp";
 
   const onSearch = () => {
     setPage(1);
@@ -194,7 +196,10 @@ export default function HomeView() {
     );
 
     const siblingsStart = Math.max(
-      Math.min(cur - siblingCount, total - boundaryCount - siblingCount * 2 - 1),
+      Math.min(
+        cur - siblingCount,
+        total - boundaryCount - siblingCount * 2 - 1,
+      ),
       boundaryCount + 2,
     );
     const siblingsEnd = Math.min(
@@ -232,9 +237,17 @@ export default function HomeView() {
       </div>
 
       <header className="home-nav sticky top-0 z-10 flex items-center justify-between bg-[#fffef7] px-6 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
-        <div className="flex cursor-pointer items-center gap-2" onClick={reload}>
+        <div
+          className="flex cursor-pointer items-center gap-2"
+          onClick={reload}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/jerusalem-cross2.svg" alt="NASB1995" width={66} height={66} />
+          <img
+            src="/assets/jerusalem-cross2.svg"
+            alt="NASB1995"
+            width={66}
+            height={66}
+          />
           <span className="effect-shine text-[2.2rem]">NASB1995</span>
         </div>
         <button
@@ -250,7 +263,9 @@ export default function HomeView() {
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
-        <div className={`search-row ${isFetching ? "search-loading" : EMPTY_STRING}`}>
+        <div
+          className={`search-row ${isFetching ? "search-loading" : EMPTY_STRING}`}
+        >
           <input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
@@ -268,14 +283,19 @@ export default function HomeView() {
           </button>
         </div>
 
-        <div className={`card-row ${isFetching ? "card-row--loading" : EMPTY_STRING}`}>
+        <div
+          className={`card-row ${isFetching ? "card-row--loading" : EMPTY_STRING}`}
+        >
           {!isFetching && records.length === 0 && (
             <div className="loading col-span-full py-10 text-center text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
               該当データなし
             </div>
           )}
           {records.map((item) => (
-            <article key={item.id} className={`glass-card ${lineClass(item.lineNumber)}`}>
+            <article
+              key={item.id}
+              className={`glass-card ${lineClass(item.lineNumber)}`}
+            >
               <a
                 className="song-name"
                 href={item.link}
