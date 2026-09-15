@@ -64,24 +64,18 @@ button:not(:disabled) {
   }
 }
 
-/* ===== HomeView ===== */
+/* ===== HomeView =====
+   カードは常に横一列(折り返しなし)。1画面に収まらない分は横スクロールで見せる。
+   PAGE_SIZE(デスクトップ7件/モバイル2件)が変わっても、この1行レイアウトは
+   そのまま対応できる。 */
 .card-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  flex-wrap: nowrap;
   gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
   transition: opacity 0.15s ease;
-}
-
-@media (max-width: 1100px) {
-  .card-row {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 700px) {
-  .card-row {
-    grid-template-columns: 1fr;
-  }
+  scrollbar-width: thin;
 }
 
 .card-row--loading {
@@ -92,6 +86,7 @@ button:not(:disabled) {
 .glass-card {
   position: relative;
   display: flex;
+  flex: 0 0 220px;
   flex-direction: column;
   justify-content: space-between;
   min-height: 330px;
@@ -122,6 +117,7 @@ button:not(:disabled) {
 
 @media (max-width: 700px) {
   .glass-card {
+    flex-basis: 45vw;
     min-height: 28.5vh;
   }
 }
