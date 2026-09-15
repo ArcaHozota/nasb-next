@@ -128,14 +128,12 @@ button:not(:disabled) {
   inset: 0;
   border-radius: inherit;
   padding: 2px;
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0deg,
-    transparent 270deg,
-    #800020 320deg,
-    #c0405f 350deg,
-    #800020 360deg
-  );
+  background: conic-gradient(from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      #800020 320deg,
+      #c0405f 350deg,
+      #800020 360deg);
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -150,25 +148,21 @@ button:not(:disabled) {
 }
 
 .glass-card.is-naples::before {
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0deg,
-    transparent 270deg,
-    #b8860b 320deg,
-    #f6c91c 350deg,
-    #b8860b 360deg
-  );
+  background: conic-gradient(from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      #b8860b 320deg,
+      #f6c91c 350deg,
+      #b8860b 360deg);
 }
 
 .glass-card.is-cadmium::before {
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0deg,
-    transparent 270deg,
-    #0d5c33 320deg,
-    #2ecc71 350deg,
-    #0d5c33 360deg
-  );
+  background: conic-gradient(from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      #0d5c33 320deg,
+      #2ecc71 350deg,
+      #0d5c33 360deg);
 }
 
 .glass-card:hover::before {
@@ -270,14 +264,12 @@ button:not(:disabled) {
   inset: -3px;
   border-radius: 999px;
   padding: 3px;
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0deg,
-    transparent 270deg,
-    #800020 320deg,
-    #c0405f 350deg,
-    #800020 360deg
-  );
+  background: conic-gradient(from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      #800020 320deg,
+      #c0405f 350deg,
+      #800020 360deg);
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
@@ -332,47 +324,39 @@ button:not(:disabled) {
 }
 
 .glass-panel--gray::before {
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0deg,
-    transparent 270deg,
-    #353542 320deg,
-    #6e6e80 350deg,
-    #353542 360deg
-  );
+  background: conic-gradient(from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      #353542 320deg,
+      #6e6e80 350deg,
+      #353542 360deg);
 }
 
 .glass-panel--burgundy::before {
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0deg,
-    transparent 270deg,
-    #800020 320deg,
-    #c0405f 350deg,
-    #800020 360deg
-  );
+  background: conic-gradient(from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      #800020 320deg,
+      #c0405f 350deg,
+      #800020 360deg);
 }
 
 .glass-panel--green::before {
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0deg,
-    transparent 270deg,
-    #006400 320deg,
-    #4caf50 350deg,
-    #006400 360deg
-  );
+  background: conic-gradient(from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      #006400 320deg,
+      #4caf50 350deg,
+      #006400 360deg);
 }
 
 .glass-panel--gold::before {
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0deg,
-    transparent 270deg,
-    #b8860b 320deg,
-    #f6c91c 350deg,
-    #b8860b 360deg
-  );
+  background: conic-gradient(from var(--angle),
+      transparent 0deg,
+      transparent 270deg,
+      #b8860b 320deg,
+      #f6c91c 350deg,
+      #b8860b 360deg);
 }
 
 /* ===== HymnList ===== */
@@ -434,19 +418,19 @@ button:not(:disabled) {
   transition: transform 0.2s ease;
 }
 
-.peer:checked ~ .toggle-track .toggle-thumb {
+.peer:checked~.toggle-track .toggle-thumb {
   transform: translateX(26px);
 }
 
-.peer:checked ~ .toggle-track.is-primary {
+.peer:checked~.toggle-track.is-primary {
   background-color: #800020;
 }
 
-.peer:checked ~ .toggle-track.is-success {
+.peer:checked~.toggle-track.is-success {
   background-color: #006400;
 }
 
-.peer:checked ~ .toggle-track.is-warning {
+.peer:checked~.toggle-track.is-warning {
   background-color: #f6c91c;
 }
 
@@ -536,10 +520,13 @@ button:not(:disabled) {
 
 /* ===== AdminLayout: メインエリアのスクロールバーを隠す ===== */
 .admin-main-scroll {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* 旧Edge/IE */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* 旧Edge/IE */
 }
 
 .admin-main-scroll::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/新Edge */
+  display: none;
+  /* Chrome/Safari/新Edge */
 }
