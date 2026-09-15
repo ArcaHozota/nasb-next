@@ -65,12 +65,18 @@ export default function MainMenu() {
             onClick={card.action}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={card.img} alt={card.title} className="h-full w-full object-cover" />
+            <img
+              src={card.img}
+              alt={card.title}
+              className="h-full w-full object-cover"
+            />
             <div
               className="absolute bottom-0 w-full bg-black/35 py-3 text-center text-white transition-colors duration-200"
               style={{ ["--hover-color" as string]: card.color }}
             >
-              <h2 className="text-xl group-hover:!text-[var(--hover-color)]">{card.title}</h2>
+              <h2 className="text-xl group-hover:!text-[var(--hover-color)]">
+                {card.title}
+              </h2>
             </div>
           </div>
         ))}

@@ -23,7 +23,11 @@ import {
 } from "lucide-react";
 import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
-import { DELAY_APOLOGY, EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import {
+  DELAY_APOLOGY,
+  EMPTY_STRING,
+  extractErrorMessage,
+} from "@/lib/constants";
 
 type StudentForm = {
   id: string | null;
@@ -44,7 +48,9 @@ const emptyForm: StudentForm = {
 };
 
 const required = (v: string) =>
-  !!v && v.trim() !== EMPTY_STRING ? EMPTY_STRING : "上記の入力ボックスを空になってはいけません。";
+  !!v && v.trim() !== EMPTY_STRING
+    ? EMPTY_STRING
+    : "上記の入力ボックスを空になってはいけません。";
 
 const toDateInputValue = (src: string) => {
   if (!src) return EMPTY_STRING;
@@ -112,7 +118,10 @@ function StudentEditionInner() {
     } catch (e: unknown) {
       setErrors((er) => ({
         ...er,
-        loginAccount: extractErrorMessage(e, "このアカウントは既に使われています。"),
+        loginAccount: extractErrorMessage(
+          e,
+          "このアカウントは既に使われています。",
+        ),
       }));
     }
   };
@@ -168,7 +177,11 @@ function StudentEditionInner() {
     <div className="noto-sans relative min-h-full bg-cover bg-fixed bg-center">
       <div className="fixed inset-0 -z-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/mainmenu-bg4.webp" alt="" className="h-full w-full object-cover" />
+        <img
+          src="/assets/mainmenu-bg4.webp"
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </div>
 
       <nav className="mb-2 text-sm font-semibold text-[#fffff0]">
@@ -182,7 +195,10 @@ function StudentEditionInner() {
       </nav>
 
       <div className="studentedition-card glass-panel glass-panel--gold relative overflow-hidden rounded-[18px]">
-        <div className="flex items-center px-4 py-3 text-white" style={{ backgroundColor: "#ff883e" }}>
+        <div
+          className="flex items-center px-4 py-3 text-white"
+          style={{ backgroundColor: "#ff883e" }}
+        >
           <IdCard className="mr-2 h-5 w-5" />
           <h1 className="text-lg font-semibold">ユーザー情報更新</h1>
         </div>
@@ -192,7 +208,9 @@ function StudentEditionInner() {
             <div className="form-label">アカウント</div>
             <input
               value={form.loginAccount}
-              onChange={(e) => setForm((f) => ({ ...f, loginAccount: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, loginAccount: e.target.value }))
+              }
               type="text"
               placeholder="アカウントを入力してください"
               className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.loginAccount ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
@@ -207,12 +225,16 @@ function StudentEditionInner() {
             <div className="form-label">名称</div>
             <input
               value={form.username}
-              onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, username: e.target.value }))
+              }
               type="text"
               placeholder="名称を入力してください"
               className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.username ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
             />
-            {errors.username && <p className="mt-1 text-xs text-red-600">{errors.username}</p>}
+            {errors.username && (
+              <p className="mt-1 text-xs text-red-600">{errors.username}</p>
+            )}
           </div>
 
           <div className="mb-5 flex gap-4">
@@ -221,7 +243,9 @@ function StudentEditionInner() {
               <div className="relative">
                 <input
                   value={form.password}
-                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, password: e.target.value }))
+                  }
                   type={showPassword ? "text" : "password"}
                   placeholder="パスワードを入力してください"
                   className={`w-full rounded-md border px-3 py-1.5 pr-9 text-sm outline-none ${errors.password ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
@@ -231,22 +255,32 @@ function StudentEditionInner() {
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   onClick={() => setShowPassword((v) => !v)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
-              {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+              )}
             </div>
 
             <div className="flex-1">
               <div className="form-label">メール</div>
               <input
                 value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email: e.target.value }))
+                }
                 type="text"
                 placeholder="メールを入力してください"
                 className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.email ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
               />
-              {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
+              {errors.email && (
+                <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+              )}
             </div>
           </div>
 
@@ -255,12 +289,16 @@ function StudentEditionInner() {
               <div className="form-label">生年月日</div>
               <input
                 value={form.dateOfBirth}
-                onChange={(e) => setForm((f) => ({ ...f, dateOfBirth: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, dateOfBirth: e.target.value }))
+                }
                 type="date"
                 className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.dateOfBirth ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
               />
               {errors.dateOfBirth && (
-                <p className="mt-1 text-xs text-red-600">{errors.dateOfBirth}</p>
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.dateOfBirth}
+                </p>
               )}
             </div>
             <div className="youtube-field w-[130px] shrink-0">
