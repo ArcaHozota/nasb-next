@@ -13,9 +13,7 @@ export default function FeedbackHost() {
     <>
       {/* スナックバー(旧 MUI Snackbar 相当) */}
       {snackbar.show && (
-        <div
-          className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded bg-gray-800 px-4 py-2 text-sm text-white shadow-lg transition duration-200 ease-out"
-        >
+        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded bg-gray-800 px-4 py-2 text-sm text-white shadow-lg transition duration-200 ease-out">
           {snackbar.text}
         </div>
       )}
@@ -28,22 +26,29 @@ export default function FeedbackHost() {
             if (e.target === e.currentTarget) answer(false);
           }}
         >
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-gray-900">{dialog.title}</h2>
-            <p className="mt-2 text-sm text-gray-600">{dialog.text}</p>
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
-                onClick={() => answer(false)}
-              >
-                キャンセル
-              </button>
-              <button
-                className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white"
-                onClick={() => answer(true)}
-              >
-                OK
-              </button>
+          <div className="w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-xl">
+            <div className="bg-white pt-3">
+              <h2 className="text-center text-lg font-semibold text-primary">
+                {dialog.title}
+              </h2>
+              <div className="mx-1.5 mt-2 h-0.75 rounded-full bg-primary"></div>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-gray-600">{dialog.text}</p>
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+                  onClick={() => answer(false)}
+                >
+                  キャンセル
+                </button>
+                <button
+                  className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white"
+                  onClick={() => answer(true)}
+                >
+                  OK
+                </button>
+              </div>
             </div>
           </div>
         </div>
