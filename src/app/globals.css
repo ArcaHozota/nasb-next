@@ -87,7 +87,7 @@ button:not(:disabled) {
 .glass-card {
   position: relative;
   display: flex;
-  flex: 0 0 9%;
+  flex: 0 0 12%;
   flex-direction: column;
   justify-content: space-between;
   min-height: 330px;
