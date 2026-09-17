@@ -125,7 +125,7 @@ button:not(:disabled) {
   }
 
   .glass-card {
-    flex-basis: 44vw;
+    flex-basis: 44%;
     min-height: 28.5vh;
   }
 }
