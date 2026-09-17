@@ -120,7 +120,7 @@ export default function AdminLayout({
 
   const onLogout = async () => {
     const ok = await feedback.confirm(
-      "ログアウトしてよろしいでしょうか。",
+      "これからログアウトしています、よろしいでしょうか。",
       "警告",
     );
     if (!ok) return;
