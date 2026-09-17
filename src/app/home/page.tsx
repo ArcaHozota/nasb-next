@@ -58,7 +58,7 @@ export default function HomeView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const PAGE_SIZE = isMobile ? 2 : 7;
+  const PAGE_SIZE = isMobile ? 4 : 7;
 
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState(EMPTY_STRING); // 入力欄の値(即時反映)
