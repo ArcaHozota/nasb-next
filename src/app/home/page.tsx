@@ -8,6 +8,7 @@ import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import { LogIn, Search } from "lucide-react";
 import api from "@/api/axios";
+import RippleButton from "@/components/RippleButton";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 
@@ -250,12 +251,12 @@ export default function HomeView() {
           />
           <span className="effect-shine text-[2.2rem]">NASB1995</span>
         </div>
-        <button
+        <RippleButton
           className="hidden items-center gap-1 rounded-md bg-[#ed6c02] px-4 py-2 font-semibold text-white md:inline-flex"
           onClick={goLogin}
         >
           <LogIn className="h-4 w-4" /> ログイン
-        </button>
+        </RippleButton>
       </header>
 
       <main
@@ -321,35 +322,42 @@ export default function HomeView() {
               {totalPages}ページ中の{page}ページ、{totalRecords}件
             </span>
             <div className="pager-glass">
-              <button
+              <RippleButton
                 className="pager-item"
+                rippleColor="rgba(0, 0, 0, 0.15)"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
                 ‹
-              </button>
+              </RippleButton>
               {pageItems.map((item, idx) =>
                 item === "ellipsis" ? (
                   <span key={`e-${idx}`} className="pager-ellipsis">
                     …
                   </span>
                 ) : (
-                  <button
+                  <RippleButton
                     key={item}
                     className={`pager-item ${item === page ? "is-selected" : EMPTY_STRING}`}
+                    rippleColor={
+                      item === page
+                        ? "rgba(255, 255, 255, 0.45)"
+                        : "rgba(0, 0, 0, 0.15)"
+                    }
                     onClick={() => setPage(item)}
                   >
                     {item}
-                  </button>
+                  </RippleButton>
                 ),
               )}
-              <button
+              <RippleButton
                 className="pager-item"
+                rippleColor="rgba(0, 0, 0, 0.15)"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
               >
                 ›
-              </button>
+              </RippleButton>
             </div>
           </div>
         )}
