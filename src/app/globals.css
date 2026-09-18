@@ -482,7 +482,7 @@ button:not(:disabled) {
 /* ===== RedLetterEditor ===== */
 .noto-serif,
 .noto-serif * {
-  font-family: "Noto Serif JP", serif !important;
+  font-family: "Noto Serif JP", "Noto Serif KR", serif !important;
 }
 
 .noto-sans,

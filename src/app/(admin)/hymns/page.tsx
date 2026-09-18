@@ -4,7 +4,11 @@
 // 旧 views/HymnList.vue を移植
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import {
+  useQuery,
+  useQueryClient,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import {
   LayoutGrid,
   CirclePlus,
@@ -15,8 +19,13 @@ import {
   ChevronsRight,
 } from "lucide-react";
 import api from "@/api/axios";
+import RippleButton from "@/components/RippleButton";
 import { useFeedbackStore } from "@/stores/feedback";
-import { EMPTY_STRING, extractErrorMessage, utf8ToBase64 } from "@/lib/constants";
+import {
+  EMPTY_STRING,
+  extractErrorMessage,
+  utf8ToBase64,
+} from "@/lib/constants";
 import HymnScoreModal from "@/components/HymnScoreModal";
 
 type HymnRow = {
@@ -75,7 +84,9 @@ function HymnListInner() {
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(Number(searchParams.get("pageNum")) || 1);
-  const [pageSize, setPageSize] = useState(Number(searchParams.get("pageSize")) || 10);
+  const [pageSize, setPageSize] = useState(
+    Number(searchParams.get("pageSize")) || 10,
+  );
   const [keyword, setKeyword] = useState(asStr(searchParams.get("keyword")));
   const [submittedKeyword, setSubmittedKeyword] = useState(
     asStr(searchParams.get("keyword")),
@@ -110,7 +121,8 @@ function HymnListInner() {
     if (e.key === "Enter") onSearch();
   };
 
-  const goAdd = () => router.push(`/hymns/add?pageNum=${page}&pageSize=${pageSize}`);
+  const goAdd = () =>
+    router.push(`/hymns/add?pageNum=${page}&pageSize=${pageSize}`);
 
   const goEdit = (id: number) =>
     router.push(
@@ -118,10 +130,12 @@ function HymnListInner() {
     );
 
   // 楽譜アップロードは専用画面への遷移ではなく、モーダルで行う
-  const [scoreModalHymn, setScoreModalHymn] = useState<{ id: number; nameKr: string } | null>(
-    null,
-  );
-  const openScoreModal = (row: HymnRow) => setScoreModalHymn({ id: row.id, nameKr: row.nameKr });
+  const [scoreModalHymn, setScoreModalHymn] = useState<{
+    id: number;
+    nameKr: string;
+  } | null>(null);
+  const openScoreModal = (row: HymnRow) =>
+    setScoreModalHymn({ id: row.id, nameKr: row.nameKr });
   const closeScoreModal = () => setScoreModalHymn(null);
 
   const onDelete = async (item: HymnRow) => {
@@ -175,7 +189,11 @@ function HymnListInner() {
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
       <div className="fixed inset-0 -z-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/mainmenu-bg5.webp" alt="" className="h-full w-full object-cover" />
+        <img
+          src="/assets/mainmenu-bg5.webp"
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </div>
 
       <div className="hymnlist-card glass-panel glass-panel--gray relative overflow-hidden rounded-[18px]">
@@ -195,23 +213,24 @@ function HymnListInner() {
                 className="w-full rounded-md border border-gray-300 py-1.5 pl-3 pr-9 text-sm outline-none focus:border-primary"
                 onKeyDown={onSearchKeyDown}
               />
-              <button
+              <RippleButton
                 type="button"
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                rippleColor="rgba(0, 0, 0, 0.12)"
                 onClick={onSearch}
               >
                 <Search className="h-4 w-4" />
-              </button>
+              </RippleButton>
             </div>
 
             <div className="ml-auto">
-              <button
+              <RippleButton
                 type="button"
-                className="flex items-center gap-1 rounded-md bg-success px-4 py-1.5 text-sm font-medium text-white"
+                className="flex items-center gap-1 rounded-md bg-success px-4 py-1.5 text-sm font-bold text-white"
                 onClick={goAdd}
               >
                 <CirclePlus className="h-4 w-4" /> 賛美歌情報追加
-              </button>
+              </RippleButton>
             </div>
           </div>
 
@@ -233,31 +252,45 @@ function HymnListInner() {
                   <th className="px-3 py-2 text-center">操作</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="noto-serif">
                 {isFetching && records.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-3 py-6 text-center text-gray-400">
+                    <td
+                      colSpan={5}
+                      className="px-3 py-6 text-center text-gray-400"
+                    >
                       読み込み中...
                     </td>
                   </tr>
                 )}
                 {!isFetching && records.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-3 py-6 text-center text-gray-400">
+                    <td
+                      colSpan={5}
+                      className="px-3 py-6 text-center text-gray-400"
+                    >
                       データがありません
                     </td>
                   </tr>
                 )}
                 {records.map((row) => (
                   <tr key={row.id} className={rowClass(row.lineNumber)}>
-                    <td className={`col-name px-3 py-2 ${textSizeClass(row.nameJp)}`}>
+                    <td
+                      className={`col-name px-3 py-2 ${textSizeClass(row.nameJp)}`}
+                    >
                       {row.nameJp}
                     </td>
-                    <td className={`col-name px-3 py-2 ${textSizeClass(row.nameKr)}`}>
+                    <td
+                      className={`col-name px-3 py-2 ${textSizeClass(row.nameKr)}`}
+                    >
                       {row.nameKr}
                     </td>
                     <td className="px-3 py-2 text-center">
-                      <a href={row.link} target="_blank" rel="noopener noreferrer">
+                      <a
+                        href={row.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         Link
                       </a>
                     </td>
@@ -274,24 +307,25 @@ function HymnListInner() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex justify-center gap-1">
-                        <button
+                        <RippleButton
                           className="rounded bg-secondary px-2 py-1 text-xs text-white"
                           onClick={() => openScoreModal(row)}
                         >
                           楽譜
-                        </button>
-                        <button
+                        </RippleButton>
+                        <RippleButton
                           className="rounded bg-primary px-2 py-1 text-xs text-white"
                           onClick={() => goEdit(row.id)}
                         >
                           編集
-                        </button>
-                        <button
+                        </RippleButton>
+                        <RippleButton
                           className="rounded bg-warning px-2 py-1 text-xs text-gray-900"
+                          rippleColor="rgba(0, 0, 0, 0.18)"
                           onClick={() => onDelete(row)}
                         >
                           削除
-                        </button>
+                        </RippleButton>
                       </div>
                     </td>
                   </tr>
@@ -319,45 +353,49 @@ function HymnListInner() {
               </select>
 
               <div className="flex items-center gap-0.5 rounded-md border border-gray-300 bg-white p-0.5">
-                <button
+                <RippleButton
                   type="button"
                   title="最初のページ"
                   className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                  rippleColor="rgba(0, 0, 0, 0.12)"
                   disabled={page <= 1}
                   onClick={() => setPage(1)}
                 >
                   <ChevronsLeft className="h-4 w-4" />
-                </button>
-                <button
+                </RippleButton>
+                <RippleButton
                   type="button"
                   title="前のページ"
                   className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                  rippleColor="rgba(0, 0, 0, 0.12)"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                </button>
+                </RippleButton>
                 <span className="px-2 text-sm font-medium text-primary">
                   {page} / {totalPages}
                 </span>
-                <button
+                <RippleButton
                   type="button"
                   title="次のページ"
                   className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                  rippleColor="rgba(0, 0, 0, 0.12)"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
                   <ChevronRight className="h-4 w-4" />
-                </button>
-                <button
+                </RippleButton>
+                <RippleButton
                   type="button"
                   title="最後のページ"
                   className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
+                  rippleColor="rgba(0, 0, 0, 0.12)"
                   disabled={page >= totalPages}
                   onClick={() => setPage(totalPages)}
                 >
                   <ChevronsRight className="h-4 w-4" />
-                </button>
+                </RippleButton>
               </div>
             </div>
           </div>
@@ -369,7 +407,9 @@ function HymnListInner() {
           hymnId={scoreModalHymn.id}
           hymnNameKr={scoreModalHymn.nameKr}
           onClose={closeScoreModal}
-          onUploaded={() => queryClient.invalidateQueries({ queryKey: ["hymns-list"] })}
+          onUploaded={() =>
+            queryClient.invalidateQueries({ queryKey: ["hymns-list"] })
+          }
         />
       )}
     </div>
