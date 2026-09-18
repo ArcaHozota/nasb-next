@@ -28,6 +28,7 @@ import {
   EMPTY_STRING,
   extractErrorMessage,
 } from "@/lib/constants";
+import RippleButton from "@/components/RippleButton";
 
 type StudentForm = {
   id: string | null;
@@ -301,7 +302,7 @@ function StudentEditionInner() {
                 </p>
               )}
             </div>
-            <div className="youtube-field w-[130px] shrink-0">
+            <div className="youtube-field w-32.5 shrink-0">
               <div className="form-label">YouTube連携</div>
               <label className="toggle-switch">
                 <input
@@ -332,7 +333,7 @@ function StudentEditionInner() {
         </div>
 
         <div className="flex justify-end gap-2 px-6 pb-4">
-          <button
+          <RippleButton
             type="button"
             className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
             disabled={saving}
@@ -345,14 +346,14 @@ function StudentEditionInner() {
                 <Zap className="h-4 w-4" /> 更新
               </span>
             )}
-          </button>
-          <button
+          </RippleButton>
+          <RippleButton
             type="button"
             className="flex items-center gap-1 rounded-md bg-gray-500 px-4 py-1.5 text-sm font-medium text-white"
             onClick={onRestore}
           >
             <Trash2 className="h-4 w-4" /> 廃棄
-          </button>
+          </RippleButton>
         </div>
       </div>
     </div>
