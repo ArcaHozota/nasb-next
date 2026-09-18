@@ -75,7 +75,7 @@ export default function LoginView() {
 
           <button
             type="button"
-            className="w-full rounded-md bg-primary py-2 text-sm font-medium text-white disabled:opacity-60"
+            className="w-full rounded-md bg-primary py-2 text-sm font-bold text-white disabled:opacity-60"
             disabled={loading}
             onClick={onLogin}
           >
