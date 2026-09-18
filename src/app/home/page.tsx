@@ -252,7 +252,7 @@ export default function HomeView() {
           <span className="effect-shine text-[2.2rem]">NASB1995</span>
         </div>
         <RippleButton
-          className="hidden items-center gap-1 rounded-md bg-warning px-4 py-2 font-semibold text-white md:inline-flex"
+          className="hidden items-center gap-1 rounded-md bg-warning px-4 py-2 font-bold text-gray-900 md:inline-flex"
           onClick={goLogin}
         >
           <LogIn className="h-4 w-4" /> ログイン
