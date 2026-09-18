@@ -11,6 +11,7 @@ import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import RippleButton from "./RippleButton";
 
 type FormState = {
   id: string | null;
@@ -35,7 +36,9 @@ const emptyForm: FormState = {
 };
 
 const required = (v: string) =>
-  !!v && v.trim() !== EMPTY_STRING ? EMPTY_STRING : "上記の入力ボックスを空になってはいけません。";
+  !!v && v.trim() !== EMPTY_STRING
+    ? EMPTY_STRING
+    : "上記の入力ボックスを空になってはいけません。";
 
 const asStr = (v: string | null) => v ?? EMPTY_STRING;
 
@@ -130,7 +133,9 @@ export default function HymnFormView() {
     }
     const uid = auth.userId;
     if (!uid) {
-      feedback.toast("ログイン情報の取得に失敗しました。再度ログインしてください。");
+      feedback.toast(
+        "ログイン情報の取得に失敗しました。再度ログインしてください。",
+      );
       return;
     }
     setSaving(true);
@@ -144,7 +149,11 @@ export default function HymnFormView() {
     };
     try {
       if (isEdit) {
-        const updatePayload = { ...payload, id: form.id, updatedTime: form.updatedTime };
+        const updatePayload = {
+          ...payload,
+          id: form.id,
+          updatedTime: form.updatedTime,
+        };
         const { data } = await api.put(`/hymns/${form.id}`, updatePayload);
         feedback.toast(typeof data === "string" ? data : "更新しました");
         router.push(`/hymns?${buildListQuery()}`);
@@ -171,10 +180,18 @@ export default function HymnFormView() {
     } else {
       setForm({ ...emptyForm, id: editId });
     }
-    setErrors({ nameJp: EMPTY_STRING, nameKr: EMPTY_STRING, link: EMPTY_STRING, lyric: EMPTY_STRING });
+    setErrors({
+      nameJp: EMPTY_STRING,
+      nameKr: EMPTY_STRING,
+      link: EMPTY_STRING,
+      lyric: EMPTY_STRING,
+    });
   };
 
-  const listQueryStr = useMemo(() => buildListQuery(), [pageNum, pageSize, keyword]);
+  const listQueryStr = useMemo(
+    () => buildListQuery(),
+    [pageNum, pageSize, keyword],
+  );
 
   const focusClass = isEdit ? "focus:border-primary" : "focus:border-success";
 
@@ -182,7 +199,11 @@ export default function HymnFormView() {
     <div className="noto-sans relative min-h-full bg-cover bg-fixed bg-center">
       <div className="fixed inset-0 -z-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/mainmenu-bg5.webp" alt="" className="h-full w-full object-cover" />
+        <img
+          src="/assets/mainmenu-bg5.webp"
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </div>
 
       {/* パンくずリスト */}
@@ -205,7 +226,9 @@ export default function HymnFormView() {
           className={`flex items-center px-4 py-3 text-white ${isEdit ? "bg-primary" : "bg-success"}`}
         >
           <LayoutGrid className="mr-2 h-5 w-5" />
-          <h1 className="text-lg font-semibold">{isEdit ? "賛美歌情報更新" : "賛美歌情報追加"}</h1>
+          <h1 className="text-lg font-semibold">
+            {isEdit ? "賛美歌情報更新" : "賛美歌情報追加"}
+          </h1>
         </div>
 
         <div className="p-6 pt-5">
@@ -213,26 +236,34 @@ export default function HymnFormView() {
             <div className="form-label">日本語名称</div>
             <input
               value={form.nameJp}
-              onChange={(e) => setForm((f) => ({ ...f, nameJp: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, nameJp: e.target.value }))
+              }
               type="text"
               placeholder="日本語名称を入力してください"
               className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.nameJp ? "border-red-400" : `border-gray-300 ${focusClass}`}`}
               onBlur={checkNameJp}
             />
-            {errors.nameJp && <p className="mt-1 text-xs text-red-600">{errors.nameJp}</p>}
+            {errors.nameJp && (
+              <p className="mt-1 text-xs text-red-600">{errors.nameJp}</p>
+            )}
           </div>
 
           <div className="mb-5">
             <div className="form-label">韓国語名称</div>
             <input
               value={form.nameKr}
-              onChange={(e) => setForm((f) => ({ ...f, nameKr: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, nameKr: e.target.value }))
+              }
               type="text"
               placeholder="韓国語名称を入力してください"
               className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.nameKr ? "border-red-400" : `border-gray-300 ${focusClass}`}`}
               onBlur={checkNameKr}
             />
-            {errors.nameKr && <p className="mt-1 text-xs text-red-600">{errors.nameKr}</p>}
+            {errors.nameKr && (
+              <p className="mt-1 text-xs text-red-600">{errors.nameKr}</p>
+            )}
           </div>
 
           <div className="link-row mb-5 flex items-start gap-4">
@@ -240,23 +271,31 @@ export default function HymnFormView() {
               <div className="form-label">リンク</div>
               <input
                 value={form.link}
-                onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, link: e.target.value }))
+                }
                 type="text"
                 placeholder="リンクを入力してください"
                 className={`h-9 w-full rounded-md border px-3 text-sm outline-none ${errors.link ? "border-red-400" : `border-gray-300 ${focusClass}`}`}
               />
-              {errors.link && <p className="mt-1 text-xs text-red-600">{errors.link}</p>}
+              {errors.link && (
+                <p className="mt-1 text-xs text-red-600">{errors.link}</p>
+              )}
             </div>
             <div className="classic-field w-24 shrink-0">
               <div className="form-label">クラシック</div>
               <label className="toggle-switch">
                 <input
                   checked={form.classic}
-                  onChange={(e) => setForm((f) => ({ ...f, classic: e.target.checked }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, classic: e.target.checked }))
+                  }
                   type="checkbox"
                   className="peer sr-only"
                 />
-                <span className={`toggle-track ${isEdit ? "is-primary" : "is-success"}`}>
+                <span
+                  className={`toggle-track ${isEdit ? "is-primary" : "is-success"}`}
+                >
                   <span className="toggle-thumb" />
                 </span>
               </label>
@@ -267,12 +306,16 @@ export default function HymnFormView() {
             <div className="form-label">歌詞</div>
             <textarea
               value={form.lyric}
-              onChange={(e) => setForm((f) => ({ ...f, lyric: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, lyric: e.target.value }))
+              }
               rows={6}
               placeholder="セリフを入力してください"
               className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.lyric ? "border-red-400" : `border-gray-300 ${focusClass}`}`}
             />
-            {errors.lyric && <p className="mt-1 text-xs text-red-600">{errors.lyric}</p>}
+            {errors.lyric && (
+              <p className="mt-1 text-xs text-red-600">{errors.lyric}</p>
+            )}
           </div>
 
           {isEdit && (
@@ -283,7 +326,7 @@ export default function HymnFormView() {
         </div>
 
         <div className="flex justify-end gap-2 px-6 pb-4">
-          <button
+          <RippleButton
             type="button"
             className={`rounded-md px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60 ${isEdit ? "bg-primary" : "bg-success"}`}
             disabled={saving}
@@ -294,14 +337,14 @@ export default function HymnFormView() {
             ) : (
               <span>{isEdit ? "更新" : "追加"}</span>
             )}
-          </button>
-          <button
+          </RippleButton>
+          <RippleButton
             type="button"
             className="rounded-md bg-gray-500 px-4 py-1.5 text-sm font-medium text-white"
             onClick={onReset}
           >
             {isEdit ? "廃棄" : "リセット"}
-          </button>
+          </RippleButton>
         </div>
       </div>
     </div>
