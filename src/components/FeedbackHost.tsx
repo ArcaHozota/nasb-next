@@ -2,6 +2,7 @@
 
 // src/components/FeedbackHost.tsx
 // 旧 components/FeedbackHost.vue を移植。App(Providers)直下にグローバルマウントする。
+import RippleButton from "@/components/RippleButton";
 import { useFeedbackStore } from "@/stores/feedback";
 
 export default function FeedbackHost() {
@@ -36,18 +37,19 @@ export default function FeedbackHost() {
             <div className="p-6">
               <p className="text-sm text-gray-600">{dialog.text}</p>
               <div className="mt-6 flex justify-end gap-2">
-                <button
+                <RippleButton
                   className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
+                  rippleColor="rgba(0, 0, 0, 0.12)"
                   onClick={() => answer(false)}
                 >
                   キャンセル
-                </button>
-                <button
+                </RippleButton>
+                <RippleButton
                   className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white"
                   onClick={() => answer(true)}
                 >
                   OK
-                </button>
+                </RippleButton>
               </div>
             </div>
           </div>
