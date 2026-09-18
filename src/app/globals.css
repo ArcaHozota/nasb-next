@@ -538,3 +538,19 @@ button:not(:disabled) {
   display: none;
   /* Chrome/Safari/新Edge */
 }
+
+/* ===== RippleButton: Vuetify風の波紋エフェクト ===== */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  pointer-events: none;
+  animation: ripple-effect 550ms ease-out;
+}
+
+@keyframes ripple-effect {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
