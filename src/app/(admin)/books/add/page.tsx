@@ -7,7 +7,9 @@ import { BookOpen, Book, Baseline, LoaderCircle } from "lucide-react";
 import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
-import RedLetterEditor, { type RedLetterEditorHandle } from "@/components/RedLetterEditor";
+import RedLetterEditor, {
+  type RedLetterEditorHandle,
+} from "@/components/RedLetterEditor";
 
 type BookOrChapter = { id: number; name: string };
 
@@ -25,7 +27,11 @@ export default function BookAddition() {
   const [textJp, setTextJp] = useState(EMPTY_STRING);
   const [chapterLoading, setChapterLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [errors, setErrors] = useState({ textEn: false, textJp: false, verseId: false });
+  const [errors, setErrors] = useState({
+    textEn: false,
+    textJp: false,
+    verseId: false,
+  });
 
   const textEnEditorRef = useRef<RedLetterEditorHandle | null>(null);
   const textJpEditorRef = useRef<RedLetterEditorHandle | null>(null);
@@ -124,7 +130,11 @@ export default function BookAddition() {
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
       <div className="fixed inset-0 -z-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/mainmenu-bg.webp" alt="" className="h-full w-full object-cover" />
+        <img
+          src="/assets/mainmenu-bg.webp"
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </div>
 
       <div className="bookaddition-card noto-serif glass-panel glass-panel--burgundy relative overflow-hidden rounded-[18px]">
@@ -145,7 +155,9 @@ export default function BookAddition() {
                 onChange={handleTextEnChange}
                 error={errors.textEn}
                 helperText={
-                  errors.textEn ? "上記の入力ボックスを空になってはいけません。" : undefined
+                  errors.textEn
+                    ? "上記の入力ボックスを空になってはいけません。"
+                    : undefined
                 }
               />
             </div>
@@ -174,7 +186,9 @@ export default function BookAddition() {
                 onChange={handleTextJpChange}
                 error={errors.textJp}
                 helperText={
-                  errors.textJp ? "上記の入力ボックスを空になってはいけません。" : undefined
+                  errors.textJp
+                    ? "上記の入力ボックスを空になってはいけません。"
+                    : undefined
                 }
               />
             </div>
@@ -182,7 +196,9 @@ export default function BookAddition() {
 
           <div className="flex flex-wrap items-start gap-3">
             <div className="w-full md:w-[22%]">
-              <label className="noto-serif mb-1 block text-sm text-gray-600">書</label>
+              <label className="noto-serif mb-1 block text-sm text-gray-600">
+                書
+              </label>
               <select
                 value={bookId}
                 onChange={(e) => setBookId(e.target.value)}
@@ -199,7 +215,9 @@ export default function BookAddition() {
             <div className="w-full md:w-[30%]">
               <label className="noto-serif mb-1 flex items-center gap-1 text-sm text-gray-600">
                 章
-                {chapterLoading && <LoaderCircle className="inline-block h-3 w-3 animate-spin" />}
+                {chapterLoading && (
+                  <LoaderCircle className="inline-block h-3 w-3 animate-spin" />
+                )}
               </label>
               <select
                 value={chapterId}
@@ -215,7 +233,9 @@ export default function BookAddition() {
             </div>
 
             <div className="w-full md:w-[22%]">
-              <label className="noto-serif mb-1 block text-sm text-gray-600">節</label>
+              <label className="noto-serif mb-1 block text-sm text-gray-600">
+                節
+              </label>
               <input
                 value={verseId}
                 type="text"
@@ -224,12 +244,16 @@ export default function BookAddition() {
                 onChange={(e) => handleVerseIdChange(e.target.value)}
               />
               {errors.verseId && (
-                <p className="mt-1 text-xs text-red-600">上記の入力ボックスを空になってはいけません。</p>
+                <p className="mt-1 text-xs text-red-600">
+                  上記の入力ボックスを空になってはいけません。
+                </p>
               )}
             </div>
 
             <div className="w-full md:w-[16%]">
-              <label className="mb-1 block text-sm text-transparent">追加</label>
+              <label className="mb-1 block text-sm text-transparent">
+                追加
+              </label>
               <button
                 type="button"
                 className="noto-serif h-9 w-full rounded-md bg-primary text-sm font-medium text-white disabled:opacity-60"
