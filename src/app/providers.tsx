@@ -30,11 +30,15 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     // CSRFトークンをマウント前に確定させておく。
     // 失敗してもアプリ自体は起動させ、以降のPOST/PUT/DELETEでresponse interceptor側の
     // 403リトライに委ねる(初回アクセス時のネットワーク瞬断などを致命傷にしないため)。
-    useCsrfStore.getState().fetchCsrf().catch((err) => {
-      console.error("Failed to fetch initial CSRF token", err);
-    });
+    useCsrfStore
+      .getState()
+      .fetchCsrf()
+      .catch((err) => {
+        console.error("Failed to fetch initial CSRF token", err);
+      });
 
-    return () => window.removeEventListener("auth:unauthorized", onUnauthorized);
+    return () =>
+      window.removeEventListener("auth:unauthorized", onUnauthorized);
   }, [router]);
 
   return (
