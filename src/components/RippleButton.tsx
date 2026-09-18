@@ -56,10 +56,18 @@ export default function RippleButton({
     [onPointerDown],
   );
 
+  // 呼び出し側が既にabsolute/fixed/sticky等でposition指定している場合、
+  // 強制的にrelativeを付けるとTailwindの生成順序次第でそちらを上書きしてしまい、
+  // 絶対配置が効かなくなることがある。position指定が無い時だけrelativeを補う。
+  const hasPositionClass = /\b(static|relative|absolute|fixed|sticky)\b/.test(
+    className,
+  );
+  const wrapperClassName = `${hasPositionClass ? "" : "relative "}overflow-hidden ${className}`;
+
   return (
     <button
       {...rest}
-      className={`relative overflow-hidden ${className}`}
+      className={wrapperClassName}
       onPointerDown={handlePointerDown}
     >
       {children}
