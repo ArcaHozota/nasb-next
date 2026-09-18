@@ -21,6 +21,7 @@ import api from "@/api/axios";
 import { useAuthStore } from "@/stores/auth";
 import { useFeedbackStore } from "@/stores/feedback";
 import { DELAY_APOLOGY, EMPTY_STRING } from "@/lib/constants";
+import RippleButton from "@/components/RippleButton";
 
 const SESSION_CHECK_INTERVAL_MS = 15_000;
 
@@ -214,7 +215,7 @@ export default function AdminLayout({
         {/* ユーザードロップダウン */}
         <hr className="border-white/10" />
         <div className="relative shrink-0">
-          <button
+          <RippleButton
             type="button"
             className="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-white/10"
             onClick={() => setUserMenuOpen((v) => !v)}
@@ -224,7 +225,7 @@ export default function AdminLayout({
             </span>
             <span className="flex-1 text-[0.9rem]">{auth.username}</span>
             <ChevronUp className="h-4 w-4 shrink-0" />
-          </button>
+          </RippleButton>
 
           {/* クリック外を検知して閉じるための透明レイヤー */}
           {userMenuOpen && (
@@ -236,14 +237,14 @@ export default function AdminLayout({
 
           {userMenuOpen && (
             <div className="absolute bottom-full left-0 z-20 mb-1 w-56 rounded-md border border-gray-200 bg-white py-1 text-sm text-gray-800 shadow-lg">
-              <button
+              <RippleButton
                 type="button"
                 className="flex w-full items-center gap-2 px-3 py-2 hover:bg-gray-100"
                 onClick={goPersonal}
               >
                 <UserCog className="h-4 w-4" /> 個人スペース
-              </button>
-              <button
+              </RippleButton>
+              <RippleButton
                 type="button"
                 className="flex w-full items-center gap-2 px-3 py-2 hover:bg-gray-100"
                 onClick={() => {
@@ -252,15 +253,15 @@ export default function AdminLayout({
                 }}
               >
                 <MessageSquare className="h-4 w-4" /> メッセージ
-              </button>
+              </RippleButton>
               <hr className="my-1 border-gray-200" />
-              <button
+              <RippleButton
                 type="button"
                 className="flex w-full items-center gap-2 px-3 py-2 text-red-700 hover:bg-gray-100"
                 onClick={onLogout}
               >
                 <LogOut className="h-4 w-4" /> ログアウト
-              </button>
+              </RippleButton>
             </div>
           )}
         </div>
