@@ -252,7 +252,7 @@ function HymnListInner() {
                   <th className="px-3 py-2 text-center">操作</th>
                 </tr>
               </thead>
-              <tbody className="noto-serif font-semibold">
+              <tbody className="noto-serif font-medium">
                 {isFetching && records.length === 0 && (
                   <tr>
                     <td
