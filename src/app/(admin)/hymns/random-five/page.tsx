@@ -8,6 +8,7 @@ import { LayoutGrid, Search, LoaderCircle } from "lucide-react";
 import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import RippleButton from "@/components/RippleButton";
 
 type HymnRecord = { id?: number; nameJp: string; nameKr: string; link: string };
 
@@ -63,7 +64,11 @@ function RandomFiveInner() {
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
       <div className="fixed inset-0 -z-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/assets/mainmenu-bg6.webp" alt="" className="h-full w-full object-cover" />
+        <img
+          src="/assets/mainmenu-bg6.webp"
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </div>
 
       <div className="randomfive-card noto-serif glass-panel glass-panel--gray relative overflow-hidden rounded-[18px]">
@@ -74,7 +79,7 @@ function RandomFiveInner() {
 
         <div className="p-6">
           <div className="mb-6 flex justify-center">
-            <div className="relative w-full max-w-[480px]">
+            <div className="relative w-full max-w-120">
               <input
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
@@ -83,13 +88,13 @@ function RandomFiveInner() {
                 className="w-full rounded-md border border-gray-300 py-1.5 pl-3 pr-9 text-sm outline-none focus:border-primary"
                 onKeyDown={onKeyDown}
               />
-              <button
+              <RippleButton
                 type="button"
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 onClick={onRandom}
               >
                 <Search className="h-4 w-4" />
-              </button>
+              </RippleButton>
             </div>
           </div>
 
