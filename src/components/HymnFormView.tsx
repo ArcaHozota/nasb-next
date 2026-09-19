@@ -342,7 +342,7 @@ export default function HymnFormView() {
           </RippleButton>
           <RippleButton
             type="button"
-            className="rounded-md bg-gray-500 px-4 py-1.5 text-sm font-medium text-white"
+            className="flex items-center gap-1 rounded-md bg-gray-500 px-4 py-1.5 text-sm font-medium text-white"
             onClick={onReset}
           >
             <Trash2 className="h-4 w-4" /> {isEdit ? "廃棄" : "リセット"}
