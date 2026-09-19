@@ -319,15 +319,19 @@ function StudentEditionInner() {
           </div>
 
           {youtubeEnabled && (
-            <div className="mb-2 flex justify-end">
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-                title="YouTubeと連携(未実装)"
-                onClick={onYoutubeButtonClick}
-              >
-                <SquarePlay className="h-4 w-4 text-red-600" />
-              </button>
+            <div className="mb-2 flex items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <RippleButton
+                  type="button"
+                  className="flex w-full items-center justify-start gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                  rippleColor="rgba(0, 0, 0, 0.12)"
+                  title="YouTubeと連携(未実装)"
+                  onClick={onYoutubeButtonClick}
+                >
+                  <SquarePlay className="h-4 w-4 text-red-600" />
+                </RippleButton>
+              </div>
+              <div className="w-32.5 shrink-0" aria-hidden="true"></div>
             </div>
           )}
         </div>
