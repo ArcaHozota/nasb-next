@@ -357,7 +357,6 @@ function HymnListInner() {
                   type="button"
                   title="最初のページ"
                   className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                  rippleColor="rgba(0, 0, 0, 0.12)"
                   disabled={page <= 1}
                   onClick={() => setPage(1)}
                 >
@@ -367,7 +366,6 @@ function HymnListInner() {
                   type="button"
                   title="前のページ"
                   className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                  rippleColor="rgba(0, 0, 0, 0.12)"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => p - 1)}
                 >
@@ -380,7 +378,6 @@ function HymnListInner() {
                   type="button"
                   title="次のページ"
                   className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                  rippleColor="rgba(0, 0, 0, 0.12)"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
                 >
@@ -390,7 +387,6 @@ function HymnListInner() {
                   type="button"
                   title="最後のページ"
                   className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                  rippleColor="rgba(0, 0, 0, 0.12)"
                   disabled={page >= totalPages}
                   onClick={() => setPage(totalPages)}
                 >
