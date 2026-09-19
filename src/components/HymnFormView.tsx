@@ -6,7 +6,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { LayoutGrid, LoaderCircle, Trash2, Zap } from "lucide-react";
+import {
+  FileArchive,
+  LayoutGrid,
+  LoaderCircle,
+  RotateCcw,
+  Trash2,
+  Zap,
+} from "lucide-react";
 import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
@@ -336,7 +343,12 @@ export default function HymnFormView() {
               <LoaderCircle className="inline-block h-4 w-4 animate-spin" />
             ) : (
               <span className="flex items-center justify-center gap-1">
-                <Zap className="h-4 w-4" /> {isEdit ? "更新" : "追加"}
+                {isEdit ? (
+                  <Zap className="h-4 w-4" />
+                ) : (
+                  <FileArchive className="h-4 w-4" />
+                )}{" "}
+                {isEdit ? "更新" : "追加"}
               </span>
             )}
           </RippleButton>
@@ -345,7 +357,12 @@ export default function HymnFormView() {
             className="flex items-center gap-1 rounded-md bg-gray-500 px-4 py-1.5 text-sm font-medium text-white"
             onClick={onReset}
           >
-            <Trash2 className="h-4 w-4" /> {isEdit ? "廃棄" : "リセット"}
+            {isEdit ? (
+              <Trash2 className="h-4 w-4" />
+            ) : (
+              <RotateCcw className="h-4 w-4" />
+            )}{" "}
+            {isEdit ? "廃棄" : "リセット"}
           </RippleButton>
         </div>
       </div>
