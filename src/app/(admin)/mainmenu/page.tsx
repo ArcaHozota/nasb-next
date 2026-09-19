@@ -4,6 +4,7 @@
 // 旧 views/MainMenu.vue を移植
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import RippleButton from "@/components/RippleButton";
 import { useFeedbackStore } from "@/stores/feedback";
 import { DELAY_APOLOGY } from "@/lib/constants";
 
@@ -59,9 +60,11 @@ export default function MainMenu() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {cards.map((card) => (
-          <div
+          <RippleButton
             key={card.key}
-            className="group relative h-[66vh] cursor-pointer overflow-hidden rounded-lg shadow"
+            type="button"
+            className="group relative block h-[66vh] w-full cursor-pointer overflow-hidden rounded-lg p-0 text-left shadow"
+            rippleColor="rgba(255, 255, 255, 0.55)"
             onClick={card.action}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -78,7 +81,7 @@ export default function MainMenu() {
                 {card.title}
               </h2>
             </div>
-          </div>
+          </RippleButton>
         ))}
       </div>
     </div>
