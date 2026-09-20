@@ -4,11 +4,9 @@
 // 旧 views/StudentEdition.vue を移植
 //
 // 【YouTube連携について】
-// バックエンドのYouTube連携APIがまだ実装中のため、ここではトグルとアイコン付き
-// ボタンの見た目だけを残し、実際の連携状態取得(/youtube/status)・OAuth開始・
-// 解除(/youtube/unlink)などのAPI呼び出しは行わない。ボタン押下時は旧DELAY_APOLOGY
-// と同じ「未実装」トーストを表示するだけの仮実装とする。バックエンド実装後、
-// onYoutubeButtonClick等を元のAPI連携ロジックに差し替えること。
+// バックエンドのYouTube連携API(/youtube/status, /youtube/authorize-url,
+// /youtube/callback, /youtube/unlink)実装済み。トグルは連携状態を反映し、
+// ONへの切り替えでGoogle同意画面へ画面遷移、OFFへの切り替えで連携解除を行う。
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -23,11 +21,7 @@ import {
 } from "lucide-react";
 import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
-import {
-  DELAY_APOLOGY,
-  EMPTY_STRING,
-  extractErrorMessage,
-} from "@/lib/constants";
+import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RippleButton from "@/components/RippleButton";
 
 type StudentForm = {
@@ -80,11 +74,50 @@ function StudentEditionInner() {
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // ===== YouTube連携(バックエンド未実装のため見た目だけ) =====
-  const [youtubeEnabled, setYoutubeEnabled] = useState(false);
+  // ===== YouTube連携 =====
+  // トグル＝連携ボタンの活性/非活性スイッチ。ONで初めてボタンが押せるようになり、
+  // OFFに戻すとその場で連携解除する。連携済みかどうかは、ボタンのアイコン色と
+  // ラベル（「連携済み」）で表す。
+  const [youtubeToggleOn, setYoutubeToggleOn] = useState(false);
+  const [youtubeLinked, setYoutubeLinked] = useState(false);
+  const [youtubeBusy, setYoutubeBusy] = useState(false);
 
-  const onYoutubeButtonClick = () => {
-    feedback.toast(DELAY_APOLOGY);
+  const fetchYoutubeStatus = async () => {
+    try {
+      const { data } = await api.get<{ linked: boolean }>("/youtube/status");
+      setYoutubeLinked(!!data.linked);
+      setYoutubeToggleOn(!!data.linked);
+    } catch {
+      // 未ログイン等はAdminLayoutの認証チェックに任せ、ここでは静かに無視する
+    }
+  };
+
+  const onYoutubeToggle = async (checked: boolean) => {
+    setYoutubeToggleOn(checked);
+    if (checked) {
+      // ONにしただけではまだ何もしない。連携ボタンが活性化するだけ。
+      return;
+    }
+    // OFFにした時点で、連携済みなら即座に解除する。
+    if (!youtubeLinked) return;
+    setYoutubeBusy(true);
+    try {
+      await api.post("/youtube/unlink");
+      setYoutubeLinked(false);
+      feedback.toast("YouTube連携を解除しました");
+    } catch (e: unknown) {
+      feedback.toast(extractErrorMessage(e, "連携解除に失敗しました"));
+      // 解除に失敗したので、実態に合わせてトグルもONへ戻す
+      setYoutubeToggleOn(true);
+    } finally {
+      setYoutubeBusy(false);
+    }
+  };
+
+  const onYoutubeConnect = () => {
+    // 連携開始はバックエンドが直接Google同意画面へリダイレクトするため、
+    // fetch/XHRではなく普通の画面遷移にする。
+    window.location.href = "/api/youtube/authorize-url";
   };
 
   const fetchInitial = async (id: string) => {
@@ -105,6 +138,24 @@ function StudentEditionInner() {
 
   useEffect(() => {
     if (form.id) fetchInitial(form.id);
+    if (!form.id) return;
+
+    fetchYoutubeStatus();
+
+    const youtubeStatus = searchParams.get("youtube");
+    if (youtubeStatus) {
+      const messages: Record<string, string> = {
+        connected: "YouTubeと連携しました",
+        error: "YouTube連携に失敗しました",
+        invalid_state: "不正なリクエストです。もう一度お試しください。",
+        unauthorized: "ログインが必要です",
+      };
+      feedback.toast(
+        messages[youtubeStatus] ?? "YouTube連携の処理が完了しました",
+      );
+      // ?youtube=... だけを消してURLをきれいにする（再読み込みで再表示させない）
+      router.replace(`/personal?userId=${form.id}`);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -304,36 +355,46 @@ function StudentEditionInner() {
             </div>
             <div className="youtube-field w-32.5 shrink-0">
               <div className="form-label">YouTube連携</div>
-              <label className="toggle-switch">
+              <label
+                className="toggle-switch"
+                title="ONで連携ボタンが押せるようになります"
+              >
                 <input
-                  checked={youtubeEnabled}
-                  onChange={(e) => setYoutubeEnabled(e.target.checked)}
+                  checked={youtubeToggleOn}
+                  onChange={(e) => onYoutubeToggle(e.target.checked)}
+                  disabled={youtubeBusy}
                   type="checkbox"
                   className="peer sr-only"
                 />
                 <span className="toggle-track is-warning">
-                  <span className="toggle-thumb" />
+                  {youtubeBusy ? (
+                    <LoaderCircle className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <span className="toggle-thumb" />
+                  )}
                 </span>
               </label>
             </div>
           </div>
 
-          {youtubeEnabled && (
-            <div className="mb-2 flex items-start gap-4">
-              <div className="min-w-0 flex-1">
-                <RippleButton
-                  type="button"
-                  className="flex w-full items-center justify-start gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-                  rippleColor="rgba(0, 0, 0, 0.12)"
-                  title="YouTubeと連携(未実装)"
-                  onClick={onYoutubeButtonClick}
-                >
-                  <SquarePlay className="h-4 w-4 text-red-600" />
-                </RippleButton>
-              </div>
-              <div className="w-32.5 shrink-0" aria-hidden="true"></div>
+          <div className="mb-2 flex items-start gap-4">
+            <div className="min-w-0 flex-1">
+              <RippleButton
+                type="button"
+                className="flex w-full items-center justify-start gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                rippleColor="rgba(0, 0, 0, 0.12)"
+                title={youtubeLinked ? "連携済みです" : "YouTubeと連携"}
+                disabled={!youtubeToggleOn || youtubeLinked || youtubeBusy}
+                onClick={onYoutubeConnect}
+              >
+                <SquarePlay
+                  className={`h-4 w-4 ${youtubeLinked ? "text-gray-400" : "text-red-600"}`}
+                />
+                <span>{youtubeLinked ? "連携済み" : "YouTubeと連携"}</span>
+              </RippleButton>
             </div>
-          )}
+            <div className="w-32.5 shrink-0" aria-hidden="true"></div>
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 px-6 pb-4">

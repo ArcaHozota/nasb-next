@@ -3,22 +3,29 @@
 // src/app/(admin)/hymns/random-five/page.tsx
 // 旧 views/RandomFive.vue を移植
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { LayoutGrid, Search, LoaderCircle } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { LayoutGrid, Search, LoaderCircle, ListMusic } from "lucide-react";
 import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
+import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RippleButton from "@/components/RippleButton";
 
-type HymnRecord = { id?: number; nameJp: string; nameKr: string; link: string };
+// HYMNS.IDはSnowflake生成の19桁数値。JavaScriptのnumberでは安全に表現できる
+// 整数の上限(2^53)を超えて精度が壊れるため、number化せず文字列のまま扱う。
+type HymnRecord = { id?: string; nameJp: string; nameKr: string; link: string };
 
 function RandomFiveInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const toast = useFeedbackStore((s) => s.toast);
+  const confirm = useFeedbackStore((s) => s.confirm);
+  const userId = useAuthStore((s) => s.userId);
 
   const [keyword, setKeyword] = useState(EMPTY_STRING);
   const [records, setRecords] = useState<HymnRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [creatingPlaylist, setCreatingPlaylist] = useState(false);
 
   const onRandom = async () => {
     setLoading(true);
@@ -60,6 +67,40 @@ function RandomFiveInner() {
     if (e.key === "Enter") onRandom();
   };
 
+  const onCreatePlaylist = async () => {
+    const hymnIds = records.map((r) => r.id).filter((id): id is string => !!id);
+    if (hymnIds.length === 0) {
+      toast("先にランダム選択してください");
+      return;
+    }
+    setCreatingPlaylist(true);
+    try {
+      const { data } = await api.post("/youtube/create-playlist", {
+        hymnIds,
+      });
+      toast("プレイリストを作成しました");
+      if (data?.playlistUrl) {
+        window.open(data.playlistUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch (e: unknown) {
+      if (
+        e &&
+        typeof e === "object" &&
+        "response" in e &&
+        (e as { response?: { status?: number } }).response?.status === 409
+      ) {
+        const ok = await confirm(
+          "YouTube連携がまだ完了していません。連携ページへ移動しますか？",
+        );
+        if (ok) router.push(`/personal?userId=${userId}`);
+        return;
+      }
+      toast(extractErrorMessage(e, "プレイリスト作成に失敗しました"));
+    } finally {
+      setCreatingPlaylist(false);
+    }
+  };
+
   return (
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
       <div className="fixed inset-0 -z-10">
@@ -96,6 +137,22 @@ function RandomFiveInner() {
                 <Search className="h-4 w-4" />
               </RippleButton>
             </div>
+          </div>
+
+          <div className="mb-4 flex justify-end">
+            <RippleButton
+              type="button"
+              className="flex items-center gap-1.5 rounded-md bg-red-600 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+              disabled={creatingPlaylist || records.length === 0}
+              onClick={onCreatePlaylist}
+            >
+              {creatingPlaylist ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <ListMusic className="h-4 w-4" />
+              )}
+              YouTubeプレイリスト作成
+            </RippleButton>
           </div>
 
           <table className="glass-table">
