@@ -75,7 +75,7 @@ function RandomFiveInner() {
     }
     setCreatingPlaylist(true);
     try {
-      const { data } = await api.post("/youtube/create-playlist", {
+      await api.post("/youtube/create-playlist", {
         hymnIds,
       });
       const proceed = await confirm(
@@ -83,8 +83,12 @@ function RandomFiveInner() {
         "お知らせ",
         { variant: "success", cancelLabel: "いいえ", confirmLabel: "はい" },
       );
-      if (proceed && data?.playlistUrl) {
-        window.open(data.playlistUrl, "_blank", "noopener,noreferrer");
+      if (proceed) {
+        window.open(
+          "https://www.youtube.com/feed/playlists",
+          "_blank",
+          "noopener,noreferrer",
+        );
       }
     } catch (e: unknown) {
       if (
