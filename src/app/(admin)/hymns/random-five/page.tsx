@@ -78,8 +78,12 @@ function RandomFiveInner() {
       const { data } = await api.post("/youtube/create-playlist", {
         hymnIds,
       });
-      toast("プレイリストを作成しました");
-      if (data?.playlistUrl) {
+      const proceed = await confirm(
+        "プレイリストを作成しました。今はYouTubeへ移動してよろしいでしょうか。",
+        "お知らせ",
+        { variant: "success", cancelLabel: "いいえ", confirmLabel: "はい" },
+      );
+      if (proceed && data?.playlistUrl) {
         window.open(data.playlistUrl, "_blank", "noopener,noreferrer");
       }
     } catch (e: unknown) {
@@ -119,40 +123,46 @@ function RandomFiveInner() {
         </div>
 
         <div className="p-6">
-          <div className="mb-6 flex justify-center">
-            <div className="relative w-full max-w-120">
-              <input
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                type="text"
-                placeholder="キーワードを入力してください"
-                className="w-full rounded-md border border-gray-300 py-1.5 pl-3 pr-9 text-sm outline-none focus:border-primary"
-                onKeyDown={onKeyDown}
-              />
+          <div className="mb-6 flex items-center gap-4">
+            <div className="flex flex-1 justify-center">
+              <div className="relative w-full max-w-120">
+                <input
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  type="text"
+                  placeholder="キーワードを入力してください"
+                  className="w-full rounded-md border border-gray-300 py-1.5 pl-3 pr-9 text-sm outline-none focus:border-primary"
+                  onKeyDown={onKeyDown}
+                />
+                <RippleButton
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  onClick={onRandom}
+                >
+                  <Search className="h-4 w-4" />
+                </RippleButton>
+              </div>
+            </div>
+
+            {records.length === 0 ? (
+              <span className="shrink-0 text-sm text-gray-500">
+                ランダム検索してください
+              </span>
+            ) : (
               <RippleButton
                 type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                onClick={onRandom}
+                className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+                disabled={creatingPlaylist}
+                onClick={onCreatePlaylist}
               >
-                <Search className="h-4 w-4" />
+                {creatingPlaylist ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ListMusic className="h-4 w-4" />
+                )}
+                プレイリスト作成
               </RippleButton>
-            </div>
-          </div>
-
-          <div className="mb-4 flex justify-end">
-            <RippleButton
-              type="button"
-              className="flex items-center gap-1.5 rounded-md bg-red-600 px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
-              disabled={creatingPlaylist || records.length === 0}
-              onClick={onCreatePlaylist}
-            >
-              {creatingPlaylist ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
-              ) : (
-                <ListMusic className="h-4 w-4" />
-              )}
-              YouTubeプレイリスト作成
-            </RippleButton>
+            )}
           </div>
 
           <table className="glass-table">

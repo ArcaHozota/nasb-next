@@ -29,10 +29,18 @@ export default function FeedbackHost() {
         >
           <div className="w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-xl">
             <div className="bg-white pt-3">
-              <h2 className="text-center text-lg font-semibold text-primary">
+              <h2
+                className={`text-center text-lg font-semibold ${
+                  dialog.variant === "success" ? "text-success" : "text-primary"
+                }`}
+              >
                 {dialog.title}
               </h2>
-              <div className="mx-1.5 mt-2 h-0.75 rounded-full bg-primary"></div>
+              <div
+                className={`mx-1.5 mt-2 h-0.75 rounded-full ${
+                  dialog.variant === "success" ? "bg-success" : "bg-primary"
+                }`}
+              ></div>
             </div>
             <div className="p-6">
               <p className="text-sm text-gray-600">{dialog.text}</p>
@@ -42,13 +50,15 @@ export default function FeedbackHost() {
                   rippleColor="rgba(0, 0, 0, 0.12)"
                   onClick={() => answer(false)}
                 >
-                  キャンセル
+                  {dialog.cancelLabel}
                 </RippleButton>
                 <RippleButton
-                  className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white"
+                  className={`rounded px-3 py-1.5 text-sm font-medium text-white ${
+                    dialog.variant === "success" ? "bg-success" : "bg-primary"
+                  }`}
                   onClick={() => answer(true)}
                 >
-                  OK
+                  {dialog.confirmLabel}
                 </RippleButton>
               </div>
             </div>
