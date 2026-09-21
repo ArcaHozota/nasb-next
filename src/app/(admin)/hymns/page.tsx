@@ -13,6 +13,8 @@ import {
   LayoutGrid,
   CirclePlus,
   Search,
+  ListMusic,
+  LoaderCircle,
   ChevronsLeft,
   ChevronLeft,
   ChevronRight,
@@ -21,6 +23,7 @@ import {
 import api from "@/api/axios";
 import RippleButton from "@/components/RippleButton";
 import { useFeedbackStore } from "@/stores/feedback";
+import { useAuthStore } from "@/stores/auth";
 import {
   EMPTY_STRING,
   extractErrorMessage,
@@ -82,6 +85,7 @@ function HymnListInner() {
   const router = useRouter();
   const feedback = useFeedbackStore();
   const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.userId);
 
   const [page, setPage] = useState(Number(searchParams.get("pageNum")) || 1);
   const [pageSize, setPageSize] = useState(
@@ -185,6 +189,68 @@ function HymnListInner() {
     setPage(1);
   };
 
+  // BURGUNDY・CADMIUM行のみを対象にYouTubeプレイリストを作成する。
+  // 表示中の1ページ分ではなく、キーワード検索にヒットした全件(ページ横断)が対象。
+  // HYMNS.IDはSnowflake生成の19桁数値でJS numberでは精度が壊れるため、
+  // String()で文字列として扱う(random-five画面と同じ理由)。
+  const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+
+  const onCreatePlaylist = async () => {
+    if (totalRecords === 0) {
+      feedback.toast("対象の賛美歌がありません");
+      return;
+    }
+    setCreatingPlaylist(true);
+    try {
+      const { data: allData } = await api.get("/hymns", {
+        params: {
+          pageNum: 1,
+          pageSize: totalRecords,
+          keyword: submittedKeyword.normalize("NFC"),
+        },
+      });
+      const allRecords = (allData?.records ?? []) as HymnRow[];
+      const hymnIds = allRecords
+        .filter(
+          (r) => r.lineNumber === "BURGUNDY" || r.lineNumber === "CADMIUM",
+        )
+        .map((r) => String(r.id));
+      if (hymnIds.length === 0) {
+        feedback.toast("対象の賛美歌（BURGUNDY・CADMIUM）がありません");
+        return;
+      }
+      await api.post("/youtube/create-playlist", { hymnIds });
+      const proceed = await feedback.confirm(
+        "プレイリストを作成しました。今はYouTubeへ移動してよろしいでしょうか。",
+        "お知らせ",
+        { variant: "success", cancelLabel: "いいえ", confirmLabel: "はい" },
+      );
+      if (proceed) {
+        window.open(
+          "https://www.youtube.com/feed/playlists",
+          "_blank",
+          "noopener,noreferrer",
+        );
+      }
+    } catch (e: unknown) {
+      if (
+        e &&
+        typeof e === "object" &&
+        "response" in e &&
+        (e as { response?: { status?: number } }).response?.status === 409
+      ) {
+        const ok = await feedback.confirm(
+          "YouTube連携がまだ完了していません。連携ページへ移動しますか？",
+        );
+        if (ok) router.push(`/personal?userId=${userId}`);
+        return;
+      }
+      feedback.toast(extractErrorMessage(e, "プレイリスト作成に失敗しました"));
+    } finally {
+      setCreatingPlaylist(false);
+    }
+  };
+
   return (
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
       <div className="fixed inset-0 -z-10">
@@ -203,33 +269,54 @@ function HymnListInner() {
         </div>
 
         <div className="p-6">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <div className="relative w-full md:w-[42%]">
-              <input
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                type="text"
-                placeholder="キーワードを入力してください"
-                className="w-full rounded-md border border-gray-300 py-1.5 pl-3 pr-9 text-sm outline-none focus:border-primary"
-                onKeyDown={onSearchKeyDown}
-              />
-              <RippleButton
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                rippleColor="rgba(0, 0, 0, 0.12)"
-                onClick={onSearch}
-              >
-                <Search className="h-4 w-4" />
-              </RippleButton>
+          <div className="mb-4 grid grid-cols-[30%_26%_10%_10%_24%] items-center gap-2">
+            <div className="col-span-2">
+              <div className="relative w-full max-w-120">
+                <input
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  type="text"
+                  placeholder="キーワードを入力してください"
+                  className="w-full rounded-md border border-gray-300 py-1.5 pl-3 pr-9 text-sm outline-none focus:border-primary"
+                  onKeyDown={onSearchKeyDown}
+                />
+                <RippleButton
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  rippleColor="rgba(0, 0, 0, 0.12)"
+                  onClick={onSearch}
+                >
+                  <Search className="h-4 w-4" />
+                </RippleButton>
+              </div>
             </div>
 
-            <div className="ml-auto">
+            {/* リンク・楽譜列に対応する空セル(グリッド比率合わせのためのスペーサー) */}
+            <div />
+            <div />
+
+            {/* 操作列と同じ30%+26%+10%+10%=76%幅のセルに収め、列内で中央寄せにする
+                (下の操作列の「楽譜」等ボタンと同じjustify-center) */}
+            <div className="flex items-center justify-center gap-2">
               <RippleButton
                 type="button"
                 className="flex items-center gap-1 rounded-md bg-success px-4 py-1.5 text-sm font-bold text-white"
                 onClick={goAdd}
               >
                 <CirclePlus className="h-4 w-4" /> 賛美歌情報追加
+              </RippleButton>
+              <RippleButton
+                type="button"
+                title="プレイリスト作成"
+                className="flex items-center justify-center rounded-md bg-primary p-2 text-white disabled:opacity-60"
+                disabled={creatingPlaylist}
+                onClick={onCreatePlaylist}
+              >
+                {creatingPlaylist ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ListMusic className="h-4 w-4" />
+                )}
               </RippleButton>
             </div>
           </div>
