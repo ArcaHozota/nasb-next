@@ -11,6 +11,7 @@ import {
   Package,
   Music,
   Shuffle,
+  Receipt,
   UserCog,
   MessageSquare,
   LogOut,
@@ -116,6 +117,13 @@ export default function AdminLayout({
       title: "ランダム五つ",
       action: () => router.push("/hymns/random-five"),
       isActive: pathname.startsWith("/hymns/random-five"),
+    },
+    {
+      key: "receipts",
+      icon: Receipt,
+      title: "レシート明細",
+      action: () => router.push("/receipts"),
+      isActive: pathname.startsWith("/receipts"),
     },
   ];
 
