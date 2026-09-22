@@ -121,7 +121,7 @@ export default function AdminLayout({
     {
       key: "receipts",
       icon: Receipt,
-      title: "レシート明細",
+      title: "レシート明細入力",
       action: () => router.push("/receipts"),
       isActive: pathname.startsWith("/receipts"),
     },
