@@ -2,12 +2,18 @@
 
 // src/components/HymnScoreModal.tsx
 // 旧 components/HymnScoreModal.vue を移植。HymnList から表示するモーダル(ルーティングは行わない)。
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+// shadcn/ui 版: createPortal・Escキー処理・背景クリック判定は Dialog(Radix)に任せる。
+import { useRef, useState } from "react";
 import axios from "axios";
 import { CloudUpload, LoaderCircle, X } from "lucide-react";
 import api from "@/api/axios";
 import RippleButton from "@/components/RippleButton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 
@@ -30,25 +36,13 @@ export default function HymnScoreModal({
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState(EMPTY_STRING);
   const [uploading, setUploading] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   const title = `楽譜-${hymnNameKr}`;
-
-  useEffect(() => setMounted(true), []);
 
   const close = () => {
     if (uploading) return; // アップロード中は誤って閉じられないようにする
     onClose();
   };
-
-  useEffect(() => {
-    const onKeydown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    document.addEventListener("keydown", onKeydown);
-    return () => document.removeEventListener("keydown", onKeydown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uploading]);
 
   const onFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFile(e.target.files?.[0] ?? null);
@@ -83,26 +77,24 @@ export default function HymnScoreModal({
     }
   };
 
-  if (!mounted) return null;
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) close();
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        // Escキー・背景クリックのどちらもここに来る
+        if (!open) close();
       }}
     >
-      <div
-        className="score-modal noto-sans relative flex h-[33vh] w-full max-w-md flex-col justify-between overflow-hidden rounded-[18px] bg-white"
-        role="dialog"
-        aria-modal="true"
+      <DialogContent
+        showCloseButton={false}
+        className="score-modal noto-sans flex h-[33vh] max-w-md flex-col justify-between gap-0 overflow-hidden rounded-[18px] border-0 bg-white p-0 sm:max-w-md"
       >
         <div className="bg-white pt-3">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center">
             <div aria-hidden="true"></div>
-            <h2 className="text-center text-base font-semibold text-secondary">
+            <DialogTitle className="text-center text-base font-semibold text-secondary">
               {title}
-            </h2>
+            </DialogTitle>
             <RippleButton
               type="button"
               className="mr-2 justify-self-end rounded p-1 text-secondary hover:bg-secondary/10 disabled:opacity-50"
@@ -115,6 +107,9 @@ export default function HymnScoreModal({
             </RippleButton>
           </div>
           <div className="mx-1.5 mt-2 h-0.75 rounded-full bg-secondary"></div>
+          <DialogDescription className="sr-only">
+            楽譜ファイル(PDF・画像)を選択してアップロードします。
+          </DialogDescription>
         </div>
 
         <div className="flex flex-col items-center gap-2 p-8">
@@ -155,8 +150,7 @@ export default function HymnScoreModal({
             )}
           </RippleButton>
         </div>
-      </div>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   );
 }

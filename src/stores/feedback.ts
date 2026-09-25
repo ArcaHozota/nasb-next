@@ -1,11 +1,7 @@
 // src/stores/feedback.ts
 import { create } from "zustand";
+import { toast as sonnerToast } from "sonner";
 import { EMPTY_STRING } from "@/lib/constants";
-
-type SnackbarState = {
-  show: boolean;
-  text: string;
-};
 
 type DialogVariant = "primary" | "success";
 
@@ -26,12 +22,11 @@ type ConfirmOptions = {
 };
 
 type FeedbackState = {
-  snackbar: SnackbarState;
   dialog: DialogState;
-  // 旧 layer.msg(トースト)相当。MUI Snackbarの autoHideDuration={3000} に合わせ、
-  // 3秒後に自動で閉じる。
+  // 旧 layer.msg(トースト)相当。表示自体は shadcn/ui の Sonner(FeedbackHost の
+  // <Toaster />)に任せる。従来の MUI Snackbar の autoHideDuration={3000} に合わせ、
+  // 3秒後に自動で閉じる。呼び出し側の API(toast("..."))は従来通り。
   toast: (text: string) => void;
-  closeSnackbar: () => void;
   // 旧 Swal.fire の confirm 相当。await confirm('...') で true/false が返る。
   // variant: "primary"(既定、burgundy red) | "success"(green)。
   confirm: (
@@ -53,20 +48,16 @@ const DEFAULT_DIALOG: DialogState = {
 };
 
 export const useFeedbackStore = create<FeedbackState>((set, get) => ({
-  snackbar: { show: false, text: EMPTY_STRING },
   dialog: DEFAULT_DIALOG,
 
   toast: (text) => {
-    set({ snackbar: { show: true, text } });
-    setTimeout(() => get().closeSnackbar(), 3000);
-  },
-
-  closeSnackbar: () => {
-    set((s) => ({ snackbar: { ...s.snackbar, show: false } }));
+    sonnerToast(text, { duration: 3000 });
   },
 
   confirm: (text, title = "確認", options = {}) =>
     new Promise<boolean>((resolve) => {
+      // 前のダイアログが未回答のまま次の confirm が来た場合は、前の方を false で閉じる
+      get().dialog.resolve?.(false);
       set({
         dialog: {
           show: true,
@@ -81,7 +72,13 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
     }),
 
   answer: (ok) => {
-    get().dialog.resolve?.(ok);
-    set({ dialog: DEFAULT_DIALOG });
+    const { resolve } = get().dialog;
+    // AlertDialog はボタン押下後に onOpenChange(false) も発火するため、
+    // 2回目の呼び出し(既に回答済み)は無視する。
+    if (!resolve) return;
+    resolve(ok);
+    // タイトルや本文は残したまま show だけ落とす。
+    // (即座に DEFAULT_DIALOG に戻すと、閉じるアニメーション中に文言が消えてしまう)
+    set((s) => ({ dialog: { ...s.dialog, show: false, resolve: null } }));
   },
 }));
