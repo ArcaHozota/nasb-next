@@ -77,6 +77,16 @@ button:not(:disabled) {
   --color-info: var(--info);
 }
 
+/* shadcn/ui 標準の「* { border-color: var(--border) }」は既存画面の枠線色まで変えてしまうため、
+   shadcn/ui のコンポーネント(data-slot 属性を持つ要素)だけに限定して適用する。
+   @layer base なので border-primary 等のユーティリティクラスが指定されていればそちらが優先される。 */
+@layer base {
+  [data-slot],
+  [data-slot] * {
+    border-color: var(--border);
+  }
+}
+
 /* 旧 src/index.css より。ロゴ(HomeView)のみが使用するグローバルスタイル。 */
 .effect-shine {
   font-family: "Niconne", cursive;

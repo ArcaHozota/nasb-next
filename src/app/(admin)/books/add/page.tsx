@@ -13,6 +13,14 @@ import RedLetterEditor, {
 } from "@/components/RedLetterEditor";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import BookCombobox from "@/components/BookCombobox";
 
 type BookOrChapter = { id: number; name: string };
 
@@ -206,18 +214,13 @@ export default function BookAddition() {
               >
                 書
               </Label>
-              <select
+              <BookCombobox
                 id="book-select"
+                books={books}
                 value={bookId}
-                onChange={(e) => setBookId(e.target.value)}
-                className="noto-serif h-9 w-full rounded-md border border-gray-300 px-2 text-sm"
-              >
-                {books.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setBookId}
+                className="noto-serif"
+              />
             </div>
 
             <div className="w-full md:w-[30%]">
@@ -230,18 +233,32 @@ export default function BookAddition() {
                   <LoaderCircle className="inline-block h-3 w-3 animate-spin" />
                 )}
               </Label>
-              <select
-                id="chapter-select"
-                value={chapterId}
-                onChange={(e) => setChapterId(e.target.value)}
-                className="noto-serif h-9 w-full rounded-md border border-gray-300 px-2 text-sm"
+              <Select
+                value={String(chapterId)}
+                onValueChange={setChapterId}
+                disabled={chapterLoading || chapters.length === 0}
               >
-                {chapters.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  id="chapter-select"
+                  className="noto-serif w-full px-2 focus-visible:border-primary focus-visible:ring-primary/20"
+                >
+                  <SelectValue placeholder="章を選択" />
+                </SelectTrigger>
+                {/* 詩篇(150章)でも画面を覆い尽くさないよう高さを抑える */}
+                <SelectContent className="noto-serif max-h-72">
+                  {chapters.map((c) => (
+                    <SelectItem
+                      key={c.id}
+                      value={String(c.id)}
+                      // 先頭文字によるタイプアヘッドは「第」で始まる章名だと効かないため、
+                      // 章番号(「第23章」→「23」)で照合させる。数字キーで章へジャンプできる。
+                      textValue={c.name.replace(/\D/g, "") || c.name}
+                    >
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="w-full md:w-[22%]">
