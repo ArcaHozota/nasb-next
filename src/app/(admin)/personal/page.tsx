@@ -20,9 +20,17 @@ import {
   SquarePlay,
 } from "lucide-react";
 import api from "@/api/axios";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RippleButton from "@/components/RippleButton";
+
+// フォーカス時の枠・リング色(オレンジ)。エラー時(aria-invalid)は赤枠のままにする。
+const FOCUS_WARNING =
+  "not-aria-invalid:focus-visible:border-warning not-aria-invalid:focus-visible:ring-warning/30";
 
 type StudentForm = {
   id: string | null;
@@ -257,15 +265,19 @@ function StudentEditionInner() {
 
         <div className="p-6 pt-5">
           <div className="mb-5">
-            <div className="form-label">アカウント</div>
-            <input
+            <Label htmlFor="personal-account" className="form-label mb-1.5">
+              アカウント
+            </Label>
+            <Input
+              id="personal-account"
               value={form.loginAccount}
               onChange={(e) =>
                 setForm((f) => ({ ...f, loginAccount: e.target.value }))
               }
               type="text"
               placeholder="アカウントを入力してください"
-              className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.loginAccount ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
+              aria-invalid={!!errors.loginAccount}
+              className={FOCUS_WARNING}
               onBlur={checkAccount}
             />
             {errors.loginAccount && (
@@ -274,15 +286,19 @@ function StudentEditionInner() {
           </div>
 
           <div className="mb-5">
-            <div className="form-label">名称</div>
-            <input
+            <Label htmlFor="personal-username" className="form-label mb-1.5">
+              名称
+            </Label>
+            <Input
+              id="personal-username"
               value={form.username}
               onChange={(e) =>
                 setForm((f) => ({ ...f, username: e.target.value }))
               }
               type="text"
               placeholder="名称を入力してください"
-              className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.username ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
+              aria-invalid={!!errors.username}
+              className={FOCUS_WARNING}
             />
             {errors.username && (
               <p className="mt-1 text-xs text-red-600">{errors.username}</p>
@@ -291,20 +307,25 @@ function StudentEditionInner() {
 
           <div className="mb-5 flex gap-4">
             <div className="flex-1">
-              <div className="form-label">パスワード</div>
+              <Label htmlFor="personal-password" className="form-label mb-1.5">
+                パスワード
+              </Label>
               <div className="relative">
-                <input
+                <Input
+                  id="personal-password"
                   value={form.password}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, password: e.target.value }))
                   }
                   type={showPassword ? "text" : "password"}
                   placeholder="パスワードを入力してください"
-                  className={`w-full rounded-md border px-3 py-1.5 pr-9 text-sm outline-none ${errors.password ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
+                  aria-invalid={!!errors.password}
+                  className={`pr-9 ${FOCUS_WARNING}`}
                 />
                 <button
                   type="button"
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
                   onClick={() => setShowPassword((v) => !v)}
                 >
                   {showPassword ? (
@@ -320,15 +341,19 @@ function StudentEditionInner() {
             </div>
 
             <div className="flex-1">
-              <div className="form-label">メール</div>
-              <input
+              <Label htmlFor="personal-email" className="form-label mb-1.5">
+                メール
+              </Label>
+              <Input
+                id="personal-email"
                 value={form.email}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, email: e.target.value }))
                 }
                 type="text"
                 placeholder="メールを入力してください"
-                className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.email ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
+                aria-invalid={!!errors.email}
+                className={FOCUS_WARNING}
               />
               {errors.email && (
                 <p className="mt-1 text-xs text-red-600">{errors.email}</p>
@@ -338,14 +363,18 @@ function StudentEditionInner() {
 
           <div className="link-row mb-2 flex items-start gap-4">
             <div className="date-field min-w-0 flex-1">
-              <div className="form-label">生年月日</div>
-              <input
+              <Label htmlFor="personal-dob" className="form-label mb-1.5">
+                生年月日
+              </Label>
+              <Input
+                id="personal-dob"
                 value={form.dateOfBirth}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, dateOfBirth: e.target.value }))
                 }
                 type="date"
-                className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.dateOfBirth ? "border-red-400" : "border-gray-300 focus:border-warning"}`}
+                aria-invalid={!!errors.dateOfBirth}
+                className={FOCUS_WARNING}
               />
               {errors.dateOfBirth && (
                 <p className="mt-1 text-xs text-red-600">
@@ -354,26 +383,28 @@ function StudentEditionInner() {
               )}
             </div>
             <div className="youtube-field w-32.5 shrink-0">
-              <div className="form-label">YouTube連携</div>
-              <label
-                className="toggle-switch"
-                title="ONで連携ボタンが押せるようになります"
-              >
-                <input
+              <Label htmlFor="personal-youtube" className="form-label mb-1.5">
+                YouTube連携
+              </Label>
+              {/* 連携処理中はつまみを隠してスピナーを表示する(従来のトグルと同じ見た目) */}
+              <span className="relative inline-flex">
+                <Switch
+                  id="personal-youtube"
+                  size="lg"
+                  title="ONで連携ボタンが押せるようになります"
                   checked={youtubeToggleOn}
-                  onChange={(e) => onYoutubeToggle(e.target.checked)}
+                  onCheckedChange={onYoutubeToggle}
                   disabled={youtubeBusy}
-                  type="checkbox"
-                  className="peer sr-only"
-                />
-                <span className="toggle-track is-warning">
-                  {youtubeBusy ? (
-                    <LoaderCircle className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <span className="toggle-thumb" />
+                  className={cn(
+                    "data-[state=checked]:bg-warning",
+                    youtubeBusy &&
+                      "disabled:opacity-100 [&_[data-slot=switch-thumb]]:opacity-0",
                   )}
-                </span>
-              </label>
+                />
+                {youtubeBusy && (
+                  <LoaderCircle className="pointer-events-none absolute inset-0 m-auto h-3 w-3 animate-spin" />
+                )}
+              </span>
             </div>
           </div>
 

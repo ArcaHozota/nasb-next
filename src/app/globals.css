@@ -1,6 +1,8 @@
+/* フォントの @import は他のすべてのルールより前に置く必要がある
+   (tailwindcss の展開後ろに来るとブラウザに無視され、フォントが読み込まれない)。 */
+@import url("https://fonts.googleapis.com/css2?family=Niconne&family=Noto+Serif+JP:wght@400;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url("https://fonts.googleapis.com/css2?family=Niconne&family=Noto+Serif+JP:wght@400;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap");
 
 /*
  * 旧 theme.ts (MUI createTheme) の palette をそのまま踏襲。
@@ -40,7 +42,7 @@ button:not(:disabled) {
   --accent-foreground: #1f2937;
   --destructive: #d32f2f;
   --border: #e5e7eb;
-  --input: #e5e7eb;
+  --input: #d1d5db; /* 従来の入力欄(border-gray-300)と同じ濃さ */
   --ring: #800020;
   --success: #355e3b;
   --warning: #f6c91c;
@@ -452,49 +454,7 @@ button:not(:disabled) {
   filter: brightness(0.97);
 }
 
-/* ===== HymnForm / StudentEdition: トグルスイッチ ===== */
-.toggle-switch {
-  display: inline-block;
-  cursor: pointer;
-}
-
-.toggle-track {
-  display: block;
-  width: 60px;
-  height: 34px;
-  border-radius: 999px;
-  background-color: #d1d5db;
-  transition: background-color 0.2s ease;
-  position: relative;
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background-color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s ease;
-}
-
-.peer:checked~.toggle-track .toggle-thumb {
-  transform: translateX(26px);
-}
-
-.peer:checked~.toggle-track.is-primary {
-  background-color: #800020;
-}
-
-.peer:checked~.toggle-track.is-success {
-  background-color: #006400;
-}
-
-.peer:checked~.toggle-track.is-warning {
-  background-color: #f6c91c;
-}
+/* HymnForm / StudentEdition のトグルスイッチは shadcn/ui の Switch(size="lg")に置き換え済み */
 
 /* ===== RandomFive ===== */
 .glass-table {

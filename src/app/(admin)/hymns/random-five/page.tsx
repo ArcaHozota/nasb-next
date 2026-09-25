@@ -10,6 +10,7 @@ import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RippleButton from "@/components/RippleButton";
+import { Input } from "@/components/ui/input";
 
 // HYMNS.IDはSnowflake生成の19桁数値。JavaScriptのnumberでは安全に表現できる
 // 整数の上限(2^53)を超えて精度が壊れるため、number化せず文字列のまま扱う。
@@ -130,12 +131,13 @@ function RandomFiveInner() {
           <div className="mb-6 flex items-center gap-4">
             <div className="flex flex-1 justify-center">
               <div className="relative w-full max-w-120">
-                <input
+                <Input
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   type="text"
                   placeholder="キーワードを入力してください"
-                  className="w-full rounded-md border border-gray-300 py-1.5 pl-3 pr-9 text-sm outline-none focus:border-primary"
+                  aria-label="キーワード"
+                  className="pr-9 focus-visible:border-primary focus-visible:ring-primary/20"
                   onKeyDown={onKeyDown}
                 />
                 <RippleButton

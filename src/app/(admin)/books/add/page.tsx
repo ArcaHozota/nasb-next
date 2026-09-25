@@ -11,6 +11,8 @@ import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RedLetterEditor, {
   type RedLetterEditorHandle,
 } from "@/components/RedLetterEditor";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type BookOrChapter = { id: number; name: string };
 
@@ -198,10 +200,14 @@ export default function BookAddition() {
 
           <div className="flex flex-wrap items-start gap-3">
             <div className="w-full md:w-[22%]">
-              <label className="noto-serif mb-1 block text-sm text-gray-600">
+              <Label
+                htmlFor="book-select"
+                className="noto-serif mb-1.5 font-normal text-gray-600"
+              >
                 書
-              </label>
+              </Label>
               <select
+                id="book-select"
                 value={bookId}
                 onChange={(e) => setBookId(e.target.value)}
                 className="noto-serif h-9 w-full rounded-md border border-gray-300 px-2 text-sm"
@@ -215,13 +221,17 @@ export default function BookAddition() {
             </div>
 
             <div className="w-full md:w-[30%]">
-              <label className="noto-serif mb-1 flex items-center gap-1 text-sm text-gray-600">
+              <Label
+                htmlFor="chapter-select"
+                className="noto-serif mb-1.5 gap-1 font-normal text-gray-600"
+              >
                 章
                 {chapterLoading && (
                   <LoaderCircle className="inline-block h-3 w-3 animate-spin" />
                 )}
-              </label>
+              </Label>
               <select
+                id="chapter-select"
                 value={chapterId}
                 onChange={(e) => setChapterId(e.target.value)}
                 className="noto-serif h-9 w-full rounded-md border border-gray-300 px-2 text-sm"
@@ -235,14 +245,19 @@ export default function BookAddition() {
             </div>
 
             <div className="w-full md:w-[22%]">
-              <label className="noto-serif mb-1 block text-sm text-gray-600">
+              <Label
+                htmlFor="verse-input"
+                className="noto-serif mb-1.5 font-normal text-gray-600"
+              >
                 節
-              </label>
-              <input
+              </Label>
+              <Input
+                id="verse-input"
                 value={verseId}
                 type="text"
                 placeholder="節の数を入力しましょう"
-                className={`noto-serif h-9 w-full rounded-md border px-2 text-sm outline-none ${errors.verseId ? "border-red-400" : "border-gray-300 focus:border-primary"}`}
+                aria-invalid={!!errors.verseId}
+                className="noto-serif px-2 not-aria-invalid:focus-visible:border-primary not-aria-invalid:focus-visible:ring-primary/20"
                 onChange={(e) => handleVerseIdChange(e.target.value)}
               />
               {errors.verseId && (
@@ -253,9 +268,10 @@ export default function BookAddition() {
             </div>
 
             <div className="w-full md:w-[16%]">
-              <label className="mb-1 block text-sm text-transparent">
+              {/* 他の列とボタンの高さを揃えるための見えないラベル */}
+              <div aria-hidden="true" className="mb-1.5 text-sm leading-none text-transparent">
                 追加
-              </label>
+              </div>
               <RippleButton
                 type="button"
                 className="noto-serif h-9 w-full rounded-md bg-primary text-sm font-medium text-white disabled:opacity-60"

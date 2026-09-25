@@ -30,6 +30,7 @@ import {
   utf8ToBase64,
 } from "@/lib/constants";
 import HymnScoreModal from "@/components/HymnScoreModal";
+import { Input } from "@/components/ui/input";
 
 type HymnRow = {
   id: number;
@@ -272,12 +273,13 @@ function HymnListInner() {
           <div className="mb-4 grid grid-cols-[30%_26%_10%_10%_24%] items-center gap-2">
             <div className="col-span-2">
               <div className="relative w-full max-w-120">
-                <input
+                <Input
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   type="text"
                   placeholder="キーワードを入力してください"
-                  className="w-full rounded-md border border-gray-300 py-1.5 pl-3 pr-9 text-sm outline-none focus:border-primary"
+                  aria-label="キーワード"
+                  className="pr-9 focus-visible:border-primary focus-visible:ring-primary/20"
                   onKeyDown={onSearchKeyDown}
                 />
                 <RippleButton

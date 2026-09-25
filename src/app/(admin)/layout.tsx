@@ -23,6 +23,14 @@ import { useAuthStore } from "@/stores/auth";
 import { useFeedbackStore } from "@/stores/feedback";
 import { DELAY_APOLOGY, EMPTY_STRING } from "@/lib/constants";
 import RippleButton from "@/components/RippleButton";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const SESSION_CHECK_INTERVAL_MS = 15_000;
 
@@ -149,7 +157,6 @@ export default function AdminLayout({
   };
 
   const goPersonal = () => {
-    setUserMenuOpen(false);
     router.push(`/personal?userId=${auth.userId || EMPTY_STRING}`);
   };
 
@@ -222,69 +229,55 @@ export default function AdminLayout({
 
         {/* ユーザードロップダウン */}
         <hr className="border-white/10" />
-        <div className="relative shrink-0">
-          <RippleButton
-            type="button"
-            className="flex w-full items-center gap-2 px-4 py-2 text-left hover:bg-white/10"
-            onClick={() => setUserMenuOpen((v) => !v)}
+        {/* modal={false}: メニューから確認ダイアログ(ログアウト)を開いても、
+            Radix同士のフォーカス/ポインタ制御が衝突しないようにする */}
+        <DropdownMenu
+          open={userMenuOpen}
+          onOpenChange={setUserMenuOpen}
+          modal={false}
+        >
+          <DropdownMenuTrigger asChild>
+            <RippleButton
+              type="button"
+              className="group flex w-full shrink-0 items-center gap-2 px-4 py-2 text-left outline-none hover:bg-white/10 focus-visible:bg-white/10"
+            >
+              <span className="inline-flex h-7.5 w-7.5 items-center justify-center rounded-full bg-white/20 text-xs">
+                {auth.username?.slice(0, 1)}
+              </span>
+              <span className="flex-1 text-[0.9rem]">{auth.username}</span>
+              <ChevronUp className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+            </RippleButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="top"
+            align="start"
+            className="w-56 text-gray-800"
           >
-            <span className="inline-flex h-7.5 w-7.5 items-center justify-center rounded-full bg-white/20 text-xs">
-              {auth.username?.slice(0, 1)}
-            </span>
-            <span className="flex-1 text-[0.9rem]">{auth.username}</span>
-            <ChevronUp className="h-4 w-4 shrink-0" />
-          </RippleButton>
-
-          {/* クリック外を検知して閉じるための透明レイヤー */}
-          {userMenuOpen && (
-            <div
-              className="fixed inset-0 z-10"
-              onClick={() => setUserMenuOpen(false)}
-            />
-          )}
-
-          {userMenuOpen && (
-            <div className="absolute bottom-full left-0 z-20 mb-1 w-56 rounded-md border border-gray-200 bg-white py-1 text-sm text-gray-800 shadow-lg">
-              <RippleButton
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-2 hover:bg-gray-100"
-                onClick={goPersonal}
-              >
-                <UserCog className="h-4 w-4" /> 個人スペース
-              </RippleButton>
-              <RippleButton
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-2 hover:bg-gray-100"
-                onClick={() => {
-                  setUserMenuOpen(false);
-                  feedback.toast(DELAY_APOLOGY);
-                }}
-              >
-                <MessageSquare className="h-4 w-4" /> メッセージ
-              </RippleButton>
-              <hr className="my-1 border-gray-200" />
-              <RippleButton
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-2 text-red-700 hover:bg-gray-100"
-                onClick={onLogout}
-              >
-                <LogOut className="h-4 w-4" /> ログアウト
-              </RippleButton>
-            </div>
-          )}
-        </div>
+            <DropdownMenuItem onSelect={goPersonal}>
+              <UserCog /> 個人スペース
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => feedback.toast(DELAY_APOLOGY)}>
+              <MessageSquare /> メッセージ
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onSelect={onLogout}>
+              <LogOut /> ログアウト
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* ===== 上部バー(旧 AppBar) ===== */}
         <header className="flex h-12 shrink-0 items-center justify-end gap-2 bg-gray-900 px-4">
           <div className="relative">
-            <input
+            <Input
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               type="text"
               placeholder="検索"
-              className="w-60 rounded bg-gray-100 py-1.5 pl-8 pr-2 text-sm text-gray-900 outline-none"
+              aria-label="検索"
+              className="h-8 w-60 rounded border-0 bg-gray-100 pl-8 text-gray-900 shadow-none focus-visible:ring-white/40"
               onKeyDown={onSearchKeyDown}
             />
             <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />

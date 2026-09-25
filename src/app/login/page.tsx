@@ -7,6 +7,12 @@ import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING } from "@/lib/constants";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+// ガラス風カードの上に置くため半透明の白背景にする
+const LOGIN_INPUT =
+  "mb-4 h-10 border-white/60 bg-white/80 focus-visible:border-primary focus-visible:ring-primary/30";
 
 export default function LoginView() {
   const router = useRouter();
@@ -50,20 +56,28 @@ export default function LoginView() {
             NASB1995
           </h1>
 
-          <label className="mb-1 block text-sm text-white/90">ユーザー名</label>
-          <input
+          <Label htmlFor="login-username" className="mb-1.5 font-normal text-white/90">
+            ユーザー名
+          </Label>
+          <Input
+            id="login-username"
+            autoComplete="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             type="text"
-            className="mb-4 w-full rounded-md border border-white/60 bg-white/80 px-3 py-2 text-sm outline-none focus:border-primary"
+            className={LOGIN_INPUT}
           />
 
-          <label className="mb-1 block text-sm text-white/90">パスワード</label>
-          <input
+          <Label htmlFor="login-password" className="mb-1.5 font-normal text-white/90">
+            パスワード
+          </Label>
+          <Input
+            id="login-password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
-            className="mb-4 w-full rounded-md border border-white/60 bg-white/80 px-3 py-2 text-sm outline-none focus:border-primary"
+            className={LOGIN_INPUT}
             onKeyDown={onEnter}
           />
 

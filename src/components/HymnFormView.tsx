@@ -15,6 +15,10 @@ import {
   Zap,
 } from "lucide-react";
 import api from "@/api/axios";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
@@ -200,7 +204,11 @@ export default function HymnFormView() {
     [pageNum, pageSize, keyword],
   );
 
-  const focusClass = isEdit ? "focus:border-primary" : "focus:border-success";
+  // フォーカス時の枠・リング色(更新=burgundy / 追加=green)。
+  // エラー時(aria-invalid)はフォーカス中でも赤枠のままにするため not-aria-invalid を付ける。
+  const focusClass = isEdit
+    ? "not-aria-invalid:focus-visible:border-primary not-aria-invalid:focus-visible:ring-primary/20"
+    : "not-aria-invalid:focus-visible:border-success not-aria-invalid:focus-visible:ring-success/20";
 
   return (
     <div className="noto-sans relative min-h-full bg-cover bg-fixed bg-center">
@@ -240,15 +248,19 @@ export default function HymnFormView() {
 
         <div className="p-6 pt-5">
           <div className="mb-5">
-            <div className="form-label">日本語名称</div>
-            <input
+            <Label htmlFor="hymn-name-jp" className="form-label mb-1.5">
+              日本語名称
+            </Label>
+            <Input
+              id="hymn-name-jp"
               value={form.nameJp}
               onChange={(e) =>
                 setForm((f) => ({ ...f, nameJp: e.target.value }))
               }
               type="text"
               placeholder="日本語名称を入力してください"
-              className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.nameJp ? "border-red-400" : `border-gray-300 ${focusClass}`}`}
+              aria-invalid={!!errors.nameJp}
+              className={focusClass}
               onBlur={checkNameJp}
             />
             {errors.nameJp && (
@@ -257,15 +269,19 @@ export default function HymnFormView() {
           </div>
 
           <div className="mb-5">
-            <div className="form-label">韓国語名称</div>
-            <input
+            <Label htmlFor="hymn-name-kr" className="form-label mb-1.5">
+              韓国語名称
+            </Label>
+            <Input
+              id="hymn-name-kr"
               value={form.nameKr}
               onChange={(e) =>
                 setForm((f) => ({ ...f, nameKr: e.target.value }))
               }
               type="text"
               placeholder="韓国語名称を入力してください"
-              className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.nameKr ? "border-red-400" : `border-gray-300 ${focusClass}`}`}
+              aria-invalid={!!errors.nameKr}
+              className={focusClass}
               onBlur={checkNameKr}
             />
             {errors.nameKr && (
@@ -275,50 +291,58 @@ export default function HymnFormView() {
 
           <div className="link-row mb-5 flex items-start gap-4">
             <div className="link-field min-w-0 flex-1">
-              <div className="form-label">リンク</div>
-              <input
+              <Label htmlFor="hymn-link" className="form-label mb-1.5">
+                リンク
+              </Label>
+              <Input
+                id="hymn-link"
                 value={form.link}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, link: e.target.value }))
                 }
                 type="text"
                 placeholder="リンクを入力してください"
-                className={`h-9 w-full rounded-md border px-3 text-sm outline-none ${errors.link ? "border-red-400" : `border-gray-300 ${focusClass}`}`}
+                aria-invalid={!!errors.link}
+                className={focusClass}
               />
               {errors.link && (
                 <p className="mt-1 text-xs text-red-600">{errors.link}</p>
               )}
             </div>
             <div className="classic-field w-24 shrink-0">
-              <div className="form-label">クラシック</div>
-              <label className="toggle-switch">
-                <input
-                  checked={form.classic}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, classic: e.target.checked }))
-                  }
-                  type="checkbox"
-                  className="peer sr-only"
-                />
-                <span
-                  className={`toggle-track ${isEdit ? "is-primary" : "is-success"}`}
-                >
-                  <span className="toggle-thumb" />
-                </span>
-              </label>
+              <Label htmlFor="hymn-classic" className="form-label mb-1.5">
+                クラシック
+              </Label>
+              <Switch
+                id="hymn-classic"
+                size="lg"
+                checked={form.classic}
+                onCheckedChange={(checked) =>
+                  setForm((f) => ({ ...f, classic: checked }))
+                }
+                className={
+                  isEdit
+                    ? "data-[state=checked]:bg-primary"
+                    : "data-[state=checked]:bg-success"
+                }
+              />
             </div>
           </div>
 
           <div className="mb-5">
-            <div className="form-label">歌詞</div>
-            <textarea
+            <Label htmlFor="hymn-lyric" className="form-label mb-1.5">
+              歌詞
+            </Label>
+            <Textarea
+              id="hymn-lyric"
               value={form.lyric}
               onChange={(e) =>
                 setForm((f) => ({ ...f, lyric: e.target.value }))
               }
               rows={6}
               placeholder="セリフを入力してください"
-              className={`w-full rounded-md border px-3 py-1.5 text-sm outline-none ${errors.lyric ? "border-red-400" : `border-gray-300 ${focusClass}`}`}
+              aria-invalid={!!errors.lyric}
+              className={`field-sizing-fixed ${focusClass}`}
             />
             {errors.lyric && (
               <p className="mt-1 text-xs text-red-600">{errors.lyric}</p>
