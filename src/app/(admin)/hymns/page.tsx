@@ -15,10 +15,8 @@ import {
   Search,
   ListMusic,
   LoaderCircle,
-  ChevronsLeft,
   ChevronLeft,
   ChevronRight,
-  ChevronsRight,
 } from "lucide-react";
 import api from "@/api/axios";
 import RippleButton from "@/components/RippleButton";
@@ -31,6 +29,30 @@ import {
 } from "@/lib/constants";
 import HymnScoreModal from "@/components/HymnScoreModal";
 import { Input } from "@/components/ui/input";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 type HymnRow = {
   id: number;
@@ -80,6 +102,36 @@ const rowClass = (line: string) =>
   })[line] ?? EMPTY_STRING;
 
 const asStr = (v: string | null) => v ?? EMPTY_STRING;
+
+/**
+ * ページャーに並べるページ番号の列を作る。先頭・末尾・現在ページ前後1件を常に表示し、
+ * 間が空く所は "…" にする。例: 現在5/20ページ → [1, …, 4, 5, 6, …, 20]
+ * 7ページ以下なら全ページを並べる。
+ */
+const getPageItems = (page: number, total: number): (number | "…")[] => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  let start = Math.max(2, Math.min(page - 1, total - 4));
+  let end = Math.min(total - 1, Math.max(page + 1, 5));
+  // "…" が1ページ分しか隠さない場合は、その番号をそのまま出す(例: 1 … 3 → 1 2 3)
+  if (start === 3) start = 2;
+  if (end === total - 2) end = total - 1;
+  const items: (number | "…")[] = [1];
+  if (start > 2) items.push("…");
+  for (let i = start; i <= end; i++) items.push(i);
+  if (end < total - 1) items.push("…");
+  items.push(total);
+  return items;
+};
+
+// ページャーのボタン(RippleButton に shadcn/ui の Button の見た目を当てる)
+const pagerButtonClass = (active = false) =>
+  cn(
+    buttonVariants({ variant: active ? "default" : "ghost", size: "icon" }),
+    "size-8 text-sm",
+    active
+      ? "pointer-events-none"
+      : "text-gray-600 hover:bg-primary/10 hover:text-primary",
+  );
 
 function HymnListInner() {
   const searchParams = useSearchParams();
@@ -185,8 +237,8 @@ function HymnListInner() {
     }
   };
 
-  const onPageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setPageSize(Number(e.target.value));
+  const onPageSizeChange = (value: string) => {
+    setPageSize(Number(value));
     setPage(1);
   };
 
@@ -323,8 +375,8 @@ function HymnListInner() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-md border border-gray-200">
-            <table className="hymn-table w-full table-fixed text-sm">
+          <div className="overflow-hidden rounded-md border border-gray-200">
+            <Table className="hymn-table table-fixed">
               <colgroup>
                 <col style={{ width: "30%" }} />
                 <col style={{ width: "26%" }} />
@@ -332,49 +384,84 @@ function HymnListInner() {
                 <col style={{ width: "10%" }} />
                 <col style={{ width: "24%" }} />
               </colgroup>
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="px-3 py-2 text-left">名称</th>
-                  <th className="px-3 py-2 text-left">韓国語名称</th>
-                  <th className="px-3 py-2 text-center">リンク</th>
-                  <th className="px-3 py-2 text-center">楽譜</th>
-                  <th className="px-3 py-2 text-center">操作</th>
-                </tr>
-              </thead>
-              <tbody className="noto-serif font-medium">
-                {isFetching && records.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-3 py-6 text-center text-gray-400"
-                    >
-                      読み込み中...
-                    </td>
-                  </tr>
-                )}
+              <TableHeader className="bg-gray-50">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="px-3 font-bold text-gray-600">
+                    名称
+                  </TableHead>
+                  <TableHead className="px-3 font-bold text-gray-600">
+                    韓国語名称
+                  </TableHead>
+                  <TableHead className="px-3 text-center font-bold text-gray-600">
+                    リンク
+                  </TableHead>
+                  <TableHead className="px-3 text-center font-bold text-gray-600">
+                    楽譜
+                  </TableHead>
+                  <TableHead className="px-3 text-center font-bold text-gray-600">
+                    操作
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="noto-serif font-medium">
+                {/* 初回読み込み中はスケルトン行(ページ切替中は keepPreviousData で前の行を薄く残す) */}
+                {isFetching &&
+                  records.length === 0 &&
+                  Array.from({ length: pageSize }, (_, i) => (
+                    <TableRow key={`skeleton-${i}`} className="hover:bg-transparent">
+                      <TableCell className="px-3 py-2">
+                        <Skeleton className="h-4 w-3/4 bg-gray-300/70" />
+                      </TableCell>
+                      <TableCell className="px-3 py-2">
+                        <Skeleton className="h-4 w-2/3 bg-gray-300/70" />
+                      </TableCell>
+                      <TableCell className="px-3 py-2">
+                        <Skeleton className="mx-auto h-4 w-8 bg-gray-300/70" />
+                      </TableCell>
+                      <TableCell className="px-3 py-2">
+                        <Skeleton className="mx-auto h-4 w-4 bg-gray-300/70" />
+                      </TableCell>
+                      <TableCell className="px-3 py-2">
+                        <Skeleton className="mx-auto h-6 w-32 bg-gray-300/70" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 {!isFetching && records.length === 0 && (
-                  <tr>
-                    <td
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell
                       colSpan={5}
                       className="px-3 py-6 text-center text-gray-400"
                     >
                       データがありません
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
                 {records.map((row) => (
-                  <tr key={row.id} className={rowClass(row.lineNumber)}>
-                    <td
-                      className={`col-name px-3 py-2 ${textSizeClass(row.nameJp)}`}
+                  <TableRow
+                    key={row.id}
+                    className={cn(
+                      rowClass(row.lineNumber),
+                      // ページ切替中は前ページの行を薄く表示する
+                      isFetching && "opacity-50",
+                    )}
+                  >
+                    <TableCell
+                      className={cn(
+                        "col-name px-3 py-2",
+                        textSizeClass(row.nameJp),
+                      )}
                     >
                       {row.nameJp}
-                    </td>
-                    <td
-                      className={`col-name px-3 py-2 ${textSizeClass(row.nameKr)}`}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "col-name px-3 py-2",
+                        textSizeClass(row.nameKr),
+                      )}
                     >
                       {row.nameKr}
-                    </td>
-                    <td className="px-3 py-2 text-center">
+                    </TableCell>
+                    <TableCell className="px-3 py-2 text-center">
                       <a
                         href={row.link}
                         target="_blank"
@@ -382,10 +469,11 @@ function HymnListInner() {
                       >
                         Link
                       </a>
-                    </td>
-                    <td className="px-3 py-2 text-center">
+                    </TableCell>
+                    <TableCell className="px-3 py-2 text-center">
                       <a
                         href="#"
+                        aria-label="楽譜をダウンロード"
                         onClick={(e) => {
                           e.preventDefault();
                           downloadScore(row.id);
@@ -393,8 +481,8 @@ function HymnListInner() {
                       >
                         𝄞
                       </a>
-                    </td>
-                    <td className="px-3 py-2">
+                    </TableCell>
+                    <TableCell className="px-3 py-2">
                       <div className="flex justify-center gap-1">
                         <RippleButton
                           className="rounded bg-secondary px-2 py-1 text-xs text-white"
@@ -416,72 +504,89 @@ function HymnListInner() {
                           削除
                         </RippleButton>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
-          {/* 簡易ページネーション(旧 DataGrid の paginationMode="server" 相当) */}
-          <div className="mt-3 flex items-center justify-between text-sm text-gray-600">
+          {/* ページネーション(旧 DataGrid の paginationMode="server" 相当) */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-600">
             <div>
               全{totalRecords}件 / {page} / {totalPages}ページ
             </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={pageSize}
-                className="rounded border border-gray-300 bg-white px-2 py-1"
-                onChange={onPageSizeChange}
+            <div className="flex items-center gap-3">
+              <Select
+                value={String(pageSize)}
+                onValueChange={onPageSizeChange}
               >
-                {pageSizeOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}件/ページ
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  size="sm"
+                  aria-label="1ページの件数"
+                  className="bg-white focus-visible:border-primary focus-visible:ring-primary/20"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {pageSizeOptions.map((opt) => (
+                    <SelectItem key={opt} value={String(opt)}>
+                      {opt}件/ページ
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              <div className="flex items-center gap-0.5 rounded-md border border-gray-300 bg-white p-0.5">
-                <RippleButton
-                  type="button"
-                  title="最初のページ"
-                  className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                  disabled={page <= 1}
-                  onClick={() => setPage(1)}
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </RippleButton>
-                <RippleButton
-                  type="button"
-                  title="前のページ"
-                  className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </RippleButton>
-                <span className="px-2 text-sm font-medium text-primary">
-                  {page} / {totalPages}
-                </span>
-                <RippleButton
-                  type="button"
-                  title="次のページ"
-                  className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </RippleButton>
-                <RippleButton
-                  type="button"
-                  title="最後のページ"
-                  className="rounded p-1.5 text-gray-600 hover:bg-primary hover:text-white disabled:pointer-events-none disabled:opacity-30"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(totalPages)}
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </RippleButton>
-              </div>
+              <Pagination className="mx-0 w-auto">
+                <PaginationContent className="gap-0.5 rounded-md border border-gray-300 bg-white p-0.5">
+                  <PaginationItem>
+                    <RippleButton
+                      type="button"
+                      aria-label="前のページ"
+                      title="前のページ"
+                      className={cn(pagerButtonClass(), "disabled:opacity-30")}
+                      rippleColor="rgba(128, 0, 32, 0.2)"
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => p - 1)}
+                    >
+                      <ChevronLeft />
+                    </RippleButton>
+                  </PaginationItem>
+                  {getPageItems(page, totalPages).map((item, i) =>
+                    item === "…" ? (
+                      <PaginationItem key={`ellipsis-${i}`}>
+                        <PaginationEllipsis className="size-8 text-gray-400" />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={item}>
+                        <RippleButton
+                          type="button"
+                          aria-label={`${item}ページ目`}
+                          aria-current={item === page ? "page" : undefined}
+                          className={pagerButtonClass(item === page)}
+                          rippleColor="rgba(128, 0, 32, 0.2)"
+                          onClick={() => setPage(item)}
+                        >
+                          {item}
+                        </RippleButton>
+                      </PaginationItem>
+                    ),
+                  )}
+                  <PaginationItem>
+                    <RippleButton
+                      type="button"
+                      aria-label="次のページ"
+                      title="次のページ"
+                      className={cn(pagerButtonClass(), "disabled:opacity-30")}
+                      rippleColor="rgba(128, 0, 32, 0.2)"
+                      disabled={page >= totalPages}
+                      onClick={() => setPage((p) => p + 1)}
+                    >
+                      <ChevronRight />
+                    </RippleButton>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           </div>
         </div>
