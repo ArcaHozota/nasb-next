@@ -17,7 +17,7 @@ import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { getPageItems } from "@/lib/pagination";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Carousel,
   CarouselContent,
@@ -362,16 +362,14 @@ export default function HomeView() {
           />
           <span className="effect-shine text-[2.2rem]">NASB1995</span>
         </div>
-        <RippleButton
-          className={cn(
-            buttonVariants({ size: "lg" }),
-            "hidden gap-1 bg-warning px-4 font-extrabold text-gray-900 hover:bg-warning/90 md:inline-flex",
-          )}
-          rippleColor="rgba(0, 0, 0, 0.15)"
+        <Button
+          variant="warning"
+          size="lg"
+          className="hidden gap-1 px-4 font-extrabold md:inline-flex"
           onClick={goLogin}
         >
           <LogIn className="h-4 w-4" /> ログイン
-        </RippleButton>
+        </Button>
       </header>
 
       <main className="mx-auto max-w-270 px-4 pb-16 pt-8 md:px-4 md:pb-16 md:pt-8">
@@ -387,14 +385,16 @@ export default function HomeView() {
             className="w-full rounded-full border-none bg-white/67 py-3 pl-5 pr-11 text-base outline-none"
             onKeyDown={onSearchKeyDown}
           />
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full hover:bg-white/50"
             type="button"
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 border-none bg-none"
             aria-label="検索"
             onClick={onSearch}
           >
             <Search className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         {/* ===== デスクトップ: 横一列のカード + ページャー ===== */}

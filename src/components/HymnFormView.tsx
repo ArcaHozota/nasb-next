@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
-import RippleButton from "./RippleButton";
+import { Button } from "@/components/ui/button";
 
 type FormState = {
   id: string | null;
@@ -357,9 +357,9 @@ export default function HymnFormView() {
         </div>
 
         <div className="flex justify-end gap-2 px-6 pb-4">
-          <RippleButton
+          <Button
+            variant={isEdit ? "default" : "success"}
             type="button"
-            className={`rounded-md px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60 ${isEdit ? "bg-primary" : "bg-success"}`}
             disabled={saving}
             onClick={onSubmit}
           >
@@ -375,10 +375,10 @@ export default function HymnFormView() {
                 {isEdit ? "更新" : "追加"}
               </span>
             )}
-          </RippleButton>
-          <RippleButton
+          </Button>
+          <Button
+            variant="neutral"
             type="button"
-            className="flex items-center gap-1 rounded-md bg-gray-500 px-4 py-1.5 text-sm font-medium text-white"
             onClick={onReset}
           >
             {isEdit ? (
@@ -387,7 +387,7 @@ export default function HymnFormView() {
               <RotateCcw className="h-4 w-4" />
             )}{" "}
             {isEdit ? "廃棄" : "リセット"}
-          </RippleButton>
+          </Button>
         </div>
       </div>
     </div>

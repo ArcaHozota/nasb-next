@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Toaster } from "@/components/ui/sonner";
-import RippleButton from "@/components/RippleButton";
+import { Button } from "@/components/ui/button";
 import { useFeedbackStore } from "@/stores/feedback";
 import { cn } from "@/lib/utils";
 
@@ -67,28 +67,27 @@ export default function FeedbackHost() {
               {dialog.text}
             </AlertDialogDescription>
             <AlertDialogFooter className="mt-6 flex-row justify-end gap-2">
-              {/* ui/alert-dialog の AlertDialogCancel/Action は buttonVariants のクラスを付与し、
-                  asChild だと RippleButton のクラスと衝突するため Radix の素の部品を使う。
+              {/* ui/alert-dialog の AlertDialogCancel/Action は波紋の無いボタンになるため、
+                  Radix の素の部品に波紋付きの Button を渡す。
                   (Cancel に初期フォーカスが当たる等の挙動はそのまま) */}
               <AlertDialogPrimitive.Cancel asChild>
-                <RippleButton
-                  className="rounded px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100"
-                  rippleColor="rgba(0, 0, 0, 0.12)"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="font-normal text-gray-600"
                   onClick={() => answer(false)}
                 >
                   {dialog.cancelLabel}
-                </RippleButton>
+                </Button>
               </AlertDialogPrimitive.Cancel>
               <AlertDialogPrimitive.Action asChild>
-                <RippleButton
-                  className={cn(
-                    "rounded px-3 py-1.5 text-sm font-medium text-white",
-                    isSuccess ? "bg-success" : "bg-primary",
-                  )}
+                <Button
+                  variant={isSuccess ? "success" : "default"}
+                  size="sm"
                   onClick={() => answer(true)}
                 >
                   {dialog.confirmLabel}
-                </RippleButton>
+                </Button>
               </AlertDialogPrimitive.Action>
             </AlertDialogFooter>
           </div>

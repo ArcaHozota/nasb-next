@@ -26,7 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
-import RippleButton from "@/components/RippleButton";
+import { Button } from "@/components/ui/button";
 
 // フォーカス時の枠・リング色(オレンジ)。エラー時(aria-invalid)は赤枠のままにする。
 const FOCUS_WARNING =
@@ -322,9 +322,11 @@ function StudentEditionInner() {
                   aria-invalid={!!errors.password}
                   className={`pr-9 ${FOCUS_WARNING}`}
                 />
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-500 hover:bg-transparent hover:text-gray-700"
                   type="button"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   aria-label={
                     showPassword ? "パスワードを隠す" : "パスワードを表示"
                   }
@@ -335,7 +337,7 @@ function StudentEditionInner() {
                   ) : (
                     <Eye className="h-4 w-4" />
                   )}
-                </button>
+                </Button>
               </div>
               {errors.password && (
                 <p className="mt-1 text-xs text-red-600">{errors.password}</p>
@@ -412,10 +414,10 @@ function StudentEditionInner() {
 
           <div className="mb-2 flex items-start gap-4">
             <div className="min-w-0 flex-1">
-              <RippleButton
+              <Button
+                variant="outline"
+                className="w-full justify-start bg-transparent text-gray-700 hover:bg-white/60"
                 type="button"
-                className="flex w-full items-center justify-start gap-2 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-                rippleColor="rgba(0, 0, 0, 0.12)"
                 title={youtubeLinked ? "連携済みです" : "YouTubeと連携"}
                 disabled={!youtubeToggleOn || youtubeLinked || youtubeBusy}
                 onClick={onYoutubeConnect}
@@ -424,16 +426,16 @@ function StudentEditionInner() {
                   className={`h-4 w-4 ${youtubeLinked ? "text-gray-400" : "text-red-600"}`}
                 />
                 <span>{youtubeLinked ? "連携済み" : "YouTubeと連携"}</span>
-              </RippleButton>
+              </Button>
             </div>
             <div className="w-32.5 shrink-0" aria-hidden="true"></div>
           </div>
         </div>
 
         <div className="flex justify-end gap-2 px-6 pb-4">
-          <RippleButton
+          <Button
+            
             type="button"
-            className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
             disabled={saving}
             onClick={onUpdate}
           >
@@ -444,14 +446,14 @@ function StudentEditionInner() {
                 <Zap className="h-4 w-4" /> 更新
               </span>
             )}
-          </RippleButton>
-          <RippleButton
+          </Button>
+          <Button
+            variant="neutral"
             type="button"
-            className="flex items-center gap-1 rounded-md bg-gray-500 px-4 py-1.5 text-sm font-medium text-white"
             onClick={onRestore}
           >
             <Trash2 className="h-4 w-4" /> 廃棄
-          </RippleButton>
+          </Button>
         </div>
       </div>
     </div>

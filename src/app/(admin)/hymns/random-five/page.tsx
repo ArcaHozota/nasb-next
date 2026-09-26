@@ -18,7 +18,7 @@ import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
-import RippleButton from "@/components/RippleButton";
+import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyDescription,
@@ -179,16 +179,15 @@ function RandomFiveInner() {
                   onKeyDown={onKeyDown}
                 />
                 <InputGroupAddon align="inline-end">
-                  <InputGroupButton asChild size="icon-xs">
-                    <RippleButton
-                      aria-label="ランダム選択"
-                      title="ランダム選択"
-                      rippleColor="rgba(0, 0, 0, 0.12)"
-                      disabled={loading}
-                      onClick={onRandom}
-                    >
-                      {loading ? <Spinner /> : <Search />}
-                    </RippleButton>
+                  {/* InputGroupButton は shadcn/ui の Button なので波紋も付く */}
+                  <InputGroupButton
+                    size="icon-xs"
+                    aria-label="ランダム選択"
+                    title="ランダム選択"
+                    disabled={loading}
+                    onClick={onRandom}
+                  >
+                    {loading ? <Spinner /> : <Search />}
                   </InputGroupButton>
                 </InputGroupAddon>
               </InputGroup>
@@ -196,9 +195,9 @@ function RandomFiveInner() {
 
             {/* 選択結果があるときだけ表示(未検索時の案内は下の Empty が担当) */}
             {records.length > 0 && (
-              <RippleButton
+              <Button
+                className="shrink-0"
                 type="button"
-                className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
                 disabled={creatingPlaylist}
                 onClick={onCreatePlaylist}
               >
@@ -208,7 +207,7 @@ function RandomFiveInner() {
                   <ListMusic className="h-4 w-4" />
                 )}
                 プレイリスト作成
-              </RippleButton>
+              </Button>
             )}
           </div>
 

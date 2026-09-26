@@ -8,6 +8,7 @@ import { LoaderCircle } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
 // ガラス風カードの上に置くため半透明の白背景にする
@@ -93,9 +94,9 @@ export default function LoginView() {
             </p>
           )}
 
-          <button
+          <Button
+            className="w-full font-bold"
             type="button"
-            className="w-full rounded-md bg-primary py-2 text-sm font-bold text-white disabled:opacity-60"
             disabled={loading}
             onClick={onLogin}
           >
@@ -104,7 +105,7 @@ export default function LoginView() {
             ) : (
               <span>ログイン</span>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

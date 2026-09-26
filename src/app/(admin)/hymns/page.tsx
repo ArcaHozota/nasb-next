@@ -19,7 +19,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import api from "@/api/axios";
-import RippleButton from "@/components/RippleButton";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import {
@@ -28,8 +27,13 @@ import {
   utf8ToBase64,
 } from "@/lib/constants";
 import HymnScoreModal from "@/components/HymnScoreModal";
-import { Input } from "@/components/ui/input";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {
   Pagination,
   PaginationContent,
@@ -73,15 +77,10 @@ const rowClass = (line: string) =>
 const asStr = (v: string | null) => v ?? EMPTY_STRING;
 
 
-// ページャーのボタン(RippleButton に shadcn/ui の Button の見た目を当てる)
-const pagerButtonClass = (active = false) =>
-  cn(
-    buttonVariants({ variant: active ? "default" : "ghost", size: "icon" }),
-    "size-8 text-sm",
-    active
-      ? "pointer-events-none"
-      : "text-gray-600 hover:bg-primary/10 hover:text-primary",
-  );
+// ページャーのボタン(shadcn/ui の Button。現在ページは default=burgundy の塗り)
+const PAGER_BUTTON =
+  "text-sm text-gray-600 hover:bg-primary/10 hover:text-primary disabled:opacity-30";
+const PAGER_RIPPLE = "rgba(128, 0, 32, 0.2)";
 
 function HymnListInner() {
   const searchParams = useSearchParams();
@@ -274,25 +273,25 @@ function HymnListInner() {
         <div className="p-6">
           <div className="mb-4 grid grid-cols-[30%_26%_10%_10%_24%] items-center gap-2">
             <div className="col-span-2">
-              <div className="relative w-full max-w-120">
-                <Input
+              <InputGroup className="max-w-120 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
+                <InputGroupInput
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   type="text"
                   placeholder="キーワードを入力してください"
                   aria-label="キーワード"
-                  className="pr-9 focus-visible:border-primary focus-visible:ring-primary/20"
                   onKeyDown={onSearchKeyDown}
                 />
-                <RippleButton
-                  type="button"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  rippleColor="rgba(0, 0, 0, 0.12)"
-                  onClick={onSearch}
-                >
-                  <Search className="h-4 w-4" />
-                </RippleButton>
-              </div>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    size="icon-xs"
+                    aria-label="検索"
+                    onClick={onSearch}
+                  >
+                    <Search />
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
             </div>
 
             {/* リンク・楽譜列に対応する空セル(グリッド比率合わせのためのスペーサー) */}
@@ -302,17 +301,19 @@ function HymnListInner() {
             {/* 操作列と同じ30%+26%+10%+10%=76%幅のセルに収め、列内で中央寄せにする
                 (下の操作列の「楽譜」等ボタンと同じjustify-center) */}
             <div className="flex items-center justify-center gap-2">
-              <RippleButton
+              <Button
+                variant="success"
+                className="font-bold"
                 type="button"
-                className="flex items-center gap-1 rounded-md bg-success px-4 py-1.5 text-sm font-bold text-white"
                 onClick={goAdd}
               >
                 <CirclePlus className="h-4 w-4" /> 賛美歌情報追加
-              </RippleButton>
-              <RippleButton
+              </Button>
+              <Button
+                size="icon"
+                aria-label="プレイリスト作成"
                 type="button"
                 title="プレイリスト作成"
-                className="flex items-center justify-center rounded-md bg-primary p-2 text-white disabled:opacity-60"
                 disabled={creatingPlaylist}
                 onClick={onCreatePlaylist}
               >
@@ -321,7 +322,7 @@ function HymnListInner() {
                 ) : (
                   <ListMusic className="h-4 w-4" />
                 )}
-              </RippleButton>
+              </Button>
             </div>
           </div>
 
@@ -433,25 +434,26 @@ function HymnListInner() {
                     </TableCell>
                     <TableCell className="px-3 py-2">
                       <div className="flex justify-center gap-1">
-                        <RippleButton
-                          className="rounded bg-secondary px-2 py-1 text-xs text-white"
+                        <Button
+                          variant="secondary"
+                          size="xs"
                           onClick={() => openScoreModal(row)}
                         >
                           楽譜
-                        </RippleButton>
-                        <RippleButton
-                          className="rounded bg-primary px-2 py-1 text-xs text-white"
+                        </Button>
+                        <Button
+                          size="xs"
                           onClick={() => goEdit(row.id)}
                         >
                           編集
-                        </RippleButton>
-                        <RippleButton
-                          className="rounded bg-warning px-2 py-1 text-xs text-gray-900"
-                          rippleColor="rgba(0, 0, 0, 0.18)"
+                        </Button>
+                        <Button
+                          variant="warning"
+                          size="xs"
                           onClick={() => onDelete(row)}
                         >
                           削除
-                        </RippleButton>
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -489,17 +491,19 @@ function HymnListInner() {
               <Pagination className="mx-0 w-auto">
                 <PaginationContent className="gap-0.5 rounded-md border border-gray-300 bg-white p-0.5">
                   <PaginationItem>
-                    <RippleButton
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className={PAGER_BUTTON}
+                      rippleColor={PAGER_RIPPLE}
                       type="button"
                       aria-label="前のページ"
                       title="前のページ"
-                      className={cn(pagerButtonClass(), "disabled:opacity-30")}
-                      rippleColor="rgba(128, 0, 32, 0.2)"
                       disabled={page <= 1}
                       onClick={() => setPage((p) => p - 1)}
                     >
                       <ChevronLeft />
-                    </RippleButton>
+                    </Button>
                   </PaginationItem>
                   {getPageItems(page, totalPages).map((item, i) =>
                     item === "ellipsis" ? (
@@ -508,31 +512,35 @@ function HymnListInner() {
                       </PaginationItem>
                     ) : (
                       <PaginationItem key={item}>
-                        <RippleButton
+                        <Button
+                          variant={item === page ? "default" : "ghost"}
+                          size="icon-sm"
+                          className={item === page ? "pointer-events-none" : PAGER_BUTTON}
+                          rippleColor={PAGER_RIPPLE}
                           type="button"
                           aria-label={`${item}ページ目`}
                           aria-current={item === page ? "page" : undefined}
-                          className={pagerButtonClass(item === page)}
-                          rippleColor="rgba(128, 0, 32, 0.2)"
                           onClick={() => setPage(item)}
                         >
                           {item}
-                        </RippleButton>
+                        </Button>
                       </PaginationItem>
                     ),
                   )}
                   <PaginationItem>
-                    <RippleButton
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className={PAGER_BUTTON}
+                      rippleColor={PAGER_RIPPLE}
                       type="button"
                       aria-label="次のページ"
                       title="次のページ"
-                      className={cn(pagerButtonClass(), "disabled:opacity-30")}
-                      rippleColor="rgba(128, 0, 32, 0.2)"
                       disabled={page >= totalPages}
                       onClick={() => setPage((p) => p + 1)}
                     >
                       <ChevronRight />
-                    </RippleButton>
+                    </Button>
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>

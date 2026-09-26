@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Book, Baseline, LoaderCircle } from "lucide-react";
 import api from "@/api/axios";
-import RippleButton from "@/components/RippleButton";
+import { Button } from "@/components/ui/button";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RedLetterEditor, {
@@ -175,16 +175,19 @@ export default function BookAddition() {
           </div>
 
           <div className="mb-2 flex justify-start pl-16">
-            <RippleButton
-              type="button"
-              className="rounded-full p-2 text-red-700 hover:bg-red-50"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full text-red-700 hover:bg-red-50 hover:text-red-700"
               rippleColor="rgba(185, 28, 28, 0.2)"
+              aria-label="選択範囲を赤文字にする"
+              type="button"
               title="選択範囲を赤文字にする(再押下で解除)"
               onMouseDown={(e) => e.preventDefault()}
               onClick={onWrapSelection}
             >
-              <Baseline className="h-5 w-5" />
-            </RippleButton>
+              <Baseline className="size-5" />
+            </Button>
           </div>
 
           <div className="mb-6 flex items-start gap-4">
@@ -289,9 +292,9 @@ export default function BookAddition() {
               <div aria-hidden="true" className="mb-1.5 text-sm leading-none text-transparent">
                 追加
               </div>
-              <RippleButton
+              <Button
+                className="noto-serif w-full"
                 type="button"
-                className="noto-serif h-9 w-full rounded-md bg-primary text-sm font-medium text-white disabled:opacity-60"
                 disabled={saving}
                 onClick={onStore}
               >
@@ -302,7 +305,7 @@ export default function BookAddition() {
                     <Book className="h-4 w-4" /> 追加
                   </span>
                 )}
-              </RippleButton>
+              </Button>
             </div>
           </div>
         </div>

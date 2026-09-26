@@ -47,6 +47,15 @@ button:not(:disabled) {
   --success: #355e3b;
   --warning: #f6c91c;
   --info: #353542;
+  /* 管理画面のサイドバー(shadcn/ui Sidebar)。従来の bg-gray-900 / 白文字を踏襲 */
+  --sidebar: #111827;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #800020;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-ring: rgba(255, 255, 255, 0.4);
 }
 
 @theme inline {
@@ -75,6 +84,14 @@ button:not(:disabled) {
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 /* shadcn/ui 標準の「* { border-color: var(--border) }」は既存画面の枠線色まで変えてしまうため、

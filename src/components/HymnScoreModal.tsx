@@ -7,7 +7,7 @@ import { useRef, useState } from "react";
 import axios from "axios";
 import { CloudUpload, LoaderCircle, X } from "lucide-react";
 import api from "@/api/axios";
-import RippleButton from "@/components/RippleButton";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -95,16 +95,18 @@ export default function HymnScoreModal({
             <DialogTitle className="text-center text-base font-semibold text-secondary">
               {title}
             </DialogTitle>
-            <RippleButton
-              type="button"
-              className="mr-2 justify-self-end rounded p-1 text-secondary hover:bg-secondary/10 disabled:opacity-50"
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="mr-2 justify-self-end text-secondary hover:bg-secondary/10 hover:text-secondary"
               rippleColor="rgba(0, 51, 153, 0.2)"
+              type="button"
               disabled={uploading}
               aria-label="閉じる"
               onClick={close}
             >
-              <X className="h-5 w-5" />
-            </RippleButton>
+              <X className="size-5" />
+            </Button>
           </div>
           <div className="mx-1.5 mt-2 h-0.75 rounded-full bg-secondary"></div>
           <DialogDescription className="sr-only">
@@ -120,14 +122,15 @@ export default function HymnScoreModal({
             className="hidden"
             onChange={onFilePick}
           />
-          <RippleButton
-            type="button"
-            className="flex scale-[1.33] items-center gap-1 rounded-md border border-secondary px-4 py-1.5 text-sm font-medium text-secondary"
+          <Button
+            variant="outline"
+            className="scale-[1.33] border-secondary bg-transparent text-secondary hover:bg-secondary/5 hover:text-secondary"
             rippleColor="rgba(0, 51, 153, 0.2)"
+            type="button"
             onClick={() => fileInputRef.current?.click()}
           >
             <CloudUpload className="h-4 w-4" /> ファイルを選択
-          </RippleButton>
+          </Button>
           {file && (
             <p className="mt-1 text-sm text-gray-600">
               {file.name}({Math.round(file.size / 1024)} KB)
@@ -137,9 +140,9 @@ export default function HymnScoreModal({
         </div>
 
         <div className="flex justify-end px-6 pb-4">
-          <RippleButton
+          <Button
+            variant="secondary"
             type="button"
-            className="rounded-md bg-secondary px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
             disabled={uploading}
             onClick={onUpload}
           >
@@ -148,7 +151,7 @@ export default function HymnScoreModal({
             ) : (
               <span className="flex items-center gap-1">アプロード</span>
             )}
-          </RippleButton>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
