@@ -50,13 +50,16 @@ export default function LoginView() {
         className="fixed inset-0 -z-10 h-full w-full object-cover"
       />
 
-      <div className="w-[360px] rounded-[18px] border border-white/45 bg-white/25 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl backdrop-saturate-150">
+      <div className="w-90 rounded-[18px] border border-white/45 bg-white/25 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl backdrop-saturate-150">
         <div className="p-4">
           <h1 className="mb-6 text-center text-2xl font-bold tracking-wide text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.4)]">
             NASB1995
           </h1>
 
-          <Label htmlFor="login-username" className="mb-1.5 font-normal text-white/90">
+          <Label
+            htmlFor="login-username"
+            className="mb-1.5 font-normal text-white/90"
+          >
             ユーザー名
           </Label>
           <Input
@@ -68,7 +71,10 @@ export default function LoginView() {
             className={LOGIN_INPUT}
           />
 
-          <Label htmlFor="login-password" className="mb-1.5 font-normal text-white/90">
+          <Label
+            htmlFor="login-password"
+            className="mb-1.5 font-normal text-white/90"
+          >
             パスワード
           </Label>
           <Input

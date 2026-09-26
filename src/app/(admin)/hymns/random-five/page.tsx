@@ -222,7 +222,12 @@ function RandomFiveInner() {
           {loading ? (
             <ItemGroup className="gap-1.5" aria-busy="true">
               {Array.from({ length: SKELETON_ROWS }, (_, i) => (
-                <Item key={i} variant="outline" size="sm" className="glass-item">
+                <Item
+                  key={i}
+                  variant="outline"
+                  size="sm"
+                  className="glass-item"
+                >
                   <ItemContent className="items-center">
                     <Skeleton className="h-5 w-2/5 bg-gray-300/70" />
                     <Skeleton className="h-4 w-1/4 bg-gray-300/70" />
@@ -264,7 +269,7 @@ function RandomFiveInner() {
                 >
                   <a href={item.link} target="_blank" rel="noopener noreferrer">
                     {/* 左右の幅を揃えて(番号 / YouTubeアイコン)、名称を中央に置く */}
-                    <ItemMedia className="w-8 justify-center text-sm font-semibold text-black/40 group-has-[[data-slot=item-description]]/item:translate-y-0 group-has-[[data-slot=item-description]]/item:self-center">
+                    <ItemMedia className="w-8 justify-center text-sm font-semibold text-black/40 group-has-data-[slot=item-description]/item:translate-y-0 group-has-data-[slot=item-description]/item:self-center">
                       {i + 1}
                     </ItemMedia>
                     <ItemContent className="items-center gap-0.5 text-center">
