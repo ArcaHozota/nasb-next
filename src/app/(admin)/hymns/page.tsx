@@ -62,38 +62,6 @@ type HymnRow = {
   lineNumber: string;
 };
 
-/**
- * 文字列の「表示幅」を計算する。
- * 全角文字(漢字・ひらがな・カタカナ・全角記号など)は2、
- * それ以外(半角英数字・半角記号など)は1としてカウントする。
- */
-const getDisplayWidth = (str: string): number => {
-  let width = 0;
-  for (const char of str) {
-    // 全角文字の判定(Unicodeのコードポイントで判定)
-    const code = char.codePointAt(0) ?? 0;
-    const isFullWidth =
-      (code >= 0x1100 && code <= 0x115f) || // ハングル字母
-      (code >= 0x2e80 && code <= 0x303e) || // CJK部首・記号
-      (code >= 0x3041 && code <= 0x33ff) || // ひらがな・カタカナ・CJK記号
-      (code >= 0x3400 && code <= 0x4dbf) || // CJK拡張A
-      (code >= 0x4e00 && code <= 0x9fff) || // CJK統一漢字
-      (code >= 0xf900 && code <= 0xfaff) || // CJK互換漢字
-      (code >= 0xff00 && code <= 0xff60) || // 全角英数・記号
-      (code >= 0xffe0 && code <= 0xffe6); // 全角記号
-
-    width += isFullWidth ? 2 : 1;
-  }
-  return width;
-};
-
-const textSizeClass = (str: string) => {
-  const width = getDisplayWidth(str ?? EMPTY_STRING);
-  if (width >= 66) return "hymn-text-xs"; // 半角66 or 全角33相当
-  if (width >= 42) return "hymn-text-sm"; // 半角42 or 全角21相当
-  return EMPTY_STRING;
-};
-
 const rowClass = (line: string) =>
   ({
     BURGUNDY: "row-burgundy",
@@ -445,21 +413,20 @@ function HymnListInner() {
                       isFetching && "opacity-50",
                     )}
                   >
-                    <TableCell
-                      className={cn(
-                        "col-name px-3 py-2",
-                        textSizeClass(row.nameJp),
-                      )}
-                    >
-                      {row.nameJp}
+                    <TableCell className="col-name px-3 py-2">
+                      {/* 長い名称は2行まで折り返し、それ以上は「…」で省略。全文はホバーで表示 */}
+                      <span className="line-clamp-2" title={row.nameJp}>
+                        {row.nameJp}
+                      </span>
                     </TableCell>
-                    <TableCell
-                      className={cn(
-                        "col-name px-3 py-2",
-                        textSizeClass(row.nameKr),
-                      )}
-                    >
-                      {row.nameKr}
+                    <TableCell className="col-name px-3 py-2">
+                      {/* 長い名称は2行まで折り返し、それ以上は「…」で省略。全文はホバーで表示 */}
+                      <span
+                        className="col-name-kr line-clamp-2"
+                        title={row.nameKr}
+                      >
+                        {row.nameKr}
+                      </span>
                     </TableCell>
                     <TableCell className="px-3 py-2 text-center">
                       <a

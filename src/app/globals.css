@@ -434,18 +434,19 @@ button:not(:disabled) {
 }
 
 /* ===== HymnList ===== */
+/* 名称列: 2行まで折り返す(行数の制限はコンポーネント側の line-clamp-2)。
+   日本語は通常の禁則処理(line-break: strict)で文字間改行、
+   韓国語は .col-name-kr で単語(分かち書きの空白)単位の改行にする。
+   空白の無い長い英数字列だけは overflow-wrap で強制的に折り返す。 */
 .col-name {
-  word-break: break-all;
   white-space: normal;
   line-height: 1.4;
+  line-break: strict;
+  overflow-wrap: anywhere;
 }
 
-.hymn-text-sm {
-  font-size: 0.67em !important;
-}
-
-.hymn-text-xs {
-  font-size: 0.33em !important;
+.col-name-kr {
+  word-break: keep-all;
 }
 
 .hymn-table .row-burgundy {
