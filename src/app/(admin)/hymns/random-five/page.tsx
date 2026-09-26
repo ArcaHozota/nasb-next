@@ -19,6 +19,8 @@ import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Hint from "@/components/Hint";
 import {
   Empty,
   EmptyDescription,
@@ -160,13 +162,19 @@ function RandomFiveInner() {
         />
       </div>
 
-      <div className="randomfive-card noto-serif glass-panel glass-panel--gray relative overflow-hidden rounded-[18px]">
-        <div className="flex items-center bg-gray-800 px-4 py-3 text-white">
+      <Card className="randomfive-card noto-serif glass-panel glass-panel--gray relative overflow-hidden rounded-[18px] gap-0 py-0">
+        <CardHeader className="gap-0 flex items-center bg-gray-800 px-4 py-3 text-white">
           <LayoutGrid className="mr-2 h-5 w-5" />
-          <h1 className="text-lg font-semibold">賛美歌ランドム選択</h1>
-        </div>
+          <CardTitle
+            role="heading"
+            aria-level={1}
+            className="text-lg leading-normal"
+          >
+            賛美歌ランドム選択
+          </CardTitle>
+        </CardHeader>
 
-        <div className="p-6">
+        <CardContent className="p-6">
           <div className="mb-6 flex items-center gap-4">
             <div className="flex flex-1 justify-center">
               <InputGroup className="max-w-120 bg-white/60 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
@@ -180,15 +188,16 @@ function RandomFiveInner() {
                 />
                 <InputGroupAddon align="inline-end">
                   {/* InputGroupButton は shadcn/ui の Button なので波紋も付く */}
-                  <InputGroupButton
-                    size="icon-xs"
-                    aria-label="ランダム選択"
-                    title="ランダム選択"
-                    disabled={loading}
-                    onClick={onRandom}
-                  >
-                    {loading ? <Spinner /> : <Search />}
-                  </InputGroupButton>
+                  <Hint label="ランダム選択">
+                    <InputGroupButton
+                      size="icon-xs"
+                      aria-label="ランダム選択"
+                      disabled={loading}
+                      onClick={onRandom}
+                    >
+                      {loading ? <Spinner /> : <Search />}
+                    </InputGroupButton>
+                  </Hint>
                 </InputGroupAddon>
               </InputGroup>
             </div>
@@ -202,7 +211,7 @@ function RandomFiveInner() {
                 onClick={onCreatePlaylist}
               >
                 {creatingPlaylist ? (
-                  <Spinner className="h-4 w-4" />
+                  <Spinner />
                 ) : (
                   <ListMusic className="h-4 w-4" />
                 )}
@@ -290,8 +299,8 @@ function RandomFiveInner() {
               ))}
             </ItemGroup>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

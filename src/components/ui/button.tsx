@@ -101,8 +101,15 @@ function Button({
       }}
       {...props}
     >
-      {children}
-      {withRipple && rippleNodes}
+      {/* asChild の時は Slot が「子要素1つ」を要求するため、波紋用の要素を足さない */}
+      {asChild ? (
+        children
+      ) : (
+        <>
+          {children}
+          {withRipple && rippleNodes}
+        </>
+      )}
     </Comp>
   );
 }

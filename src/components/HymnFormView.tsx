@@ -7,22 +7,31 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  FileArchive,
-  LayoutGrid,
-  LoaderCircle,
-  RotateCcw,
-  Trash2,
-  Zap,
-} from "lucide-react";
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { FileArchive, LayoutGrid, RotateCcw, Trash2, Zap } from "lucide-react";
 import api from "@/api/axios";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
 
 type FormState = {
   id: string | null;
@@ -222,35 +231,55 @@ export default function HymnFormView() {
       </div>
 
       {/* パンくずリスト */}
-      <nav className="mb-2 text-sm font-semibold text-[#fffff0]">
-        <Link href="/mainmenu" className="hover:underline">
-          メインメニュー
-        </Link>
-        <span className="mx-1">/</span>
-        <Link href={`/hymns?${listQueryStr}`} className="hover:underline">
-          データリスト
-        </Link>
-        <span className="mx-1">/</span>
-        <span>{isEdit ? "データ更新" : "データ追加"}</span>
-      </nav>
+      <Breadcrumb className="mb-2">
+        <BreadcrumbList className="font-semibold text-[#fffff0] [text-shadow:0_1px_3px_rgba(0,0,0,0.45)]">
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              asChild
+              className="text-[#fffff0] hover:text-white hover:underline"
+            >
+              <Link href="/mainmenu">メインメニュー</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              asChild
+              className="text-[#fffff0] hover:text-white hover:underline"
+            >
+              <Link href={`/hymns?${listQueryStr}`}>データリスト</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-semibold text-[#fffff0]">
+              {isEdit ? "データ更新" : "データ追加"}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
-      <div
-        className={`form-card glass-panel ${isEdit ? "glass-panel--burgundy" : "glass-panel--green"} relative overflow-hidden rounded-[18px]`}
+      <Card
+        className={`form-card glass-panel ${isEdit ? "glass-panel--burgundy" : "glass-panel--green"} relative overflow-hidden rounded-[18px] gap-0 py-0`}
       >
-        <div
-          className={`flex items-center px-4 py-3 text-white ${isEdit ? "bg-primary" : "bg-success"}`}
+        <CardHeader
+          className={`gap-0 flex items-center px-4 py-3 text-white ${isEdit ? "bg-primary" : "bg-success"}`}
         >
           <LayoutGrid className="mr-2 h-5 w-5" />
-          <h1 className="text-lg font-semibold">
+          <CardTitle
+            role="heading"
+            aria-level={1}
+            className="text-lg leading-normal"
+          >
             {isEdit ? "賛美歌情報更新" : "賛美歌情報追加"}
-          </h1>
-        </div>
+          </CardTitle>
+        </CardHeader>
 
-        <div className="p-6 pt-5">
-          <div className="mb-5">
-            <Label htmlFor="hymn-name-jp" className="form-label mb-1.5">
+        <CardContent className="p-6 pt-5">
+          <Field className="mb-5 gap-1.5">
+            <FieldLabel htmlFor="hymn-name-jp" className="form-label">
               日本語名称
-            </Label>
+            </FieldLabel>
             <Input
               id="hymn-name-jp"
               value={form.nameJp}
@@ -260,18 +289,21 @@ export default function HymnFormView() {
               type="text"
               placeholder="日本語名称を入力してください"
               aria-invalid={!!errors.nameJp}
+              aria-describedby={
+                errors.nameJp ? "hymn-name-jp-error" : undefined
+              }
               className={focusClass}
               onBlur={checkNameJp}
             />
-            {errors.nameJp && (
-              <p className="mt-1 text-xs text-red-600">{errors.nameJp}</p>
-            )}
-          </div>
+            <FieldError id="hymn-name-jp-error" className="text-xs">
+              {errors.nameJp}
+            </FieldError>
+          </Field>
 
-          <div className="mb-5">
-            <Label htmlFor="hymn-name-kr" className="form-label mb-1.5">
+          <Field className="mb-5 gap-1.5">
+            <FieldLabel htmlFor="hymn-name-kr" className="form-label">
               韓国語名称
-            </Label>
+            </FieldLabel>
             <Input
               id="hymn-name-kr"
               value={form.nameKr}
@@ -281,19 +313,22 @@ export default function HymnFormView() {
               type="text"
               placeholder="韓国語名称を入力してください"
               aria-invalid={!!errors.nameKr}
+              aria-describedby={
+                errors.nameKr ? "hymn-name-kr-error" : undefined
+              }
               className={focusClass}
               onBlur={checkNameKr}
             />
-            {errors.nameKr && (
-              <p className="mt-1 text-xs text-red-600">{errors.nameKr}</p>
-            )}
-          </div>
+            <FieldError id="hymn-name-kr-error" className="text-xs">
+              {errors.nameKr}
+            </FieldError>
+          </Field>
 
           <div className="link-row mb-5 flex items-start gap-4">
-            <div className="link-field min-w-0 flex-1">
-              <Label htmlFor="hymn-link" className="form-label mb-1.5">
+            <Field className="link-field min-w-0 flex-1 gap-1.5">
+              <FieldLabel htmlFor="hymn-link" className="form-label">
                 リンク
-              </Label>
+              </FieldLabel>
               <Input
                 id="hymn-link"
                 value={form.link}
@@ -303,16 +338,17 @@ export default function HymnFormView() {
                 type="text"
                 placeholder="リンクを入力してください"
                 aria-invalid={!!errors.link}
+                aria-describedby={errors.link ? "hymn-link-error" : undefined}
                 className={focusClass}
               />
-              {errors.link && (
-                <p className="mt-1 text-xs text-red-600">{errors.link}</p>
-              )}
-            </div>
-            <div className="classic-field w-24 shrink-0">
-              <Label htmlFor="hymn-classic" className="form-label mb-1.5">
+              <FieldError id="hymn-link-error" className="text-xs">
+                {errors.link}
+              </FieldError>
+            </Field>
+            <Field className="classic-field w-24 shrink-0 gap-1.5">
+              <FieldLabel htmlFor="hymn-classic" className="form-label">
                 クラシック
-              </Label>
+              </FieldLabel>
               <Switch
                 id="hymn-classic"
                 size="lg"
@@ -326,13 +362,13 @@ export default function HymnFormView() {
                     : "data-[state=checked]:bg-success"
                 }
               />
-            </div>
+            </Field>
           </div>
 
-          <div className="mb-5">
-            <Label htmlFor="hymn-lyric" className="form-label mb-1.5">
+          <Field className="mb-5 gap-1.5">
+            <FieldLabel htmlFor="hymn-lyric" className="form-label">
               歌詞
-            </Label>
+            </FieldLabel>
             <Textarea
               id="hymn-lyric"
               value={form.lyric}
@@ -342,21 +378,22 @@ export default function HymnFormView() {
               rows={6}
               placeholder="セリフを入力してください"
               aria-invalid={!!errors.lyric}
+              aria-describedby={errors.lyric ? "hymn-lyric-error" : undefined}
               className={`field-sizing-fixed ${focusClass}`}
             />
-            {errors.lyric && (
-              <p className="mt-1 text-xs text-red-600">{errors.lyric}</p>
-            )}
-          </div>
+            <FieldError id="hymn-lyric-error" className="text-xs">
+              {errors.lyric}
+            </FieldError>
+          </Field>
 
           {isEdit && (
             <p className="text-xs text-gray-500">
               最終更新者：{form.updatedUser}＠{form.updatedTime}日本標準時間
             </p>
           )}
-        </div>
+        </CardContent>
 
-        <div className="flex justify-end gap-2 px-6 pb-4">
+        <CardFooter className="flex justify-end gap-2 px-6 pb-4">
           <Button
             variant={isEdit ? "default" : "success"}
             type="button"
@@ -364,7 +401,7 @@ export default function HymnFormView() {
             onClick={onSubmit}
           >
             {saving ? (
-              <LoaderCircle className="inline-block h-4 w-4 animate-spin" />
+              <Spinner />
             ) : (
               <span className="flex items-center justify-center gap-1">
                 {isEdit ? (
@@ -376,11 +413,7 @@ export default function HymnFormView() {
               </span>
             )}
           </Button>
-          <Button
-            variant="neutral"
-            type="button"
-            onClick={onReset}
-          >
+          <Button variant="neutral" type="button" onClick={onReset}>
             {isEdit ? (
               <Trash2 className="h-4 w-4" />
             ) : (
@@ -388,8 +421,8 @@ export default function HymnFormView() {
             )}{" "}
             {isEdit ? "廃棄" : "リセット"}
           </Button>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

@@ -5,9 +5,10 @@
 // shadcn/ui 版: createPortal・Escキー処理・背景クリック判定は Dialog(Radix)に任せる。
 import { useRef, useState } from "react";
 import axios from "axios";
-import { CloudUpload, LoaderCircle, X } from "lucide-react";
+import { CloudUpload, X } from "lucide-react";
 import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Dialog,
   DialogContent,
@@ -147,7 +148,7 @@ export default function HymnScoreModal({
             onClick={onUpload}
           >
             {uploading ? (
-              <LoaderCircle className="inline-block h-4 w-4 animate-spin" />
+              <Spinner />
             ) : (
               <span className="flex items-center gap-1">アプロード</span>
             )}

@@ -11,22 +11,31 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  IdCard,
-  Eye,
-  EyeOff,
-  Zap,
-  Trash2,
-  LoaderCircle,
-  SquarePlay,
-} from "lucide-react";
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { IdCard, Eye, EyeOff, Zap, Trash2, SquarePlay } from "lucide-react";
 import api from "@/api/axios";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import Hint from "@/components/Hint";
 
 // フォーカス時の枠・リング色(オレンジ)。エラー時(aria-invalid)は赤枠のままにする。
 const FOCUS_WARNING =
@@ -121,6 +130,13 @@ function StudentEditionInner() {
       setYoutubeBusy(false);
     }
   };
+
+  // 連携ボタンのツールチップ。押せない時は「なぜ押せないか」を伝える
+  const youtubeHint = youtubeLinked
+    ? "連携済みです"
+    : youtubeToggleOn
+      ? "YouTubeアカウントと連携します"
+      : "「YouTube連携」をONにすると押せます";
 
   const onYoutubeConnect = () => {
     // 連携開始はバックエンドが直接Google同意画面へリダイレクトするため、
@@ -244,30 +260,46 @@ function StudentEditionInner() {
         />
       </div>
 
-      <nav className="mb-2 text-sm font-semibold text-[#fffff0]">
-        <Link href="/mainmenu" className="hover:underline">
-          メインメニュー
-        </Link>
-        <span className="mx-1">/</span>
-        <span>データリスト</span>
-        <span className="mx-1">/</span>
-        <span>データ更新</span>
-      </nav>
+      {/* パンくずリスト(旧表記「データリスト / データ更新」は賛美歌画面からの流用だったため修正) */}
+      <Breadcrumb className="mb-2">
+        <BreadcrumbList className="font-semibold text-[#fffff0] [text-shadow:0_1px_3px_rgba(0,0,0,0.45)]">
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              asChild
+              className="text-[#fffff0] hover:text-white hover:underline"
+            >
+              <Link href="/mainmenu">メインメニュー</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-semibold text-[#fffff0]">
+              ユーザー情報
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
-      <div className="studentedition-card glass-panel glass-panel--gold relative overflow-hidden rounded-[18px]">
-        <div
-          className="flex items-center px-4 py-3 text-white"
+      <Card className="studentedition-card glass-panel glass-panel--gold relative overflow-hidden rounded-[18px] gap-0 py-0">
+        <CardHeader
+          className="gap-0 flex items-center px-4 py-3 text-white"
           style={{ backgroundColor: "#ff883e" }}
         >
           <IdCard className="mr-2 h-5 w-5" />
-          <h1 className="text-lg font-semibold">ユーザー情報更新</h1>
-        </div>
+          <CardTitle
+            role="heading"
+            aria-level={1}
+            className="text-lg leading-normal"
+          >
+            ユーザー情報更新
+          </CardTitle>
+        </CardHeader>
 
-        <div className="p-6 pt-5">
-          <div className="mb-5">
-            <Label htmlFor="personal-account" className="form-label mb-1.5">
+        <CardContent className="p-6 pt-5">
+          <Field className="mb-5 gap-1.5">
+            <FieldLabel htmlFor="personal-account" className="form-label">
               アカウント
-            </Label>
+            </FieldLabel>
             <Input
               id="personal-account"
               value={form.loginAccount}
@@ -277,18 +309,21 @@ function StudentEditionInner() {
               type="text"
               placeholder="アカウントを入力してください"
               aria-invalid={!!errors.loginAccount}
+              aria-describedby={
+                errors.loginAccount ? "personal-account-error" : undefined
+              }
               className={FOCUS_WARNING}
               onBlur={checkAccount}
             />
-            {errors.loginAccount && (
-              <p className="mt-1 text-xs text-red-600">{errors.loginAccount}</p>
-            )}
-          </div>
+            <FieldError id="personal-account-error" className="text-xs">
+              {errors.loginAccount}
+            </FieldError>
+          </Field>
 
-          <div className="mb-5">
-            <Label htmlFor="personal-username" className="form-label mb-1.5">
+          <Field className="mb-5 gap-1.5">
+            <FieldLabel htmlFor="personal-username" className="form-label">
               名称
-            </Label>
+            </FieldLabel>
             <Input
               id="personal-username"
               value={form.username}
@@ -298,18 +333,21 @@ function StudentEditionInner() {
               type="text"
               placeholder="名称を入力してください"
               aria-invalid={!!errors.username}
+              aria-describedby={
+                errors.username ? "personal-username-error" : undefined
+              }
               className={FOCUS_WARNING}
             />
-            {errors.username && (
-              <p className="mt-1 text-xs text-red-600">{errors.username}</p>
-            )}
-          </div>
+            <FieldError id="personal-username-error" className="text-xs">
+              {errors.username}
+            </FieldError>
+          </Field>
 
           <div className="mb-5 flex gap-4">
-            <div className="flex-1">
-              <Label htmlFor="personal-password" className="form-label mb-1.5">
+            <Field className="flex-1 gap-1.5">
+              <FieldLabel htmlFor="personal-password" className="form-label">
                 パスワード
-              </Label>
+              </FieldLabel>
               <div className="relative">
                 <Input
                   id="personal-password"
@@ -320,6 +358,9 @@ function StudentEditionInner() {
                   type={showPassword ? "text" : "password"}
                   placeholder="パスワードを入力してください"
                   aria-invalid={!!errors.password}
+                  aria-describedby={
+                    errors.password ? "personal-password-error" : undefined
+                  }
                   className={`pr-9 ${FOCUS_WARNING}`}
                 />
                 <Button
@@ -339,15 +380,15 @@ function StudentEditionInner() {
                   )}
                 </Button>
               </div>
-              {errors.password && (
-                <p className="mt-1 text-xs text-red-600">{errors.password}</p>
-              )}
-            </div>
+              <FieldError id="personal-password-error" className="text-xs">
+                {errors.password}
+              </FieldError>
+            </Field>
 
-            <div className="flex-1">
-              <Label htmlFor="personal-email" className="form-label mb-1.5">
+            <Field className="flex-1 gap-1.5">
+              <FieldLabel htmlFor="personal-email" className="form-label">
                 メール
-              </Label>
+              </FieldLabel>
               <Input
                 id="personal-email"
                 value={form.email}
@@ -357,19 +398,22 @@ function StudentEditionInner() {
                 type="text"
                 placeholder="メールを入力してください"
                 aria-invalid={!!errors.email}
+                aria-describedby={
+                  errors.email ? "personal-email-error" : undefined
+                }
                 className={FOCUS_WARNING}
               />
-              {errors.email && (
-                <p className="mt-1 text-xs text-red-600">{errors.email}</p>
-              )}
-            </div>
+              <FieldError id="personal-email-error" className="text-xs">
+                {errors.email}
+              </FieldError>
+            </Field>
           </div>
 
           <div className="link-row mb-2 flex items-start gap-4">
-            <div className="date-field min-w-0 flex-1">
-              <Label htmlFor="personal-dob" className="form-label mb-1.5">
+            <Field className="date-field min-w-0 flex-1 gap-1.5">
+              <FieldLabel htmlFor="personal-dob" className="form-label">
                 生年月日
-              </Label>
+              </FieldLabel>
               <Input
                 id="personal-dob"
                 value={form.dateOfBirth}
@@ -378,84 +422,82 @@ function StudentEditionInner() {
                 }
                 type="date"
                 aria-invalid={!!errors.dateOfBirth}
+                aria-describedby={
+                  errors.dateOfBirth ? "personal-dob-error" : undefined
+                }
                 className={FOCUS_WARNING}
               />
-              {errors.dateOfBirth && (
-                <p className="mt-1 text-xs text-red-600">
-                  {errors.dateOfBirth}
-                </p>
-              )}
-            </div>
-            <div className="youtube-field w-32.5 shrink-0">
-              <Label htmlFor="personal-youtube" className="form-label mb-1.5">
+              <FieldError id="personal-dob-error" className="text-xs">
+                {errors.dateOfBirth}
+              </FieldError>
+            </Field>
+            <Field className="youtube-field w-32.5 shrink-0 gap-1.5">
+              <FieldLabel htmlFor="personal-youtube" className="form-label">
                 YouTube連携
-              </Label>
+              </FieldLabel>
               {/* 連携処理中はつまみを隠してスピナーを表示する(従来のトグルと同じ見た目) */}
               <span className="relative inline-flex">
-                <Switch
-                  id="personal-youtube"
-                  size="lg"
-                  title="ONで連携ボタンが押せるようになります"
-                  checked={youtubeToggleOn}
-                  onCheckedChange={onYoutubeToggle}
-                  disabled={youtubeBusy}
-                  className={cn(
-                    "data-[state=checked]:bg-warning",
-                    youtubeBusy &&
-                      "disabled:opacity-100 **:data-[slot=switch-thumb]:opacity-0",
-                  )}
-                />
+                <Hint label="ONで連携ボタンが押せるようになります">
+                  <Switch
+                    id="personal-youtube"
+                    size="lg"
+                    checked={youtubeToggleOn}
+                    onCheckedChange={onYoutubeToggle}
+                    disabled={youtubeBusy}
+                    className={cn(
+                      "data-[state=checked]:bg-warning",
+                      youtubeBusy &&
+                        "disabled:opacity-100 **:data-[slot=switch-thumb]:opacity-0",
+                    )}
+                  />
+                </Hint>
                 {youtubeBusy && (
-                  <LoaderCircle className="pointer-events-none absolute inset-0 m-auto h-3 w-3 animate-spin" />
+                  <Spinner className="pointer-events-none absolute inset-0 m-auto size-3" />
                 )}
               </span>
-            </div>
+            </Field>
           </div>
 
           <div className="mb-2 flex items-start gap-4">
             <div className="min-w-0 flex-1">
-              <Button
-                variant="outline"
-                className="w-full justify-start bg-transparent text-gray-700 hover:bg-white/60"
-                type="button"
-                title={youtubeLinked ? "連携済みです" : "YouTubeと連携"}
-                disabled={!youtubeToggleOn || youtubeLinked || youtubeBusy}
-                onClick={onYoutubeConnect}
+              <Hint
+                label={youtubeHint}
+                wrapDisabled
+                wrapperClassName="flex w-full"
               >
-                <SquarePlay
-                  className={`h-4 w-4 ${youtubeLinked ? "text-gray-400" : "text-red-600"}`}
-                />
-                <span>{youtubeLinked ? "連携済み" : "YouTubeと連携"}</span>
-              </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start bg-transparent text-gray-700 hover:bg-white/60"
+                  type="button"
+                  disabled={!youtubeToggleOn || youtubeLinked || youtubeBusy}
+                  onClick={onYoutubeConnect}
+                >
+                  <SquarePlay
+                    className={`h-4 w-4 ${youtubeLinked ? "text-gray-400" : "text-red-600"}`}
+                  />
+                  <span>{youtubeLinked ? "連携済み" : "YouTubeと連携"}</span>
+                </Button>
+              </Hint>
             </div>
             <div className="w-32.5 shrink-0" aria-hidden="true"></div>
           </div>
-        </div>
+        </CardContent>
 
-        <div className="flex justify-end gap-2 px-6 pb-4">
-          <Button
-            
-            type="button"
-            disabled={saving}
-            onClick={onUpdate}
-          >
+        <CardFooter className="flex justify-end gap-2 px-6 pb-4">
+          <Button type="button" disabled={saving} onClick={onUpdate}>
             {saving ? (
-              <LoaderCircle className="inline-block h-4 w-4 animate-spin" />
+              <Spinner />
             ) : (
               <span className="flex items-center justify-center gap-1">
                 <Zap className="h-4 w-4" /> 更新
               </span>
             )}
           </Button>
-          <Button
-            variant="neutral"
-            type="button"
-            onClick={onRestore}
-          >
+          <Button variant="neutral" type="button" onClick={onRestore}>
             <Trash2 className="h-4 w-4" /> 廃棄
           </Button>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

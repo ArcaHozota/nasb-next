@@ -3,16 +3,19 @@
 // src/app/(admin)/books/add/page.tsx
 // 旧 views/BookAddition.vue を移植
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Book, Baseline, LoaderCircle } from "lucide-react";
+import { BookOpen, Book, Baseline } from "lucide-react";
 import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import Hint from "@/components/Hint";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RedLetterEditor, {
   type RedLetterEditorHandle,
 } from "@/components/RedLetterEditor";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -148,13 +151,19 @@ export default function BookAddition() {
         />
       </div>
 
-      <div className="bookaddition-card noto-serif glass-panel glass-panel--burgundy relative overflow-hidden rounded-[18px]">
-        <div className="noto-serif flex items-center bg-gray-800 px-4 py-3 text-white">
+      <Card className="bookaddition-card noto-serif glass-panel glass-panel--burgundy relative overflow-hidden rounded-[18px] gap-0 py-0">
+        <CardHeader className="gap-0 noto-serif flex items-center bg-gray-800 px-4 py-3 text-white">
           <BookOpen className="mr-2 h-5 w-5" />
-          <h1 className="text-lg font-semibold">聖書章節入力</h1>
-        </div>
+          <CardTitle
+            role="heading"
+            aria-level={1}
+            className="text-lg leading-normal"
+          >
+            聖書章節入力
+          </CardTitle>
+        </CardHeader>
 
-        <div className="p-6">
+        <CardContent className="p-6">
           <div className="mb-2 flex items-start gap-4">
             <div className="label-text w-16 shrink-0 pt-2 text-right text-[0.95rem] font-semibold">
               英語
@@ -175,19 +184,20 @@ export default function BookAddition() {
           </div>
 
           <div className="mb-2 flex justify-start pl-16">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full text-red-700 hover:bg-red-50 hover:text-red-700"
-              rippleColor="rgba(185, 28, 28, 0.2)"
-              aria-label="選択範囲を赤文字にする"
-              type="button"
-              title="選択範囲を赤文字にする(再押下で解除)"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={onWrapSelection}
-            >
-              <Baseline className="size-5" />
-            </Button>
+            <Hint label="選択範囲を赤文字にする(再押下で解除)">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full text-red-700 hover:bg-red-50 hover:text-red-700"
+                rippleColor="rgba(185, 28, 28, 0.2)"
+                aria-label="選択範囲を赤文字にする"
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={onWrapSelection}
+              >
+                <Baseline className="size-5" />
+              </Button>
+            </Hint>
           </div>
 
           <div className="mb-6 flex items-start gap-4">
@@ -210,13 +220,13 @@ export default function BookAddition() {
           </div>
 
           <div className="flex flex-wrap items-start gap-3">
-            <div className="w-full md:w-[22%]">
-              <Label
+            <Field className="w-full md:w-[22%] gap-1.5">
+              <FieldLabel
                 htmlFor="book-select"
-                className="noto-serif mb-1.5 font-normal text-gray-600"
+                className="noto-serif font-normal text-gray-600"
               >
                 書
-              </Label>
+              </FieldLabel>
               <BookCombobox
                 id="book-select"
                 books={books}
@@ -224,18 +234,15 @@ export default function BookAddition() {
                 onChange={setBookId}
                 className="noto-serif"
               />
-            </div>
+            </Field>
 
-            <div className="w-full md:w-[30%]">
-              <Label
+            <Field className="w-full md:w-[30%] gap-1.5">
+              <FieldLabel
                 htmlFor="chapter-select"
-                className="noto-serif mb-1.5 gap-1 font-normal text-gray-600"
+                className="noto-serif gap-1 font-normal text-gray-600"
               >
-                章
-                {chapterLoading && (
-                  <LoaderCircle className="inline-block h-3 w-3 animate-spin" />
-                )}
-              </Label>
+                章{chapterLoading && <Spinner className="size-3" />}
+              </FieldLabel>
               <Select
                 value={String(chapterId)}
                 onValueChange={setChapterId}
@@ -262,34 +269,40 @@ export default function BookAddition() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </Field>
 
-            <div className="w-full md:w-[22%]">
-              <Label
+            <Field className="w-full md:w-[22%] gap-1.5">
+              <FieldLabel
                 htmlFor="verse-input"
-                className="noto-serif mb-1.5 font-normal text-gray-600"
+                className="noto-serif font-normal text-gray-600"
               >
                 節
-              </Label>
+              </FieldLabel>
               <Input
                 id="verse-input"
                 value={verseId}
                 type="text"
                 placeholder="節の数を入力しましょう"
                 aria-invalid={!!errors.verseId}
+                aria-describedby={
+                  errors.verseId ? "verse-input-error" : undefined
+                }
                 className="noto-serif px-2 not-aria-invalid:focus-visible:border-primary not-aria-invalid:focus-visible:ring-primary/20"
                 onChange={(e) => handleVerseIdChange(e.target.value)}
               />
               {errors.verseId && (
-                <p className="mt-1 text-xs text-red-600">
+                <FieldError id="verse-input-error" className="text-xs">
                   上記の入力ボックスを空になってはいけません。
-                </p>
+                </FieldError>
               )}
-            </div>
+            </Field>
 
             <div className="w-full md:w-[16%]">
               {/* 他の列とボタンの高さを揃えるための見えないラベル */}
-              <div aria-hidden="true" className="mb-1.5 text-sm leading-none text-transparent">
+              <div
+                aria-hidden="true"
+                className="mb-1.5 text-sm leading-none text-transparent"
+              >
                 追加
               </div>
               <Button
@@ -299,7 +312,7 @@ export default function BookAddition() {
                 onClick={onStore}
               >
                 {saving ? (
-                  <LoaderCircle className="inline-block h-4 w-4 animate-spin" />
+                  <Spinner />
                 ) : (
                   <span className="flex items-center justify-center gap-1">
                     <Book className="h-4 w-4" /> 追加
@@ -308,8 +321,8 @@ export default function BookAddition() {
               </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

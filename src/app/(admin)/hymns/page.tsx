@@ -14,7 +14,6 @@ import {
   CirclePlus,
   Search,
   ListMusic,
-  LoaderCircle,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -28,6 +27,10 @@ import {
 } from "@/lib/constants";
 import HymnScoreModal from "@/components/HymnScoreModal";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import Hint from "@/components/Hint";
+import ClampText from "@/components/ClampText";
 import {
   InputGroup,
   InputGroupAddon,
@@ -75,7 +78,6 @@ const rowClass = (line: string) =>
   })[line] ?? EMPTY_STRING;
 
 const asStr = (v: string | null) => v ?? EMPTY_STRING;
-
 
 // ページャーのボタン(shadcn/ui の Button。現在ページは default=burgundy の塗り)
 const PAGER_BUTTON =
@@ -264,13 +266,19 @@ function HymnListInner() {
         />
       </div>
 
-      <div className="hymnlist-card glass-panel glass-panel--gray relative overflow-hidden rounded-[18px]">
-        <div className="noto-serif flex items-center bg-gray-800 px-4 py-3 text-white">
+      <Card className="hymnlist-card glass-panel glass-panel--gray relative overflow-hidden rounded-[18px] gap-0 py-0">
+        <CardHeader className="gap-0 noto-serif flex items-center bg-gray-800 px-4 py-3 text-white">
           <LayoutGrid className="mr-2 h-5 w-5" />
-          <h1 className="text-lg font-semibold">賛美歌情報メンテナンス</h1>
-        </div>
+          <CardTitle
+            role="heading"
+            aria-level={1}
+            className="text-lg leading-normal"
+          >
+            賛美歌情報メンテナンス
+          </CardTitle>
+        </CardHeader>
 
-        <div className="p-6">
+        <CardContent className="p-6">
           <div className="mb-4 grid grid-cols-[30%_26%_10%_10%_24%] items-center gap-2">
             <div className="col-span-2">
               <InputGroup className="max-w-120 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
@@ -309,20 +317,21 @@ function HymnListInner() {
               >
                 <CirclePlus className="h-4 w-4" /> 賛美歌情報追加
               </Button>
-              <Button
-                size="icon"
-                aria-label="プレイリスト作成"
-                type="button"
-                title="プレイリスト作成"
-                disabled={creatingPlaylist}
-                onClick={onCreatePlaylist}
-              >
-                {creatingPlaylist ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ListMusic className="h-4 w-4" />
-                )}
-              </Button>
+              <Hint label="プレイリスト作成">
+                <Button
+                  size="icon"
+                  aria-label="プレイリスト作成"
+                  type="button"
+                  disabled={creatingPlaylist}
+                  onClick={onCreatePlaylist}
+                >
+                  {creatingPlaylist ? (
+                    <Spinner />
+                  ) : (
+                    <ListMusic className="h-4 w-4" />
+                  )}
+                </Button>
+              </Hint>
             </div>
           </div>
 
@@ -359,7 +368,10 @@ function HymnListInner() {
                 {isFetching &&
                   records.length === 0 &&
                   Array.from({ length: pageSize }, (_, i) => (
-                    <TableRow key={`skeleton-${i}`} className="hover:bg-transparent">
+                    <TableRow
+                      key={`skeleton-${i}`}
+                      className="hover:bg-transparent"
+                    >
                       <TableCell className="px-3 py-2">
                         <Skeleton className="h-4 w-3/4 bg-gray-300/70" />
                       </TableCell>
@@ -397,19 +409,12 @@ function HymnListInner() {
                     )}
                   >
                     <TableCell className="col-name px-3 py-2">
-                      {/* 長い名称は2行まで折り返し、それ以上は「…」で省略。全文はホバーで表示 */}
-                      <span className="line-clamp-2" title={row.nameJp}>
-                        {row.nameJp}
-                      </span>
+                      {/* 長い名称は2行まで折り返し、それ以上は「…」で省略。省略時のみホバーで全文を表示 */}
+                      <ClampText text={row.nameJp} />
                     </TableCell>
                     <TableCell className="col-name px-3 py-2">
-                      {/* 長い名称は2行まで折り返し、それ以上は「…」で省略。全文はホバーで表示 */}
-                      <span
-                        className="col-name-kr line-clamp-2"
-                        title={row.nameKr}
-                      >
-                        {row.nameKr}
-                      </span>
+                      {/* 長い名称は2行まで折り返し、それ以上は「…」で省略。省略時のみホバーで全文を表示 */}
+                      <ClampText text={row.nameKr} className="col-name-kr" />
                     </TableCell>
                     <TableCell className="px-3 py-2 text-center">
                       <a
@@ -441,10 +446,7 @@ function HymnListInner() {
                         >
                           楽譜
                         </Button>
-                        <Button
-                          size="xs"
-                          onClick={() => goEdit(row.id)}
-                        >
+                        <Button size="xs" onClick={() => goEdit(row.id)}>
                           編集
                         </Button>
                         <Button
@@ -468,10 +470,7 @@ function HymnListInner() {
               全{totalRecords}件 / {page} / {totalPages}ページ
             </div>
             <div className="flex items-center gap-3">
-              <Select
-                value={String(pageSize)}
-                onValueChange={onPageSizeChange}
-              >
+              <Select value={String(pageSize)} onValueChange={onPageSizeChange}>
                 <SelectTrigger
                   size="sm"
                   aria-label="1ページの件数"
@@ -491,19 +490,20 @@ function HymnListInner() {
               <Pagination className="mx-0 w-auto">
                 <PaginationContent className="gap-0.5 rounded-md border border-gray-300 bg-white p-0.5">
                   <PaginationItem>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className={PAGER_BUTTON}
-                      rippleColor={PAGER_RIPPLE}
-                      type="button"
-                      aria-label="前のページ"
-                      title="前のページ"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => p - 1)}
-                    >
-                      <ChevronLeft />
-                    </Button>
+                    <Hint label="前のページ">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className={PAGER_BUTTON}
+                        rippleColor={PAGER_RIPPLE}
+                        type="button"
+                        aria-label="前のページ"
+                        disabled={page <= 1}
+                        onClick={() => setPage((p) => p - 1)}
+                      >
+                        <ChevronLeft />
+                      </Button>
+                    </Hint>
                   </PaginationItem>
                   {getPageItems(page, totalPages).map((item, i) =>
                     item === "ellipsis" ? (
@@ -515,7 +515,9 @@ function HymnListInner() {
                         <Button
                           variant={item === page ? "default" : "ghost"}
                           size="icon-sm"
-                          className={item === page ? "pointer-events-none" : PAGER_BUTTON}
+                          className={
+                            item === page ? "pointer-events-none" : PAGER_BUTTON
+                          }
                           rippleColor={PAGER_RIPPLE}
                           type="button"
                           aria-label={`${item}ページ目`}
@@ -528,26 +530,27 @@ function HymnListInner() {
                     ),
                   )}
                   <PaginationItem>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className={PAGER_BUTTON}
-                      rippleColor={PAGER_RIPPLE}
-                      type="button"
-                      aria-label="次のページ"
-                      title="次のページ"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage((p) => p + 1)}
-                    >
-                      <ChevronRight />
-                    </Button>
+                    <Hint label="次のページ">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className={PAGER_BUTTON}
+                        rippleColor={PAGER_RIPPLE}
+                        type="button"
+                        aria-label="次のページ"
+                        disabled={page >= totalPages}
+                        onClick={() => setPage((p) => p + 1)}
+                      >
+                        <ChevronRight />
+                      </Button>
+                    </Hint>
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {scoreModalHymn !== null && (
         <HymnScoreModal

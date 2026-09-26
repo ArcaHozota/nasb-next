@@ -4,16 +4,18 @@
 // 旧 views/LoginView.vue を移植
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LoaderCircle } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
+import { CircleAlert } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { Field, FieldLabel } from "@/components/ui/field";
 
 // ガラス風カードの上に置くため半透明の白背景にする
 const LOGIN_INPUT =
-  "mb-4 h-10 border-white/60 bg-white/80 focus-visible:border-primary focus-visible:ring-primary/30";
+  "h-10 border-white/60 bg-white/80 focus-visible:border-primary focus-visible:ring-primary/30";
 
 export default function LoginView() {
   const router = useRouter();
@@ -57,41 +59,51 @@ export default function LoginView() {
             NASB1995
           </h1>
 
-          <Label
-            htmlFor="login-username"
-            className="mb-1.5 font-normal text-white/90"
-          >
-            ユーザー名
-          </Label>
-          <Input
-            id="login-username"
-            autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            type="text"
-            className={LOGIN_INPUT}
-          />
+          <Field className="mb-4 gap-1.5">
+            <FieldLabel
+              htmlFor="login-username"
+              className="font-normal text-white/90"
+            >
+              ユーザー名
+            </FieldLabel>
+            <Input
+              id="login-username"
+              autoComplete="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              type="text"
+              className={LOGIN_INPUT}
+            />
+          </Field>
 
-          <Label
-            htmlFor="login-password"
-            className="mb-1.5 font-normal text-white/90"
-          >
-            パスワード
-          </Label>
-          <Input
-            id="login-password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            type="password"
-            className={LOGIN_INPUT}
-            onKeyDown={onEnter}
-          />
+          <Field className="mb-4 gap-1.5">
+            <FieldLabel
+              htmlFor="login-password"
+              className="font-normal text-white/90"
+            >
+              パスワード
+            </FieldLabel>
+            <Input
+              id="login-password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              type="password"
+              className={LOGIN_INPUT}
+              onKeyDown={onEnter}
+            />
+          </Field>
 
           {error && (
-            <p className="mb-4 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
+            <Alert
+              variant="destructive"
+              className="mb-4 border-red-300 bg-red-50/95 py-2"
+            >
+              <CircleAlert />
+              <AlertDescription className="text-red-700">
+                {error}
+              </AlertDescription>
+            </Alert>
           )}
 
           <Button
@@ -100,11 +112,7 @@ export default function LoginView() {
             disabled={loading}
             onClick={onLogin}
           >
-            {loading ? (
-              <LoaderCircle className="inline-block h-4 w-4 animate-spin" />
-            ) : (
-              <span>ログイン</span>
-            )}
+            {loading ? <Spinner /> : <span>ログイン</span>}
           </Button>
         </div>
       </div>
