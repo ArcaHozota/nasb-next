@@ -468,40 +468,21 @@ button:not(:disabled) {
 /* HymnForm / StudentEdition のトグルスイッチは shadcn/ui の Switch(size="lg")に置き換え済み */
 
 /* ===== RandomFive ===== */
-.glass-table {
-  width: 100%;
-  background: transparent;
-  border-collapse: separate;
-  border-spacing: 0 6px;
-}
-
-.glass-table caption {
-  font-size: 0.75rem;
-  color: rgba(0, 0, 0, 0.6);
-  padding-bottom: 4px;
-}
-
-.header-row-mint th {
+/* 見出し帯(ミント) */
+.header-mint {
   background: rgba(168, 230, 196, 0.5);
-  padding: 8px;
 }
 
-.body-row-glass td {
+/* 1件分の行(shadcn/ui の Item)。旧 .body-row-glass のすりガラス表現を踏襲 */
+.glass-item {
   background: rgba(255, 255, 255, 0.33);
   backdrop-filter: blur(10px) saturate(160%);
   -webkit-backdrop-filter: blur(10px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  padding: 10px;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-.record-link {
-  color: #006b3c;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.record-link:hover {
-  text-decoration: underline;
+a.glass-item:hover {
+  background: rgba(255, 255, 255, 0.6);
 }
 
 /* ===== RedLetterEditor ===== */

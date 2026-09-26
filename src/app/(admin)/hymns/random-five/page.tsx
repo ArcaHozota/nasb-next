@@ -2,19 +2,54 @@
 
 // src/app/(admin)/hymns/random-five/page.tsx
 // 旧 views/RandomFive.vue を移植
+// shadcn/ui 版: 検索欄 = InputGroup、結果一覧 = Item(日本語名/韓国語名の2行表示)、
+// 読み込み中 = Skeleton、結果なし = Empty、読み込みアイコン = Spinner。
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LayoutGrid, Search, LoaderCircle, ListMusic } from "lucide-react";
+import {
+  LayoutGrid,
+  Search,
+  ListMusic,
+  SearchX,
+  Shuffle,
+  SquarePlay,
+} from "lucide-react";
 import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RippleButton from "@/components/RippleButton";
-import { Input } from "@/components/ui/input";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 
 // HYMNS.IDはSnowflake生成の19桁数値。JavaScriptのnumberでは安全に表現できる
 // 整数の上限(2^53)を超えて精度が壊れるため、number化せず文字列のまま扱う。
 type HymnRecord = { id?: string; nameJp: string; nameKr: string; link: string };
+
+// 読み込み中に表示するスケルトン行の数
+const SKELETON_ROWS = 5;
 
 function RandomFiveInner() {
   const searchParams = useSearchParams();
@@ -26,6 +61,8 @@ function RandomFiveInner() {
   const [keyword, setKeyword] = useState(EMPTY_STRING);
   const [records, setRecords] = useState<HymnRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  // 一度でも検索したか(未検索の案内と「該当データなし」を出し分けるため)
+  const [searched, setSearched] = useState(false);
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
 
   const onRandom = async () => {
@@ -39,6 +76,7 @@ function RandomFiveInner() {
       toast(extractErrorMessage(e, "通信エラー"));
     } finally {
       setLoading(false);
+      setSearched(true);
     }
   };
 
@@ -58,6 +96,7 @@ function RandomFiveInner() {
           toast(extractErrorMessage(e, "通信エラー"));
         } finally {
           setLoading(false);
+          setSearched(true);
         }
       })();
     }
@@ -130,31 +169,33 @@ function RandomFiveInner() {
         <div className="p-6">
           <div className="mb-6 flex items-center gap-4">
             <div className="flex flex-1 justify-center">
-              <div className="relative w-full max-w-120">
-                <Input
+              <InputGroup className="max-w-120 bg-white/60 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
+                <InputGroupInput
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   type="text"
                   placeholder="キーワードを入力してください"
                   aria-label="キーワード"
-                  className="pr-9 focus-visible:border-primary focus-visible:ring-primary/20"
                   onKeyDown={onKeyDown}
                 />
-                <RippleButton
-                  type="button"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  onClick={onRandom}
-                >
-                  <Search className="h-4 w-4" />
-                </RippleButton>
-              </div>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton asChild size="icon-xs">
+                    <RippleButton
+                      aria-label="ランダム選択"
+                      title="ランダム選択"
+                      rippleColor="rgba(0, 0, 0, 0.12)"
+                      disabled={loading}
+                      onClick={onRandom}
+                    >
+                      {loading ? <Spinner /> : <Search />}
+                    </RippleButton>
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
             </div>
 
-            {records.length === 0 ? (
-              <span className="shrink-0 text-sm text-gray-500">
-                ランダム検索してください
-              </span>
-            ) : (
+            {/* 選択結果があるときだけ表示(未検索時の案内は下の Empty が担当) */}
+            {records.length > 0 && (
               <RippleButton
                 type="button"
                 className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white disabled:opacity-60"
@@ -162,7 +203,7 @@ function RandomFiveInner() {
                 onClick={onCreatePlaylist}
               >
                 {creatingPlaylist ? (
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  <Spinner className="h-4 w-4" />
                 ) : (
                   <ListMusic className="h-4 w-4" />
                 )}
@@ -171,43 +212,80 @@ function RandomFiveInner() {
             )}
           </div>
 
-          <table className="glass-table">
-            <caption>ランドム選択した賛美歌情報一覧</caption>
-            <thead>
-              <tr className="header-row-mint">
-                <th>名称</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && (
-                <tr className="body-row-glass">
-                  <td className="py-4 text-center">
-                    <LoaderCircle className="inline-block h-4 w-4 animate-spin" />
-                  </td>
-                </tr>
-              )}
-              {!loading && records.length === 0 && (
-                <tr className="body-row-glass">
-                  <td className="py-4 text-center">該当データなし</td>
-                </tr>
-              )}
-              {!loading &&
-                records.map((item) => (
-                  <tr key={item.id ?? item.nameJp} className="body-row-glass">
-                    <td className="text-center">
-                      <a
-                        href={item.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="record-link"
-                      >
-                        {item.nameJp} / {item.nameKr}
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
+          <p className="mb-1 text-center text-xs text-black/60">
+            ランドム選択した賛美歌情報一覧
+          </p>
+          <div className="header-mint mb-1.5 px-2 py-2 text-center font-bold">
+            名称
+          </div>
+
+          {loading ? (
+            <ItemGroup className="gap-1.5" aria-busy="true">
+              {Array.from({ length: SKELETON_ROWS }, (_, i) => (
+                <Item key={i} variant="outline" size="sm" className="glass-item">
+                  <ItemContent className="items-center">
+                    <Skeleton className="h-5 w-2/5 bg-gray-300/70" />
+                    <Skeleton className="h-4 w-1/4 bg-gray-300/70" />
+                  </ItemContent>
+                </Item>
+              ))}
+            </ItemGroup>
+          ) : records.length === 0 ? (
+            <Empty className="glass-item rounded-md border py-10">
+              <EmptyHeader className="max-w-lg">
+                <EmptyMedia variant="icon">
+                  {searched ? <SearchX /> : <Shuffle />}
+                </EmptyMedia>
+                <EmptyTitle className="text-base">
+                  {searched ? "該当データなし" : "ランダム選択してください"}
+                </EmptyTitle>
+                <EmptyDescription>
+                  {searched ? (
+                    "別のキーワードで試してください。"
+                  ) : (
+                    <>
+                      キーワードを入力して検索ボタンを押すと、
+                      <br />
+                      賛美歌をランダムに選びます。
+                    </>
+                  )}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <ItemGroup className="gap-1.5">
+              {records.map((item, i) => (
+                <Item
+                  key={item.id ?? item.nameJp}
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="glass-item"
+                >
+                  <a href={item.link} target="_blank" rel="noopener noreferrer">
+                    {/* 左右の幅を揃えて(番号 / YouTubeアイコン)、名称を中央に置く */}
+                    <ItemMedia className="w-8 justify-center text-sm font-semibold text-black/40 group-has-[[data-slot=item-description]]/item:translate-y-0 group-has-[[data-slot=item-description]]/item:self-center">
+                      {i + 1}
+                    </ItemMedia>
+                    <ItemContent className="items-center gap-0.5 text-center">
+                      <ItemTitle className="text-base font-semibold text-[#006b3c]">
+                        {item.nameJp}
+                      </ItemTitle>
+                      <ItemDescription className="text-gray-700">
+                        {item.nameKr}
+                      </ItemDescription>
+                    </ItemContent>
+                    <ItemActions className="w-8 justify-center">
+                      <SquarePlay
+                        aria-hidden="true"
+                        className="size-5 text-[#c4302b] opacity-70 transition-opacity group-hover/item:opacity-100"
+                      />
+                    </ItemActions>
+                  </a>
+                </Item>
+              ))}
+            </ItemGroup>
+          )}
         </div>
       </div>
     </div>
