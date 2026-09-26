@@ -10,6 +10,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useAuthStore } from "@/stores/auth";
 import { useCsrfStore } from "@/stores/csrf";
 import FeedbackHost from "@/components/FeedbackHost";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -43,8 +44,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
-      <FeedbackHost />
+      {/* shadcn/ui の Tooltip はアプリ全体で1つの Provider を共有する */}
+      <TooltipProvider delayDuration={200}>
+        {children}
+        <FeedbackHost />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

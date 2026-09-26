@@ -53,6 +53,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { getPageItems } from "@/lib/pagination";
 
 type HymnRow = {
   id: number;
@@ -71,25 +72,6 @@ const rowClass = (line: string) =>
 
 const asStr = (v: string | null) => v ?? EMPTY_STRING;
 
-/**
- * ページャーに並べるページ番号の列を作る。先頭・末尾・現在ページ前後1件を常に表示し、
- * 間が空く所は "…" にする。例: 現在5/20ページ → [1, …, 4, 5, 6, …, 20]
- * 7ページ以下なら全ページを並べる。
- */
-const getPageItems = (page: number, total: number): (number | "…")[] => {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  let start = Math.max(2, Math.min(page - 1, total - 4));
-  let end = Math.min(total - 1, Math.max(page + 1, 5));
-  // "…" が1ページ分しか隠さない場合は、その番号をそのまま出す(例: 1 … 3 → 1 2 3)
-  if (start === 3) start = 2;
-  if (end === total - 2) end = total - 1;
-  const items: (number | "…")[] = [1];
-  if (start > 2) items.push("…");
-  for (let i = start; i <= end; i++) items.push(i);
-  if (end < total - 1) items.push("…");
-  items.push(total);
-  return items;
-};
 
 // ページャーのボタン(RippleButton に shadcn/ui の Button の見た目を当てる)
 const pagerButtonClass = (active = false) =>
@@ -520,7 +502,7 @@ function HymnListInner() {
                     </RippleButton>
                   </PaginationItem>
                   {getPageItems(page, totalPages).map((item, i) =>
-                    item === "…" ? (
+                    item === "ellipsis" ? (
                       <PaginationItem key={`ellipsis-${i}`}>
                         <PaginationEllipsis className="size-8 text-gray-400" />
                       </PaginationItem>

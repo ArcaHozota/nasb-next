@@ -2,15 +2,37 @@
 
 // src/app/home/page.tsx
 // 旧 views/HomeView.vue を移植
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import { LogIn, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogIn, Search, SearchX } from "lucide-react";
 import api from "@/api/axios";
 import RippleButton from "@/components/RippleButton";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import { getPageItems } from "@/lib/pagination";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+} from "@/components/ui/pagination";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type HymnRecord = {
   id: number;
@@ -179,56 +201,9 @@ export default function HomeView() {
     else goPrevPage();
   };
 
-  // 旧 MUI <Pagination siblingCount={2}> 相当のページ番号リスト生成
-  // (boundaryCount=1がMUIのデフォルト)
-  const pageItems = useMemo<(number | "ellipsis")[]>(() => {
-    const total = totalPages;
-    const cur = page;
-    const siblingCount = 2;
-    const boundaryCount = 1;
-
-    const range = (start: number, end: number) =>
-      Array.from({ length: end - start + 1 }, (_, i) => start + i);
-
-    const startPages = range(1, Math.min(boundaryCount, total));
-    const endPages = range(
-      Math.max(total - boundaryCount + 1, boundaryCount + 1),
-      total,
-    );
-
-    const siblingsStart = Math.max(
-      Math.min(
-        cur - siblingCount,
-        total - boundaryCount - siblingCount * 2 - 1,
-      ),
-      boundaryCount + 2,
-    );
-    const siblingsEnd = Math.min(
-      Math.max(cur + siblingCount, boundaryCount + siblingCount * 2 + 2),
-      endPages.length > 0 ? endPages[0] - 2 : total - 1,
-    );
-
-    const items: (number | "ellipsis")[] = [
-      ...startPages,
-      ...(siblingsStart > boundaryCount + 2
-        ? (["ellipsis"] as const)
-        : boundaryCount + 1 < total - boundaryCount
-          ? [boundaryCount + 1]
-          : []),
-      ...range(siblingsStart, siblingsEnd),
-      ...(siblingsEnd < total - boundaryCount - 1
-        ? (["ellipsis"] as const)
-        : total - boundaryCount > boundaryCount
-          ? [total - boundaryCount]
-          : []),
-      ...endPages,
-    ];
-
-    // 重複除去(小さいページ数の時に範囲が重なるため)
-    return items.filter(
-      (item, idx) => item === "ellipsis" || items.indexOf(item) === idx,
-    );
-  }, [totalPages, page]);
+  // 旧 MUI <Pagination siblingCount={2}> 相当(前後2ページずつ表示)。
+  // 計算は賛美歌一覧と共通の src/lib/pagination.ts に集約。
+  const pageItems = getPageItems(page, totalPages, 2);
 
   return (
     <div className="home relative z-0 min-h-screen bg-cover bg-fixed bg-center">
@@ -252,7 +227,11 @@ export default function HomeView() {
           <span className="effect-shine text-[2.2rem]">NASB1995</span>
         </div>
         <RippleButton
-          className="hidden items-center gap-1 rounded-md bg-warning px-4 py-2 font-extrabold text-gray-900 md:inline-flex"
+          className={cn(
+            buttonVariants({ size: "lg" }),
+            "hidden gap-1 bg-warning px-4 font-extrabold text-gray-900 hover:bg-warning/90 md:inline-flex",
+          )}
+          rippleColor="rgba(0, 0, 0, 0.15)"
           onClick={goLogin}
         >
           <LogIn className="h-4 w-4" /> ログイン
@@ -272,12 +251,14 @@ export default function HomeView() {
             onChange={(e) => setKeyword(e.target.value)}
             type="text"
             placeholder="韓国語単語で検索してください"
+            aria-label="キーワード"
             className="w-full rounded-full border-none bg-white/67 py-3 pl-5 pr-11 text-base outline-none"
             onKeyDown={onSearchKeyDown}
           />
           <button
             type="button"
             className="absolute right-3.5 top-1/2 -translate-y-1/2 border-none bg-none"
+            aria-label="検索"
             onClick={onSearch}
           >
             <Search className="h-4 w-4" />
@@ -285,12 +266,39 @@ export default function HomeView() {
         </div>
 
         <div
-          className={`card-row ${isFetching ? "card-row--loading" : EMPTY_STRING}`}
+          // 薄くするのは「前のページのカードを表示したまま次を読み込む」時だけ
+          // (初回のスケルトンまで薄くなると見えにくいため)
+          className={`card-row ${isFetching && records.length > 0 ? "card-row--loading" : EMPTY_STRING}`}
         >
+          {/* 初回読み込み中: カードと同じ形のスケルトン
+              (2回目以降のページ切替は keepPreviousData + .card-row--loading で前のカードを薄く表示) */}
+          {isFetching &&
+            records.length === 0 &&
+            Array.from({ length: PAGE_SIZE }, (_, i) => (
+              <div key={`skeleton-${i}`} className="glass-card" aria-hidden="true">
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-4 w-full bg-white/60" />
+                  <Skeleton className="h-4 w-4/5 bg-white/60" />
+                  <Skeleton className="h-4 w-3/5 bg-white/60" />
+                </div>
+                <Skeleton className="size-7 self-end rounded-full bg-white/60" />
+              </div>
+            ))}
           {!isFetching && records.length === 0 && (
-            <div className="loading w-full py-10 text-center text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
-              該当データなし
-            </div>
+            <Empty className="w-full py-10 text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
+              <EmptyHeader>
+                <EmptyMedia
+                  variant="icon"
+                  className="bg-white/25 text-white backdrop-blur-sm"
+                >
+                  <SearchX />
+                </EmptyMedia>
+                <EmptyTitle className="text-white">該当データなし</EmptyTitle>
+                <EmptyDescription className="text-white/85">
+                  別の韓国語単語で検索してください。
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           )}
           {records.map((item) => (
             <article
@@ -305,13 +313,18 @@ export default function HomeView() {
               >
                 {item.nameJp} / {item.nameKr}
               </a>
-              <button
-                className="score-btn"
-                title="楽譜ダウンロード"
-                onClick={() => downloadScore(item.id)}
-              >
-                𝄞
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="score-btn"
+                    aria-label="楽譜ダウンロード"
+                    onClick={() => downloadScore(item.id)}
+                  >
+                    𝄞
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
+              </Tooltip>
             </article>
           ))}
         </div>
@@ -321,44 +334,59 @@ export default function HomeView() {
             <span className="page-info text-xs text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
               {totalPages}ページ中の{page}ページ、{totalRecords}件
             </span>
-            <div className="pager-glass">
-              <RippleButton
-                className="pager-item"
-                rippleColor="rgba(0, 0, 0, 0.15)"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                ‹
-              </RippleButton>
-              {pageItems.map((item, idx) =>
-                item === "ellipsis" ? (
-                  <span key={`e-${idx}`} className="pager-ellipsis">
-                    …
-                  </span>
-                ) : (
+            {/* 見た目は従来のすりガラス(.pager-glass / .pager-item)のまま、構造を shadcn/ui の Pagination に */}
+            <Pagination className="mx-0 w-auto">
+              <PaginationContent className="pager-glass gap-0">
+                <PaginationItem>
                   <RippleButton
-                    key={item}
-                    className={`pager-item ${item === page ? "is-selected" : EMPTY_STRING}`}
-                    rippleColor={
-                      item === page
-                        ? "rgba(255, 255, 255, 0.45)"
-                        : "rgba(0, 0, 0, 0.15)"
-                    }
-                    onClick={() => setPage(item)}
+                    className="pager-item inline-flex items-center justify-center"
+                    rippleColor="rgba(0, 0, 0, 0.15)"
+                    aria-label="前のページ"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
                   >
-                    {item}
+                    <ChevronLeft className="size-4" />
                   </RippleButton>
-                ),
-              )}
-              <RippleButton
-                className="pager-item"
-                rippleColor="rgba(0, 0, 0, 0.15)"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                ›
-              </RippleButton>
-            </div>
+                </PaginationItem>
+                {pageItems.map((item, idx) =>
+                  item === "ellipsis" ? (
+                    <PaginationItem key={`e-${idx}`}>
+                      <PaginationEllipsis className="pager-ellipsis size-8" />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={item}>
+                      <RippleButton
+                        className={cn(
+                          "pager-item",
+                          item === page && "is-selected",
+                        )}
+                        rippleColor={
+                          item === page
+                            ? "rgba(255, 255, 255, 0.45)"
+                            : "rgba(0, 0, 0, 0.15)"
+                        }
+                        aria-label={`${item}ページ目`}
+                        aria-current={item === page ? "page" : undefined}
+                        onClick={() => setPage(item)}
+                      >
+                        {item}
+                      </RippleButton>
+                    </PaginationItem>
+                  ),
+                )}
+                <PaginationItem>
+                  <RippleButton
+                    className="pager-item inline-flex items-center justify-center"
+                    rippleColor="rgba(0, 0, 0, 0.15)"
+                    aria-label="次のページ"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    <ChevronRight className="size-4" />
+                  </RippleButton>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
         )}
 
