@@ -196,6 +196,20 @@ button:not(:disabled) {
   }
 }
 
+/* モバイルのカルーセル内のカード: 1枚を大きく見せる(次のカードの端がのぞく) */
+.glass-card.is-slide {
+  min-height: 44vh;
+  padding: 24px;
+}
+
+.glass-card.is-slide .song-name {
+  font-size: 1.3rem;
+}
+
+.glass-card.is-slide .score-btn {
+  font-size: 2.2rem;
+}
+
 .glass-card::before {
   content: "";
   position: absolute;
