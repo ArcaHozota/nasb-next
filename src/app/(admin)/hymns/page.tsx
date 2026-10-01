@@ -61,6 +61,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { getPageItems } from "@/lib/pagination";
+import { hymnNameSizeClass } from "@/lib/text";
 
 type HymnRow = {
   id: number;
@@ -409,12 +410,22 @@ function HymnListInner() {
                     )}
                   >
                     <TableCell className="col-name px-3 py-2">
-                      {/* 長い名称は2行まで折り返し、それ以上は「…」で省略。省略時のみホバーで全文を表示 */}
-                      <ClampText text={row.nameJp} />
+                      {/* 長い名称は文字サイズを縮小(表示幅34〜66: 0.8倍 / 67以上: 0.66倍)。
+                          2行まで折り返し、それ以上は「…」で省略。省略時のみホバーで全文を表示 */}
+                      <ClampText
+                        text={row.nameJp}
+                        className={hymnNameSizeClass(row.nameJp)}
+                      />
                     </TableCell>
                     <TableCell className="col-name px-3 py-2">
-                      {/* 長い名称は2行まで折り返し、それ以上は「…」で省略。省略時のみホバーで全文を表示 */}
-                      <ClampText text={row.nameKr} className="col-name-kr" />
+                      {/* 日本語名称と同じルールで縮小・2行まで */}
+                      <ClampText
+                        text={row.nameKr}
+                        className={cn(
+                          "col-name-kr",
+                          hymnNameSizeClass(row.nameKr),
+                        )}
+                      />
                     </TableCell>
                     <TableCell className="px-3 py-2 text-center">
                       <a
