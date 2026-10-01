@@ -3,7 +3,7 @@
 // src/app/(admin)/books/add/page.tsx
 // 旧 views/BookAddition.vue を移植
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Book, Baseline, Pencil } from "lucide-react";
+import { BookOpen, Book, Baseline, Cross } from "lucide-react";
 import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -483,7 +483,7 @@ export default function BookAddition() {
                   <Spinner />
                 ) : isUpdate ? (
                   <span className="flex items-center justify-center gap-1">
-                    <Pencil className="h-4 w-4" /> 更新
+                    <Cross className="h-4 w-4" /> 更新
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-1">
