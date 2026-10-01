@@ -3,7 +3,7 @@
 // src/app/(admin)/books/add/page.tsx
 // 旧 views/BookAddition.vue を移植
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Book, Baseline } from "lucide-react";
+import { BookOpen, Book, Baseline, Pencil } from "lucide-react";
 import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,9 +23,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import BookCombobox from "@/components/BookCombobox";
 
 type BookOrChapter = { id: number; name: string };
+
+/** 既存の節の本文(エディタに入れる形。英語の末尾の # は改行フラグを表す) */
+type VerseText = { textEn: string; textJp: string };
+
+/**
+ * 既存の節の確認状態
+ * idle: 章・節が未確定 / loading: 確認中 / found: 登録済み(更新になる)
+ * none: 未登録(新規追加になる) / error: 確認に失敗
+ */
+type VerseLookup = "idle" | "loading" | "found" | "none" | "error";
+
+/** 章・節を入力してから既存の節を問い合わせるまでの待ち時間(ms) */
+const LOOKUP_DELAY = 300;
 
 const required = (v: string) => !!v && v.trim() !== EMPTY_STRING;
 
@@ -47,10 +70,26 @@ export default function BookAddition() {
     verseId: false,
   });
 
+  // 編集モード(既存の節を読み込んで更新する)用
+  const [lookup, setLookup] = useState<VerseLookup>("idle");
+  const [existing, setExisting] = useState<VerseText | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   const textEnEditorRef = useRef<RedLetterEditorHandle | null>(null);
   const textJpEditorRef = useRef<RedLetterEditorHandle | null>(null);
 
   const booksLoaded = useRef(false);
+
+  // 非同期の応答の中から最新の入力値を読むための写し
+  const textEnRef = useRef(textEn);
+  const textJpRef = useRef(textJp);
+  // 既存の節からエディタへ読み込んだ内容(ユーザーが未編集かどうかの判定用)
+  const loadedRef = useRef<VerseText | null>(null);
+
+  useEffect(() => {
+    textEnRef.current = textEn;
+    textJpRef.current = textJp;
+  }, [textEn, textJp]);
 
   // 初期表示: 書一覧を取得
   useEffect(() => {
@@ -88,6 +127,82 @@ export default function BookAddition() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId]);
 
+  // 両方の入力欄が空、または既存の節から読み込んだ内容のまま(未編集)か
+  const isPristine = () => {
+    const en = textEnRef.current;
+    const jp = textJpRef.current;
+    if (!required(en) && !required(jp)) return true;
+    const loaded = loadedRef.current;
+    return !!loaded && en === loaded.textEn && jp === loaded.textJp;
+  };
+
+  // 既存の節の本文を入力欄へ読み込む
+  const loadExisting = (verse: VerseText) => {
+    loadedRef.current = verse;
+    setTextEn(verse.textEn);
+    setTextJp(verse.textJp);
+    setErrors((er) => ({ ...er, textEn: false, textJp: false }));
+  };
+
+  // 別の節から読み込んだままの未編集の内容は、節が変わったら消す(編集済みなら残す)
+  const releaseLoaded = () => {
+    const loaded = loadedRef.current;
+    if (
+      loaded &&
+      textEnRef.current === loaded.textEn &&
+      textJpRef.current === loaded.textJp
+    ) {
+      setTextEn(EMPTY_STRING);
+      setTextJp(EMPTY_STRING);
+    }
+    loadedRef.current = null;
+  };
+
+  // 章・節が決まったら既存の節を探す。あれば編集モード(ボタンが「更新」になる)
+  useEffect(() => {
+    const verse = verseId.trim();
+    setExisting(null);
+    if (!chapterId || !/^\d+$/.test(verse)) {
+      setLookup("idle");
+      releaseLoaded();
+      return;
+    }
+    setLookup("loading");
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        // 登録済みなら1件、未登録なら空のリストが返る
+        const { data } = await api.get(`/books/${chapterId}/verse`, {
+          params: { verseNo: verse },
+        });
+        if (cancelled) return;
+        const row = Array.isArray(data) ? data[0] : undefined;
+        if (row) {
+          const found: VerseText = {
+            textEn: row.textEn ?? EMPTY_STRING,
+            textJp: row.textJp ?? EMPTY_STRING,
+          };
+          setExisting(found);
+          setLookup("found");
+          // 入力欄が空、または別の節から読み込んだままなら、既存の内容に置き換える
+          if (isPristine()) loadExisting(found);
+        } else {
+          setLookup("none");
+          releaseLoaded();
+        }
+      } catch (e: unknown) {
+        if (cancelled) return;
+        setLookup("error");
+        feedback.toast(extractErrorMessage(e, "既存の節の確認に失敗しました"));
+      }
+    }, LOOKUP_DELAY);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapterId, verseId]);
+
   // 入力中でも該当欄が埋まった時点でアラート(エラー表示)を消す
   const handleTextEnChange = (v: string) => {
     setTextEn(v);
@@ -109,17 +224,7 @@ export default function BookAddition() {
     textJpEditorRef.current?.wrapSelection();
   };
 
-  const onStore = async () => {
-    const nextErrors = {
-      textEn: !required(textEn),
-      textJp: !required(textJp),
-      verseId: !required(verseId),
-    };
-    setErrors(nextErrors);
-    if (Object.values(nextErrors).some(Boolean)) {
-      feedback.toast("入力情報不正");
-      return;
-    }
+  const doSave = async () => {
     setSaving(true);
     try {
       const { data } = await api.post("/books", {
@@ -129,6 +234,7 @@ export default function BookAddition() {
         textJp: textJp.trim(),
       });
       feedback.toast(typeof data === "string" ? data : "追加済み");
+      loadedRef.current = null;
       setVerseId(EMPTY_STRING);
       setTextEn(EMPTY_STRING);
       setTextJp(EMPTY_STRING);
@@ -139,6 +245,34 @@ export default function BookAddition() {
       setSaving(false);
     }
   };
+
+  const onStore = () => {
+    const nextErrors = {
+      textEn: !required(textEn),
+      textJp: !required(textJp),
+      verseId: !required(verseId),
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) {
+      feedback.toast("入力情報不正");
+      return;
+    }
+    // 登録済み(更新になる)場合、または既存かどうか確認できなかった場合は、上書き確認を出す
+    if (lookup === "found" || lookup === "error") {
+      setConfirmOpen(true);
+      return;
+    }
+    void doSave();
+  };
+
+  const isUpdate = lookup === "found";
+  // 入力内容が既存の節と違う(「既存の内容を読み込む」を出す)か
+  const differsFromExisting =
+    !!existing && (existing.textEn !== textEn || existing.textJp !== textJp);
+  const bookName = books.find((b) => String(b.id) === String(bookId))?.name;
+  const chapterName = chapters.find(
+    (c) => String(c.id) === String(chapterId),
+  )?.name;
 
   return (
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
@@ -200,7 +334,7 @@ export default function BookAddition() {
             </Hint>
           </div>
 
-          <div className="mb-6 flex items-start gap-4">
+          <div className="mb-3 flex items-start gap-4">
             <div className="label-text w-16 shrink-0 pt-2 text-right text-[0.95rem] font-semibold">
               日本語
             </div>
@@ -217,6 +351,35 @@ export default function BookAddition() {
                 }
               />
             </div>
+          </div>
+
+          {/* 既存の節の確認状況(行の高さが変わらないよう min-h を確保) */}
+          <div
+            className="noto-serif mb-3 min-h-6 pl-20 text-sm"
+            aria-live="polite"
+          >
+            {lookup === "loading" && (
+              <span className="text-gray-500">既存の節を確認中…</span>
+            )}
+            {lookup === "found" && (
+              <span className="text-red-700">
+                この節は登録済みです。保存すると上書き更新されます。
+                {differsFromExisting && existing && (
+                  <button
+                    type="button"
+                    className="ml-2 underline underline-offset-2 hover:opacity-80"
+                    onClick={() => loadExisting(existing)}
+                  >
+                    既存の内容を読み込む
+                  </button>
+                )}
+              </span>
+            )}
+            {lookup === "error" && (
+              <span className="text-red-700">
+                既存の節かどうか確認できませんでした。保存時に確認します。
+              </span>
+            )}
           </div>
 
           <div className="flex flex-wrap items-start gap-3">
@@ -297,32 +460,61 @@ export default function BookAddition() {
               )}
             </Field>
 
-            <div className="w-full md:w-[16%]">
-              {/* 他の列とボタンの高さを揃えるための見えないラベル */}
-              <div
+            {/*
+              ボタンも他の列と同じ Field + FieldLabel の構造にする。
+              ラベルは見えないだけで同じ高さ・同じ間隔を取るので、入力欄・プルダウンと
+              ボタンが同じ行に揃う(以前は別寸法の見えないラベルで約5pxずれていた)。
+              狭い画面(縦積み)ではラベルの分の空きを作らない。
+            */}
+            <Field className="w-full md:w-[16%] gap-1.5">
+              <FieldLabel
                 aria-hidden="true"
-                className="mb-1.5 text-sm leading-none text-transparent"
+                className="noto-serif invisible font-normal max-md:hidden"
               >
                 追加
-              </div>
+              </FieldLabel>
               <Button
                 className="noto-serif w-full"
                 type="button"
-                disabled={saving}
+                disabled={saving || lookup === "loading"}
                 onClick={onStore}
               >
                 {saving ? (
                   <Spinner />
+                ) : isUpdate ? (
+                  <span className="flex items-center justify-center gap-1">
+                    <Pencil className="h-4 w-4" /> 更新
+                  </span>
                 ) : (
                   <span className="flex items-center justify-center gap-1">
                     <Book className="h-4 w-4" /> 追加
                   </span>
                 )}
               </Button>
-            </div>
+            </Field>
           </div>
         </CardContent>
       </Card>
+
+      {/* 上書き確認 */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="noto-serif">
+          <AlertDialogHeader>
+            <AlertDialogTitle>上書きの確認</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isUpdate
+                ? `${bookName ?? EMPTY_STRING} ${chapterName ?? EMPTY_STRING} ${verseId.trim()}節は既に登録されています。入力した内容で上書きして更新しますか?`
+                : "既存の節かどうか確認できませんでした。既に登録されている場合は上書きされます。保存しますか?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void doSave()}>
+              {isUpdate ? "更新する" : "保存する"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
