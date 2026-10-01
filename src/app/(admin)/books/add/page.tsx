@@ -40,6 +40,9 @@ type BookOrChapter = { id: number; name: string };
 /** 既存の節の本文(エディタに入れる形。英語の末尾の # は改行フラグを表す) */
 type VerseText = { textEn: string; textJp: string };
 
+/** 既存の節(VerseDTO の name は「章名:節番号」の表記。例: Psalms 23:1) */
+type ExistingVerse = VerseText & { name: string };
+
 /**
  * 既存の節の確認状態
  * idle: 章・節が未確定 / loading: 確認中 / found: 登録済み(更新になる)
@@ -72,7 +75,7 @@ export default function BookAddition() {
 
   // 編集モード(既存の節を読み込んで更新する)用
   const [lookup, setLookup] = useState<VerseLookup>("idle");
-  const [existing, setExisting] = useState<VerseText | null>(null);
+  const [existing, setExisting] = useState<ExistingVerse | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const textEnEditorRef = useRef<RedLetterEditorHandle | null>(null);
@@ -178,7 +181,8 @@ export default function BookAddition() {
         if (cancelled) return;
         const row = Array.isArray(data) ? data[0] : undefined;
         if (row) {
-          const found: VerseText = {
+          const found: ExistingVerse = {
+            name: row.name ?? EMPTY_STRING,
             textEn: row.textEn ?? EMPTY_STRING,
             textJp: row.textJp ?? EMPTY_STRING,
           };
@@ -269,10 +273,8 @@ export default function BookAddition() {
   // 入力内容が既存の節と違う(「既存の内容を読み込む」を出す)か
   const differsFromExisting =
     !!existing && (existing.textEn !== textEn || existing.textJp !== textJp);
-  const bookName = books.find((b) => String(b.id) === String(bookId))?.name;
-  const chapterName = chapters.find(
-    (c) => String(c.id) === String(chapterId),
-  )?.name;
+  // 確認ダイアログに出す節の表記は VerseDTO の name を使う(無ければ入力値で代替)
+  const verseLabel = existing?.name || `${verseId.trim()}節`;
 
   return (
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
@@ -503,7 +505,7 @@ export default function BookAddition() {
             <AlertDialogTitle>上書きの確認</AlertDialogTitle>
             <AlertDialogDescription>
               {isUpdate
-                ? `${bookName ?? EMPTY_STRING} ${chapterName ?? EMPTY_STRING} ${verseId.trim()}節は既に登録されています。入力した内容で上書きして更新しますか?`
+                ? `${verseLabel} は既に登録されています。入力した内容で上書きして更新しますか?`
                 : "既存の節かどうか確認できませんでした。既に登録されている場合は上書きされます。保存しますか?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
