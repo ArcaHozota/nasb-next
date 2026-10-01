@@ -437,19 +437,27 @@ function StudentEditionInner() {
               </FieldLabel>
               {/* 連携処理中はつまみを隠してスピナーを表示する(従来のトグルと同じ見た目) */}
               <span className="relative inline-flex">
+                {/*
+                  Hint(Tooltip のトリガー)は子要素に data-state="closed" 等を付ける。
+                  Switch(Radix)に直接付くと、Switch 自身の data-state="checked/unchecked" を
+                  上書きしてしまい、バーの色(data-[state=checked]:bg-…)が当たらなくなる。
+                  そのため span を挟み、トリガーの属性を Switch ではなく span に付ける。
+                */}
                 <Hint label="ONで連携ボタンが押せるようになります">
-                  <Switch
-                    id="personal-youtube"
-                    size="lg"
-                    checked={youtubeToggleOn}
-                    onCheckedChange={onYoutubeToggle}
-                    disabled={youtubeBusy}
-                    className={cn(
-                      "data-[state=checked]:bg-warning",
-                      youtubeBusy &&
-                        "disabled:opacity-100 **:data-[slot=switch-thumb]:opacity-0",
-                    )}
-                  />
+                  <span className="inline-flex">
+                    <Switch
+                      id="personal-youtube"
+                      size="lg"
+                      checked={youtubeToggleOn}
+                      onCheckedChange={onYoutubeToggle}
+                      disabled={youtubeBusy}
+                      className={cn(
+                        "data-[state=checked]:bg-warning",
+                        youtubeBusy &&
+                          "disabled:opacity-100 **:data-[slot=switch-thumb]:opacity-0",
+                      )}
+                    />
+                  </span>
                 </Hint>
                 {youtubeBusy && (
                   <Spinner className="pointer-events-none absolute inset-0 m-auto size-3" />
