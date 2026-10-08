@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Popover as PopoverPrimitive } from "radix-ui";
 import api from "@/api/axios";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
@@ -79,6 +80,99 @@ const rowClass = (line: string) =>
   })[line] ?? EMPTY_STRING;
 
 const asStr = (v: string | null) => v ?? EMPTY_STRING;
+
+/** 画面表示用の調名(DB・通信は ASCII の Ab 等、表示だけ A♭ にする) */
+const chordLabel = (chord: string) => chord.replace(/b$/, "♭");
+
+/** 楽譜が登録されている調(isOriginal はオリジナルキー) */
+type ScoreKey = { chord: string; isOriginal: boolean };
+
+/**
+ * 楽譜アイコン。楽譜が1件(以下)ならそのままダウンロード、
+ * 複数あるときはアイコンの下にふきだしを出し、調を選んでダウンロードする。
+ * ふきだしは Popover(Portal)なので、テーブルの overflow-hidden に切られない。
+ */
+function ScoreCell({
+  id,
+  fetchKeys,
+  download,
+}: {
+  id: number;
+  fetchKeys: (id: number) => Promise<ScoreKey[] | null>;
+  download: (id: number, chord?: string) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [keys, setKeys] = useState<ScoreKey[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const onIconClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (loading) return;
+    setLoading(true);
+    try {
+      const list = await fetchKeys(id);
+      if (list === null) return; // 取得失敗(トースト表示済み)
+      if (list.length > 1) {
+        setKeys(list);
+        setOpen(true);
+      } else {
+        await download(id); // 0件・1件: 今まで通り直接ダウンロード
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+      <PopoverPrimitive.Anchor asChild>
+        <a
+          href="#"
+          aria-label="楽譜をダウンロード"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          className={cn(loading && "pointer-events-none opacity-50")}
+          onClick={onIconClick}
+        >
+          𝄞
+        </a>
+      </PopoverPrimitive.Anchor>
+      <PopoverPrimitive.Portal>
+        <PopoverPrimitive.Content
+          side="bottom"
+          align="center"
+          sideOffset={8}
+          collisionPadding={8}
+          className="noto-serif z-50 min-w-20 rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg outline-none"
+        >
+          <ul role="menu" className="flex flex-col">
+            {keys.map((k) => (
+              <li key={k.chord} role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="block w-full rounded-lg px-5 py-1.5 text-center text-sm font-medium text-gray-700 hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:outline-none"
+                  onClick={() => {
+                    setOpen(false);
+                    void download(id, k.chord);
+                  }}
+                >
+                  {chordLabel(k.chord)}
+                  {k.isOriginal ? "*" : EMPTY_STRING}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <PopoverPrimitive.Arrow
+            className="fill-white"
+            width={14}
+            height={7}
+          />
+        </PopoverPrimitive.Content>
+      </PopoverPrimitive.Portal>
+    </PopoverPrimitive.Root>
+  );
+}
 
 // ページャーのボタン(shadcn/ui の Button。現在ページは default=burgundy の塗り)
 const PAGER_BUTTON =
@@ -169,16 +263,37 @@ function HymnListInner() {
     }
   };
 
-  const downloadScore = async (id: number) => {
+  // この曲で楽譜が登録されている調の一覧(失敗時はトーストを出して null)
+  const fetchScoreKeys = async (id: number): Promise<ScoreKey[] | null> => {
+    try {
+      const { data } = await api.get(`/hymns/${id}/score`, {
+        params: { keysOnly: true },
+      });
+      const list = Array.isArray(data) ? data : [];
+      return list.map(
+        (k: { chord: string; isOriginal?: boolean | string }) => ({
+          chord: k.chord,
+          isOriginal: k.isOriginal === true || k.isOriginal === "true",
+        }),
+      );
+    } catch (e: unknown) {
+      feedback.toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
+      return null;
+    }
+  };
+
+  // chord を省略すると、サーバー側がオリジナルキー優先で1件選ぶ
+  const downloadScore = async (id: number, chord?: string) => {
     try {
       const res = await api.get(`/hymns/${id}/score`, {
+        params: chord ? { chord } : undefined,
         responseType: "blob",
         headers: { Accept: "*/*" },
       });
       const url = window.URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${id}.pdf`;
+      a.download = chord ? `${id}(${chord}).pdf` : `${id}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -437,16 +552,11 @@ function HymnListInner() {
                       </a>
                     </TableCell>
                     <TableCell className="px-3 py-2 text-center">
-                      <a
-                        href="#"
-                        aria-label="楽譜をダウンロード"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          downloadScore(row.id);
-                        }}
-                      >
-                        𝄞
-                      </a>
+                      <ScoreCell
+                        id={row.id}
+                        fetchKeys={fetchScoreKeys}
+                        download={downloadScore}
+                      />
                     </TableCell>
                     <TableCell className="px-3 py-2">
                       <div className="flex justify-center gap-1">
