@@ -15,6 +15,14 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 
@@ -24,6 +32,25 @@ type Props = {
   onClose: () => void;
   onUploaded: () => void;
 };
+
+/**
+ * 12長調。value は DB(HYMNS_WORK.CHORD)に保存する値(ASCII)、label は画面表示。
+ * バックエンド(HymnsHandler)の許可リストと同じ並び・同じ値にすること。
+ */
+const MAJOR_KEYS = [
+  { value: "A", label: "A" },
+  { value: "Ab", label: "A♭" },
+  { value: "B", label: "B" },
+  { value: "Bb", label: "B♭" },
+  { value: "C", label: "C" },
+  { value: "D", label: "D" },
+  { value: "Db", label: "D♭" },
+  { value: "E", label: "E" },
+  { value: "Eb", label: "E♭" },
+  { value: "F", label: "F" },
+  { value: "G", label: "G" },
+  { value: "Gb", label: "G♭" },
+] as const;
 
 export default function HymnScoreModal({
   hymnId,
@@ -35,6 +62,8 @@ export default function HymnScoreModal({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
+  const [chord, setChord] = useState(EMPTY_STRING);
+  const [isOriginal, setIsOriginal] = useState(false);
   const [error, setError] = useState(EMPTY_STRING);
   const [uploading, setUploading] = useState(false);
 
@@ -51,12 +80,18 @@ export default function HymnScoreModal({
   };
 
   const onUpload = async () => {
+    if (!chord) {
+      setError("調を選択してください。");
+      return;
+    }
     if (!file) {
       setError("ファイルを選択してください。");
       return;
     }
     const formData = new FormData();
     formData.append("score", file);
+    formData.append("chord", chord);
+    formData.append("isOriginal", String(isOriginal));
     const controller = new AbortController();
     setUploading(true);
     try {
@@ -88,7 +123,7 @@ export default function HymnScoreModal({
     >
       <DialogContent
         showCloseButton={false}
-        className="score-modal noto-sans flex h-[33vh] max-w-md flex-col justify-between gap-0 overflow-hidden rounded-[18px] border-0 bg-white p-0 sm:max-w-md"
+        className="score-modal noto-sans flex min-h-[33vh] max-w-md flex-col justify-between gap-0 overflow-hidden rounded-[18px] border-0 bg-white p-0 sm:max-w-md"
       >
         <div className="bg-white pt-3">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center">
@@ -115,7 +150,7 @@ export default function HymnScoreModal({
           </DialogDescription>
         </div>
 
-        <div className="flex flex-col items-center gap-2 p-8">
+        <div className="flex flex-col items-center gap-2 p-6">
           <input
             ref={fileInputRef}
             type="file"
@@ -123,17 +158,56 @@ export default function HymnScoreModal({
             className="hidden"
             onChange={onFilePick}
           />
-          <Button
-            variant="outline"
-            className="scale-[1.33] border-secondary bg-transparent text-secondary hover:bg-secondary/5 hover:text-secondary"
-            rippleColor="rgba(0, 51, 153, 0.2)"
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <CloudUpload className="h-4 w-4" /> ファイルを選択
-          </Button>
+          <div className="flex items-center justify-center gap-5">
+            <Select
+              value={chord}
+              onValueChange={(v) => {
+                setChord(v);
+                setError(EMPTY_STRING);
+              }}
+              disabled={uploading}
+            >
+              <SelectTrigger
+                className="w-20 border-secondary text-secondary focus-visible:border-secondary focus-visible:ring-secondary/20"
+                aria-label="調(長調)"
+              >
+                <SelectValue placeholder="調" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                {MAJOR_KEYS.map((k) => (
+                  <SelectItem key={k.value} value={k.value}>
+                    {k.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              className="mx-2 scale-[1.33] border-secondary bg-transparent text-secondary hover:bg-secondary/5 hover:text-secondary"
+              rippleColor="rgba(0, 51, 153, 0.2)"
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <CloudUpload className="h-4 w-4" /> ファイルを選択
+            </Button>
+            <div className="flex flex-col items-center gap-1.5">
+              <label
+                htmlFor="score-original"
+                className="text-xs font-medium text-secondary"
+              >
+                オリジナル
+              </label>
+              <Switch
+                id="score-original"
+                checked={isOriginal}
+                onCheckedChange={setIsOriginal}
+                disabled={uploading}
+                className="data-[state=checked]:bg-secondary"
+              />
+            </div>
+          </div>
           {file && (
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-gray-600">
               {file.name}({Math.round(file.size / 1024)} KB)
             </p>
           )}
@@ -150,7 +224,7 @@ export default function HymnScoreModal({
             {uploading ? (
               <Spinner />
             ) : (
-              <span className="flex items-center gap-1">アプロード</span>
+              <span className="flex items-center gap-1">アップロード</span>
             )}
           </Button>
         </div>
