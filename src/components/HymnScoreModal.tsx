@@ -15,13 +15,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Switch } from "@/components/ui/switch";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
@@ -158,29 +152,31 @@ export default function HymnScoreModal({
             className="hidden"
             onChange={onFilePick}
           />
-          <div className="flex items-center justify-center gap-5">
-            <Select
-              value={chord}
-              onValueChange={(v) => {
-                setChord(v);
-                setError(EMPTY_STRING);
-              }}
-              disabled={uploading}
-            >
-              <SelectTrigger
-                className="w-20 border-secondary text-secondary focus-visible:border-secondary focus-visible:ring-secondary/20"
-                aria-label="調(長調)"
+          <ToggleGroup
+            type="single"
+            value={chord}
+            onValueChange={(v) => {
+              // 選択済みを再クリックすると v が空になるので、選択を維持する
+              if (!v) return;
+              setChord(v);
+              setError(EMPTY_STRING);
+            }}
+            disabled={uploading}
+            aria-label="調(長調)"
+            className="mb-5 grid w-full grid-cols-6 gap-1.5"
+          >
+            {MAJOR_KEYS.map((k) => (
+              <ToggleGroupItem
+                key={k.value}
+                value={k.value}
+                aria-label={k.label}
+                className="h-10 rounded-md! border border-secondary px-0 text-base text-secondary hover:bg-secondary/10 hover:text-secondary data-[state=on]:bg-secondary data-[state=on]:text-white"
               >
-                <SelectValue placeholder="調" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72">
-                {MAJOR_KEYS.map((k) => (
-                  <SelectItem key={k.value} value={k.value}>
-                    {k.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                {k.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <div className="flex items-end justify-center gap-5">
             <Button
               variant="outline"
               className="mx-2 scale-[1.33] border-secondary bg-transparent text-secondary hover:bg-secondary/5 hover:text-secondary"
@@ -190,7 +186,7 @@ export default function HymnScoreModal({
             >
               <CloudUpload className="h-4 w-4" /> ファイルを選択
             </Button>
-            <div className="flex flex-col items-center gap-1.5">
+            <div className="mx-3 flex flex-col items-center gap-3">
               <label
                 htmlFor="score-original"
                 className="text-xs font-medium text-secondary"
@@ -202,7 +198,8 @@ export default function HymnScoreModal({
                 checked={isOriginal}
                 onCheckedChange={setIsOriginal}
                 disabled={uploading}
-                className="data-[state=checked]:bg-secondary"
+                size="lg"
+                className="scale-[1.41] data-[state=checked]:bg-secondary"
               />
             </div>
           </div>
