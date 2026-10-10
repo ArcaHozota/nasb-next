@@ -13,6 +13,8 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -60,6 +62,9 @@ export default function HymnScoreModal({
   const [isOriginal, setIsOriginal] = useState(false);
   const [error, setError] = useState(EMPTY_STRING);
   const [uploading, setUploading] = useState(false);
+  // 同じ調の楽譜が既にある場合の上書き確認ダイアログ
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const title = `楽譜-${hymnNameKr}`;
 
@@ -73,19 +78,15 @@ export default function HymnScoreModal({
     setError(EMPTY_STRING);
   };
 
-  const onUpload = async () => {
-    if (!chord) {
-      setError("調を選択してください。");
-      return;
-    }
-    if (!file) {
-      setError("ファイルを選択してください。");
-      return;
-    }
+  // overwrite=false: 同じ調に違う内容の楽譜があればサーバーが 409 を返す(上書きしない)
+  // overwrite=true : 確認ダイアログで「上書きする」を選んだあとの再送
+  const doUpload = async (overwrite: boolean) => {
+    if (!file) return;
     const formData = new FormData();
     formData.append("score", file);
     formData.append("chord", chord);
     formData.append("isOriginal", String(isOriginal));
+    formData.append("overwrite", String(overwrite));
     const controller = new AbortController();
     setUploading(true);
     try {
@@ -99,6 +100,9 @@ export default function HymnScoreModal({
     } catch (e: unknown) {
       if (axios.isCancel(e)) {
         toast("アップロードをキャンセルしました");
+      } else if (axios.isAxiosError(e) && e.response?.status === 409) {
+        // この調の楽譜は登録済み: ファイル・調・オリジナルの入力はそのまま残して確認する
+        setConfirmOpen(true);
       } else {
         toast(extractErrorMessage(e, "通信エラーが発生しました。"));
       }
@@ -106,6 +110,49 @@ export default function HymnScoreModal({
       setUploading(false);
     }
   };
+
+  const onUpload = async () => {
+    if (!chord) {
+      setError("調を選択してください。");
+      return;
+    }
+    if (!file) {
+      setError("ファイルを選択してください。");
+      return;
+    }
+    await doUpload(false);
+  };
+
+  const onOverwrite = async () => {
+    setConfirmOpen(false);
+    await doUpload(true);
+  };
+
+  // 登録済みの楽譜をダウンロードして中身を確認する(確認ダイアログは開いたまま)
+  const onDownloadExisting = async () => {
+    setDownloading(true);
+    try {
+      const res = await api.get(`/hymns/${hymnId}/score`, {
+        params: { chord },
+        responseType: "blob",
+        headers: { Accept: "*/*" },
+      });
+      const url = window.URL.createObjectURL(res.data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${hymnId}(${chord}).pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const chordLabel = MAJOR_KEYS.find((k) => k.value === chord)?.label ?? chord;
 
   return (
     <Dialog
@@ -225,6 +272,38 @@ export default function HymnScoreModal({
             )}
           </Button>
         </div>
+
+        {/* 上書き確認: 外側の Dialog の子として描画し、Radix に入れ子のレイヤーとして扱わせる */}
+        <Dialog
+          open={confirmOpen}
+          onOpenChange={(open) => {
+            if (!open && !uploading) setConfirmOpen(false);
+          }}
+        >
+          <DialogContent className="noto-sans max-w-sm gap-4 rounded-[18px] border-0 bg-white sm:max-w-sm **:data-[slot=dialog-close]:text-secondary">
+            <DialogHeader>
+              <DialogTitle className="text-secondary">
+                {chordLabel}の楽譜は登録済みです
+              </DialogTitle>
+              <DialogDescription>上書きしますか?</DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                type="button"
+                disabled={downloading}
+                className="border-secondary text-secondary hover:bg-secondary/5 hover:text-secondary"
+                rippleColor="rgba(0, 51, 153, 0.2)"
+                onClick={onDownloadExisting}
+              >
+                {downloading ? <Spinner /> : "既存をダウンロード"}
+              </Button>
+              <Button variant="secondary" type="button" onClick={onOverwrite}>
+                上書きする
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
