@@ -10,9 +10,16 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import { ChevronLeft, ChevronRight, LogIn, Search, SearchX } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  LogIn,
+  Search,
+  SearchX,
+} from "lucide-react";
 import api from "@/api/axios";
 import RippleButton from "@/components/RippleButton";
+import ScoreKeyPopover, { type ScoreKey } from "@/components/ScoreKeyPopover";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { getPageItems } from "@/lib/pagination";
@@ -73,17 +80,51 @@ const lineClass = (line: string) =>
 
 // ===== カード部品(デスクトップ・モバイル共通) =====
 
+// 楽譜の「調を選ぶふきだし」をカードと同じガラス風にする(PC版のみ)。
+// 色はカードの色(.glass-card.is-burgundy 等)に合わせ、カードの兄弟のように見せる。
+const BUBBLE_GLASS =
+  "rounded-[18px] border-white/45 text-white backdrop-blur-[20px] backdrop-saturate-[180%] shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)]";
+const BUBBLE_ITEM =
+  "text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.66)] hover:bg-white/25 hover:text-white focus-visible:bg-white/25";
+const bubbleTone = (line: string) =>
+  ({
+    BURGUNDY: {
+      bg: "bg-[rgba(128,0,32,0.55)]",
+      arrow: "fill-[rgba(128,0,32,0.55)]",
+    },
+    NAPLES: {
+      bg: "bg-[rgba(246,201,28,0.6)]",
+      arrow: "fill-[rgba(246,201,28,0.6)]",
+    },
+    CADMIUM: {
+      bg: "bg-[rgba(13,92,51,0.55)]",
+      arrow: "fill-[rgba(13,92,51,0.55)]",
+    },
+  })[line] ?? {
+    bg: "bg-[rgba(255,255,255,0.4)]",
+    arrow: "fill-[rgba(255,255,255,0.4)]",
+  };
+
 function HymnCard({
   item,
   onScore,
+  bubble,
   className,
 }: {
   item: HymnRecord;
   onScore: (id: number) => void;
+  /** 指定すると、楽譜が複数ある曲では調を選ぶふきだしを出す(PC版)。省略時は直接ダウンロード(モバイル) */
+  bubble?: {
+    fetchKeys: (id: number) => Promise<ScoreKey[] | null>;
+    download: (id: number, chord?: string) => Promise<void>;
+  };
   className?: string;
 }) {
+  const tone = bubbleTone(item.lineNumber);
   return (
-    <article className={cn("glass-card", lineClass(item.lineNumber), className)}>
+    <article
+      className={cn("glass-card", lineClass(item.lineNumber), className)}
+    >
       <a
         className="song-name"
         href={item.link}
@@ -92,18 +133,48 @@ function HymnCard({
       >
         {item.nameJp} / {item.nameKr}
       </a>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            className="score-btn"
-            aria-label="楽譜ダウンロード"
-            onClick={() => onScore(item.id)}
-          >
-            𝄞
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
-      </Tooltip>
+      {bubble ? (
+        <ScoreKeyPopover
+          id={item.id}
+          fetchKeys={bubble.fetchKeys}
+          download={bubble.download}
+          side="right"
+          contentClassName={cn(BUBBLE_GLASS, tone.bg)}
+          arrowClassName={tone.arrow}
+          itemClassName={BUBBLE_ITEM}
+        >
+          {({ onClick, loading, open, anchorRef }) => (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  ref={anchorRef}
+                  className={cn("score-btn", loading && "opacity-50")}
+                  aria-label="楽譜ダウンロード"
+                  aria-haspopup="menu"
+                  aria-expanded={open}
+                  onClick={onClick}
+                >
+                  𝄞
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
+            </Tooltip>
+          )}
+        </ScoreKeyPopover>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className="score-btn"
+              aria-label="楽譜ダウンロード"
+              onClick={() => onScore(item.id)}
+            >
+              𝄞
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
+        </Tooltip>
+      )}
     </article>
   );
 }
@@ -310,16 +381,37 @@ export default function HomeView() {
     if (e.key === "Enter") onSearch();
   };
 
-  const downloadScore = async (id: number) => {
+  // この曲で楽譜が登録されている調の一覧(失敗時はトーストを出して null)
+  const fetchScoreKeys = async (id: number): Promise<ScoreKey[] | null> => {
+    try {
+      const { data } = await api.get(`/hymns/${id}/score`, {
+        params: { keysOnly: true },
+      });
+      const list = Array.isArray(data) ? data : [];
+      return list.map(
+        (k: { chord: string; isOriginal?: boolean | string }) => ({
+          chord: k.chord,
+          isOriginal: k.isOriginal === true || k.isOriginal === "true",
+        }),
+      );
+    } catch (e: unknown) {
+      toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
+      return null;
+    }
+  };
+
+  // chord を省略すると、サーバー側がオリジナルキー優先で1件選ぶ
+  const downloadScore = async (id: number, chord?: string) => {
     try {
       const res = await api.get(`/hymns/${id}/score`, {
+        params: chord ? { chord } : undefined,
         responseType: "blob",
         headers: { Accept: "*/*" },
       });
       const url = window.URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${id}.pdf`;
+      a.download = chord ? `${id}(${chord}).pdf` : `${id}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -413,7 +505,12 @@ export default function HomeView() {
               ))}
             {!isFetching && records.length === 0 && <NoResults />}
             {records.map((item) => (
-              <HymnCard key={item.id} item={item} onScore={downloadScore} />
+              <HymnCard
+                key={item.id}
+                item={item}
+                onScore={downloadScore}
+                bubble={{ fetchKeys: fetchScoreKeys, download: downloadScore }}
+              />
             ))}
           </div>
         )}
