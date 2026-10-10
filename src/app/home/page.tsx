@@ -20,6 +20,7 @@ import {
 import api from "@/api/axios";
 import RippleButton from "@/components/RippleButton";
 import ScoreKeyPopover, { type ScoreKey } from "@/components/ScoreKeyPopover";
+import ScoreKeyDialog from "@/components/ScoreKeyDialog";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { getPageItems } from "@/lib/pagination";
@@ -421,6 +422,19 @@ export default function HomeView() {
     }
   };
 
+  // モバイル: 調が複数ある曲は中央ダイアログで選ばせ、1件ならそのままダウンロード
+  const [keyDialog, setKeyDialog] = useState<{
+    item: HymnRecord;
+    keys: ScoreKey[];
+  } | null>(null);
+  const onMobileScore = async (id: number) => {
+    const keys = await fetchScoreKeys(id);
+    if (keys === null) return;
+    const item = mobileRecords.find((r) => r?.id === id);
+    if (keys.length > 1 && item) setKeyDialog({ item, keys });
+    else await downloadScore(id);
+  };
+
   const goLogin = () => router.push("/login");
   const reload = () => {
     setPage(1);
@@ -540,7 +554,7 @@ export default function HomeView() {
                         {item ? (
                           <HymnCard
                             item={item}
-                            onScore={downloadScore}
+                            onScore={onMobileScore}
                             className="is-slide h-full"
                           />
                         ) : (
@@ -562,6 +576,28 @@ export default function HomeView() {
             )}
           </>
         )}
+
+        <ScoreKeyDialog
+          open={keyDialog !== null}
+          onOpenChange={(o) => {
+            if (!o) setKeyDialog(null);
+          }}
+          title={
+            keyDialog
+              ? `${keyDialog.item.nameJp} / ${keyDialog.item.nameKr}`
+              : undefined
+          }
+          keys={keyDialog?.keys ?? []}
+          onSelect={(chord) => {
+            if (keyDialog) void downloadScore(keyDialog.item.id, chord);
+          }}
+          contentClassName={cn(
+            BUBBLE_GLASS,
+            bubbleTone(keyDialog?.item.lineNumber ?? "").bg,
+            "border",
+          )}
+          itemClassName={BUBBLE_ITEM}
+        />
 
         {isMobile === false && (
           <div className="pager-row mt-7 flex flex-wrap items-center justify-between gap-3">
