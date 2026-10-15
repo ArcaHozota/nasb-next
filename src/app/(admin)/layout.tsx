@@ -99,16 +99,46 @@ export default function AdminLayout({
   // 実際の失効判定・メッセージ表示・リダイレクトは axios.ts のレスポンス
   // インターセプター(SESSION_INVALIDATED 検知)が一元的に行うので、ここでは
   // ただ /me を叩いて「次のリクエスト」を発生させるだけでよい。
+  //
+  // タブが裏に回っている間(別タブ・最小化・スリープ)は確認を止める。
+  // 開きっぱなしのタブが15秒ごとに叩き続けると、それだけでサイト全体の
+  // アクセスを上回ってしまうため。タブが表に戻った時点ですぐ1回確認し、
+  // その後また15秒ごとの確認を再開するので、強制ログアウトの検知は遅れない。
   useEffect(() => {
     if (!authChecked) return;
-    const timer = setInterval(() => {
+    const checkSession = () => {
       api.get("/common/me").catch(() => {
         // 401(SESSION_INVALIDATEDを含む)はaxios.ts側で既に処理済み。
         // それ以外の一時的な通信エラーでポーリング自体を止めたくないため、
         // ここでは意図的に何もしない。
       });
-    }, SESSION_CHECK_INTERVAL_MS);
-    return () => clearInterval(timer);
+    };
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      if (timer === undefined) {
+        timer = setInterval(checkSession, SESSION_CHECK_INTERVAL_MS);
+      }
+    };
+    const stop = () => {
+      if (timer !== undefined) {
+        clearInterval(timer);
+        timer = undefined;
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkSession();
+        start();
+      } else {
+        stop();
+      }
+    };
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      stop();
+    };
   }, [authChecked]);
 
   const navItems = [

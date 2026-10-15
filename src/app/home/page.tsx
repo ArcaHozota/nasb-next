@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   useInfiniteQuery,
   useQuery,
+  useQueryClient,
   keepPreviousData,
 } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
@@ -24,6 +25,7 @@ import ScoreKeyDialog from "@/components/ScoreKeyDialog";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { getPageItems } from "@/lib/pagination";
+import { fetchScoreKeysCached } from "@/lib/scoreKeys";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -215,6 +217,7 @@ function NoResults() {
 export default function HomeView() {
   const router = useRouter();
   const toast = useFeedbackStore((s) => s.toast);
+  const queryClient = useQueryClient();
 
   // --- レスポンシブ判定(旧 useMediaQuery("(max-width:700px)")相当) ---
   // null = まだ判定前。判定が済むまでデスクトップ/モバイルどちらのデータ取得も始めない
@@ -385,16 +388,7 @@ export default function HomeView() {
   // この曲で楽譜が登録されている調の一覧(失敗時はトーストを出して null)
   const fetchScoreKeys = async (id: number): Promise<ScoreKey[] | null> => {
     try {
-      const { data } = await api.get(`/hymns/${id}/score`, {
-        params: { keysOnly: true },
-      });
-      const list = Array.isArray(data) ? data : [];
-      return list.map(
-        (k: { chord: string; isOriginal?: boolean | string }) => ({
-          chord: k.chord,
-          isOriginal: k.isOriginal === true || k.isOriginal === "true",
-        }),
-      );
+      return await fetchScoreKeysCached(queryClient, id);
     } catch (e: unknown) {
       toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
       return null;

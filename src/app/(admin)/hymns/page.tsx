@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { getPageItems } from "@/lib/pagination";
+import { fetchScoreKeysCached, invalidateScoreKeys } from "@/lib/scoreKeys";
 import { hymnNameSizeClass } from "@/lib/text";
 
 type HymnRow = {
@@ -173,16 +174,7 @@ function HymnListInner() {
   // この曲で楽譜が登録されている調の一覧(失敗時はトーストを出して null)
   const fetchScoreKeys = async (id: number): Promise<ScoreKey[] | null> => {
     try {
-      const { data } = await api.get(`/hymns/${id}/score`, {
-        params: { keysOnly: true },
-      });
-      const list = Array.isArray(data) ? data : [];
-      return list.map(
-        (k: { chord: string; isOriginal?: boolean | string }) => ({
-          chord: k.chord,
-          isOriginal: k.isOriginal === true || k.isOriginal === "true",
-        }),
-      );
+      return await fetchScoreKeysCached(queryClient, id);
     } catch (e: unknown) {
       feedback.toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
       return null;
@@ -603,9 +595,11 @@ function HymnListInner() {
           hymnId={scoreModalHymn.id}
           hymnNameKr={scoreModalHymn.nameKr}
           onClose={closeScoreModal}
-          onUploaded={() =>
-            queryClient.invalidateQueries({ queryKey: ["hymns-list"] })
-          }
+          onUploaded={() => {
+            queryClient.invalidateQueries({ queryKey: ["hymns-list"] });
+            // 調の一覧も変わるので、この曲のキャッシュを捨てる
+            void invalidateScoreKeys(queryClient, scoreModalHymn.id);
+          }}
         />
       )}
     </div>

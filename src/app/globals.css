@@ -1,6 +1,5 @@
-/* フォントの @import は他のすべてのルールより前に置く必要がある
-   (tailwindcss の展開後ろに来るとブラウザに無視され、フォントが読み込まれない)。 */
-@import url("https://fonts.googleapis.com/css2?family=Niconne&family=Noto+Serif+JP:wght@400;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap");
+/* Google Fonts は next/font(src/app/fonts.ts)で自前配信し、<html> に付けた CSS 変数で参照する。
+   (以前の @import url("https://fonts.googleapis.com/...") は描画をブロックするため廃止) */
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -106,7 +105,7 @@ button:not(:disabled) {
 
 /* 旧 src/index.css より。ロゴ(HomeView)のみが使用するグローバルスタイル。 */
 .effect-shine {
-  font-family: "Niconne", cursive;
+  font-family: var(--font-niconne), "Niconne", cursive;
   font-size: 1.8rem;
   color: #800020;
   transition: 500ms;
@@ -280,7 +279,7 @@ button:not(:disabled) {
 }
 
 .song-name {
-  font-family: "Noto Serif JP", "Noto Serif KR", serif;
+  font-family: var(--font-noto-serif-jp), var(--font-noto-serif-kr), "Noto Serif JP", "Noto Serif KR", serif;
   font-weight: 600;
   font-size: 1.05rem;
   line-height: 1.5;
@@ -519,12 +518,12 @@ a.glass-item:hover {
 /* ===== RedLetterEditor ===== */
 .noto-serif,
 .noto-serif * {
-  font-family: "Noto Serif JP", "Noto Serif KR", serif !important;
+  font-family: var(--font-noto-serif-jp), var(--font-noto-serif-kr), "Noto Serif JP", "Noto Serif KR", serif !important;
 }
 
 .noto-sans,
 .noto-sans * {
-  font-family: "Noto Sans JP", sans-serif !important;
+  font-family: var(--font-noto-sans-jp), "Noto Sans JP", sans-serif !important;
 }
 
 .red-letter-editor {

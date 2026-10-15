@@ -4,6 +4,7 @@
 // 旧 views/BookAddition.vue を移植
 import { useEffect, useRef, useState } from "react";
 import { BookOpen, Book, Baseline, Cross } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,6 +58,7 @@ const required = (v: string) => !!v && v.trim() !== EMPTY_STRING;
 
 export default function BookAddition() {
   const feedback = useFeedbackStore();
+  const queryClient = useQueryClient();
 
   const [books, setBooks] = useState<BookOrChapter[]>([]);
   const [chapters, setChapters] = useState<BookOrChapter[]>([]);
@@ -100,7 +102,13 @@ export default function BookAddition() {
     booksLoaded.current = true;
     (async () => {
       try {
-        const { data } = await api.get("/books");
+        // 書の一覧は変わらないので、一度取得したら画面を出入りしても再取得しない
+        const data = await queryClient.fetchQuery({
+          queryKey: ["books"],
+          queryFn: async () =>
+            (await api.get<BookOrChapter[]>("/books")).data,
+          staleTime: Infinity,
+        });
         setBooks(data);
         if (data.length) setBookId(data[0].id);
       } catch (e: unknown) {
@@ -118,7 +126,14 @@ export default function BookAddition() {
     setChapterLoading(true);
     (async () => {
       try {
-        const { data } = await api.get(`/books/${bookId}/chapters`);
+        // 章の一覧も変わらないので、書ごとにキャッシュする(同じ書に戻ったときは再取得しない)
+        const data = await queryClient.fetchQuery({
+          queryKey: ["chapters", String(bookId)],
+          queryFn: async () =>
+            (await api.get<BookOrChapter[]>(`/books/${bookId}/chapters`))
+              .data,
+          staleTime: Infinity,
+        });
         setChapters(data);
         if (data.length) setChapterId(data[0].id);
       } catch (e: unknown) {
