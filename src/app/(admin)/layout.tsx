@@ -186,10 +186,7 @@ export default function AdminLayout({
   ];
 
   const onLogout = async () => {
-    const ok = await feedback.confirm(
-      "ログアウトしますか？",
-      "警告",
-    );
+    const ok = await feedback.confirm("ログアウトしますか？", "警告");
     if (!ok) return;
     await auth.logout();
     // 旧実装同様、状態を完全にリセットするためフルリロードする
