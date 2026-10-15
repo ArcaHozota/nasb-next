@@ -154,18 +154,15 @@ button:not(:disabled) {
 }
 
 /* ===== HomeView =====
-   カードは常に横一列(折り返しなし)。1画面に収まらない分は横スクロールで見せる。
-   PAGE_SIZE(デスクトップ7件/モバイル2件)が変わっても、この1行レイアウトは
-   そのまま対応できる。 */
+   デスクトップ(701px以上)はカードをグリッドで並べる。
+   1列の最小幅を240pxにすると、本文の最大幅(1080px)で4列、約750〜1000pxで3列、
+   それ未満で2列になる。PAGE_SIZE(8件)は4列なら2行、2列なら4行で揃う
+   (3列のときだけ最後の行が2枚)。モバイル(700px以下)はカルーセルなので .card-row は使わない。 */
 .card-row {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 4px;
   transition: opacity 0.15s ease;
-  scrollbar-width: thin;
 }
 
 .card-row--loading {
@@ -173,13 +170,13 @@ button:not(:disabled) {
   pointer-events: none;
 }
 
+/* カードは横長〜正方形。名前が長い曲は高さが伸び、同じ行のカードもそれに揃う */
 .glass-card {
   position: relative;
   display: flex;
-  flex: 0 0 12%;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 330px;
+  min-height: 170px;
   padding: 20px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.33);
@@ -203,19 +200,6 @@ button:not(:disabled) {
 
 .glass-card.is-cadmium {
   background: rgba(13, 92, 51, 0.42);
-}
-
-@media (max-width: 700px) {
-  .card-row {
-    flex-wrap: wrap;
-    justify-content: center;
-    overflow-x: hidden;
-  }
-
-  .glass-card {
-    flex-basis: 44%;
-    min-height: 28.5vh;
-  }
 }
 
 /* モバイルのカルーセル内のカード: 1枚を大きく見せる(次のカードの端がのぞく) */

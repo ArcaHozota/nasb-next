@@ -67,8 +67,10 @@ type PaginationResponse = {
   totalRecords: number;
 };
 
-// デスクトップ: 1ページあたりのカード数(ページャーで切替)
-const PAGE_SIZE = 7;
+// デスクトップ: 1ページあたりのカード数(ページャーで切替)。
+// 4列なら2行、2列なら4行でぴったり揃い、ページ送りまで1画面に収まる
+// (3列になる約750〜1000pxの幅だけ、最後の行が2枚になる)
+const PAGE_SIZE = 8;
 // モバイル: カルーセルに一度に追加読み込みする件数
 const MOBILE_BATCH_SIZE = 10;
 // カルーセルの残りがこの枚数以下になったら次の分を先読みする
@@ -565,7 +567,12 @@ export default function HomeView() {
               Array.from({ length: PAGE_SIZE }, (_, i) => (
                 <SkeletonCard key={`skeleton-${i}`} />
               ))}
-            {!isFetching && records.length === 0 && <NoResults />}
+            {!isFetching && records.length === 0 && (
+              // グリッドの全列にまたがって中央に表示する
+              <div className="col-span-full">
+                <NoResults />
+              </div>
+            )}
             {records.map((item) => (
               <HymnCard
                 key={item.id}
