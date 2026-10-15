@@ -15,7 +15,9 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { FileArchive, LayoutGrid, RotateCcw, Trash2, Zap } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
+import { invalidateLyric } from "@/lib/lyrics";
 import { Input } from "@/components/ui/input";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
@@ -66,6 +68,7 @@ export default function HymnFormView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const feedback = useFeedbackStore();
+  const queryClient = useQueryClient();
   const auth = useAuthStore();
 
   const editId = searchParams.get("editId") || null;
@@ -175,6 +178,8 @@ export default function HymnFormView() {
           updatedTime: form.updatedTime,
         };
         const { data } = await api.put(`/hymns/${form.id}`, updatePayload);
+        // ホーム画面の歌詞キャッシュ(5分)に古い歌詞が残らないよう、この曲の分を捨てる
+        if (form.id) void invalidateLyric(queryClient, form.id);
         feedback.toast(typeof data === "string" ? data : "更新しました");
         router.push(`/hymns?${buildListQuery()}`);
       } else {

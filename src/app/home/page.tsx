@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogIn,
+  ScrollText,
   Search,
   SearchX,
 } from "lucide-react";
@@ -22,6 +23,9 @@ import api from "@/api/axios";
 import RippleButton from "@/components/RippleButton";
 import ScoreKeyPopover, { type ScoreKey } from "@/components/ScoreKeyPopover";
 import ScoreKeyDialog from "@/components/ScoreKeyDialog";
+import Highlighted from "@/components/Highlighted";
+import LyricViewer, { type LyricTarget } from "@/components/LyricViewer";
+import { extractTerms } from "@/lib/lyrics";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { getPageItems } from "@/lib/pagination";
@@ -60,6 +64,8 @@ type HymnRecord = {
   nameKr: string;
   link: string;
   lineNumber: "BURGUNDY" | "NAPLES" | "CADMIUM" | string;
+  /** 検索キーワードを含む歌詞の一行(検索したときだけサーバーが付ける) */
+  snippet?: string | null;
 };
 
 type PaginationResponse = {
@@ -119,11 +125,20 @@ const bubbleTone = (line: string) =>
 const HymnCard = memo(function HymnCard({
   item,
   onScore,
+  onLyric,
+  snippetTerms,
   bubble,
   className,
 }: {
   item: HymnRecord;
   onScore: (id: number) => void;
+  /** 歌詞を表示する(モバイル: シート / PC: ダイアログ) */
+  onLyric: (item: HymnRecord) => void;
+  /**
+   * 指定すると、歌詞の抜粋(検索キーワードを含む一行)をハイライト付きで表示する(PC版)。
+   * 省略時は抜粋を出さない(モバイルは今のカードの見た目のまま)
+   */
+  snippetTerms?: string[];
   /** 指定すると、楽譜が複数ある曲では調を選ぶふきだしを出す(PC版)。省略時は直接ダウンロード(モバイル) */
   bubble?: {
     fetchKeys: (id: number) => Promise<ScoreKey[] | null>;
@@ -136,56 +151,84 @@ const HymnCard = memo(function HymnCard({
     <article
       className={cn("glass-card", lineClass(item.lineNumber), className)}
     >
-      <a
-        className="song-name"
-        href={item.link}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {item.nameJp} / {item.nameKr}
-      </a>
-      {bubble ? (
-        <ScoreKeyPopover
-          id={item.id}
-          fetchKeys={bubble.fetchKeys}
-          download={bubble.download}
-          side="right"
-          contentClassName={cn(BUBBLE_GLASS, tone.bg)}
-          arrowClassName={tone.arrow}
-          itemClassName={BUBBLE_ITEM}
+      <div className="flex flex-col gap-2">
+        <a
+          className="song-name"
+          href={item.link}
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          {({ onClick, loading, open, anchorRef }) => (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  ref={anchorRef}
-                  className={cn("score-btn", loading && "opacity-50")}
-                  aria-label="楽譜ダウンロード"
-                  aria-haspopup="menu"
-                  aria-expanded={open}
-                  onClick={onClick}
-                >
-                  𝄞
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
-            </Tooltip>
-          )}
-        </ScoreKeyPopover>
-      ) : (
+          {item.nameJp} / {item.nameKr}
+        </a>
+        {snippetTerms && item.snippet && (
+          // 一致した歌詞の一行。押すと歌詞の全文を表示する
+          <button
+            type="button"
+            className="lyric-snippet noto-serif"
+            aria-label="歌詞の全文を表示"
+            onClick={() => onLyric(item)}
+          >
+            <Highlighted text={item.snippet} terms={snippetTerms} />
+          </button>
+        )}
+      </div>
+      <div className="card-actions">
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              className="score-btn"
-              aria-label="楽譜ダウンロード"
-              onClick={() => onScore(item.id)}
+              type="button"
+              className="score-btn lyric-btn"
+              aria-label="歌詞"
+              onClick={() => onLyric(item)}
             >
-              𝄞
+              <ScrollText aria-hidden="true" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
+          <TooltipContent side="bottom">歌詞</TooltipContent>
         </Tooltip>
-      )}
+        {bubble ? (
+          <ScoreKeyPopover
+            id={item.id}
+            fetchKeys={bubble.fetchKeys}
+            download={bubble.download}
+            side="right"
+            contentClassName={cn(BUBBLE_GLASS, tone.bg)}
+            arrowClassName={tone.arrow}
+            itemClassName={BUBBLE_ITEM}
+          >
+            {({ onClick, loading, open, anchorRef }) => (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    ref={anchorRef}
+                    className={cn("score-btn", loading && "opacity-50")}
+                    aria-label="楽譜ダウンロード"
+                    aria-haspopup="menu"
+                    aria-expanded={open}
+                    onClick={onClick}
+                  >
+                    𝄞
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
+              </Tooltip>
+            )}
+          </ScoreKeyPopover>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="score-btn"
+                aria-label="楽譜ダウンロード"
+                onClick={() => onScore(item.id)}
+              >
+                𝄞
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
+          </Tooltip>
+        )}
+      </div>
     </article>
   );
 });
@@ -222,15 +265,22 @@ const CarouselSlide = memo(function CarouselSlide({
   kind,
   item,
   onScore,
+  onLyric,
 }: {
   kind: SlideKind;
   item: HymnRecord | undefined;
   onScore: (id: number) => void;
+  onLyric: (item: HymnRecord) => void;
 }) {
   return (
     <CarouselItem className="basis-4/5 pl-3">
       {kind === "card" && item ? (
-        <HymnCard item={item} onScore={onScore} className="is-slide h-full" />
+        <HymnCard
+          item={item}
+          onScore={onScore}
+          onLyric={onLyric}
+          className="is-slide h-full"
+        />
       ) : kind === "skeleton" ? (
         <SkeletonCard className="is-slide h-full" />
       ) : (
@@ -485,6 +535,26 @@ export default function HomeView() {
     [],
   );
 
+  // ===== 歌詞の表示(照合) =====
+  // 表示中の曲(null なら閉じている)。モバイルはシート、PCはダイアログで表示する
+  const [lyricTarget, setLyricTarget] = useState<LyricTarget | null>(null);
+  // setState は参照が変わらないので、memo したカードに渡しても再描画を起こさない
+  const openLyric = useCallback(
+    (item: HymnRecord) =>
+      setLyricTarget({
+        id: item.id,
+        nameJp: item.nameJp,
+        nameKr: item.nameKr,
+        lineNumber: item.lineNumber,
+      }),
+    [],
+  );
+  // ハイライトする語。確定した検索キーワードから作る(入力中の文字では変わらない)
+  const lyricTerms = useMemo(
+    () => extractTerms(submittedKeyword),
+    [submittedKeyword],
+  );
+
   const goLogin = () => router.push("/login");
   const reload = () => {
     setPage(1);
@@ -578,6 +648,8 @@ export default function HomeView() {
                 key={item.id}
                 item={item}
                 onScore={downloadScore}
+                onLyric={openLyric}
+                snippetTerms={lyricTerms}
                 bubble={{ fetchKeys: fetchScoreKeys, download: downloadScore }}
               />
             ))}
@@ -615,6 +687,7 @@ export default function HomeView() {
                         kind={kind}
                         item={item}
                         onScore={stableOnMobileScore}
+                        onLyric={openLyric}
                       />
                     );
                   })}
@@ -631,6 +704,18 @@ export default function HomeView() {
             )}
           </>
         )}
+
+        <LyricViewer
+          target={lyricTarget}
+          terms={lyricTerms}
+          variant={isMobile ? "sheet" : "dialog"}
+          onClose={() => setLyricTarget(null)}
+          contentClassName={cn(
+            BUBBLE_GLASS,
+            bubbleTone(lyricTarget?.lineNumber ?? "").bg,
+            "border",
+          )}
+        />
 
         <ScoreKeyDialog
           open={keyDialog !== null}
