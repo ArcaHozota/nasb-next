@@ -2,7 +2,7 @@
 
 // src/app/home/page.tsx
 // 旧 views/HomeView.vue を移植
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   useInfiniteQuery,
@@ -73,6 +73,10 @@ const PAGE_SIZE = 7;
 const MOBILE_BATCH_SIZE = 10;
 // カルーセルの残りがこの枚数以下になったら次の分を先読みする
 const MOBILE_PREFETCH_REMAINING = 4;
+// 未取得のスライドのうち、現在位置からこの枚数以内だけスケルトンカードを描く。
+// それより遠いスライドは同じ大きさの空の箱にして、ぼかし・影・アニメーションを持たせない
+// (画面に入らないので見た目は変わらない。スワイプで近づくとスケルトンに切り替わる)
+const MOBILE_SKELETON_WINDOW = 4;
 
 const lineClass = (line: string) =>
   ({
@@ -108,7 +112,9 @@ const bubbleTone = (line: string) =>
     arrow: "fill-[rgba(255,255,255,0.4)]",
   };
 
-function HymnCard({
+// React.memo: モバイルではスワイプのたびに親(HomeView)が再描画されるため、
+// props が変わらないカードは描き直さない
+const HymnCard = memo(function HymnCard({
   item,
   onScore,
   bubble,
@@ -180,9 +186,13 @@ function HymnCard({
       )}
     </article>
   );
-}
+});
 
-function SkeletonCard({ className }: { className?: string }) {
+const SkeletonCard = memo(function SkeletonCard({
+  className,
+}: {
+  className?: string;
+}) {
   return (
     <div className={cn("glass-card", className)} aria-hidden="true">
       <div className="flex flex-col gap-2">
@@ -193,7 +203,41 @@ function SkeletonCard({ className }: { className?: string }) {
       <Skeleton className="size-7 self-end rounded-full bg-white/60" />
     </div>
   );
-}
+});
+
+/** モバイルのカルーセルの1スライドに何を描くか */
+type SlideKind = "card" | "skeleton" | "placeholder";
+
+/**
+ * モバイルのカルーセルの1スライド。
+ * スライドの枚数は全件数で固定のまま(Embla の reInit を起こさない)、中身だけを3段階で切り替える。
+ *   card        : 取得済みの賛美歌カード
+ *   skeleton    : 未取得で、現在位置の近く(読み込み中だと分かる見た目)
+ *   placeholder : 未取得で、現在位置から遠い(同じ大きさの空の箱。描画コストほぼゼロ)
+ * memo により、スワイプで親が再描画されても kind / item が変わったスライドだけが描き直される。
+ */
+const CarouselSlide = memo(function CarouselSlide({
+  kind,
+  item,
+  onScore,
+}: {
+  kind: SlideKind;
+  item: HymnRecord | undefined;
+  onScore: (id: number) => void;
+}) {
+  return (
+    <CarouselItem className="basis-4/5 pl-3">
+      {kind === "card" && item ? (
+        <HymnCard item={item} onScore={onScore} className="is-slide h-full" />
+      ) : kind === "skeleton" ? (
+        <SkeletonCard className="is-slide h-full" />
+      ) : (
+        // .glass-card.is-slide と同じ高さを確保し、カルーセルの高さが変わらないようにする
+        <div className="h-full min-h-[44vh]" aria-hidden="true" />
+      )}
+    </CarouselItem>
+  );
+});
 
 function NoResults() {
   return (
@@ -428,6 +472,16 @@ export default function HomeView() {
     if (keys.length > 1 && item) setKeyDialog({ item, keys });
     else await downloadScore(id);
   };
+  // カード(memo)に渡すための、参照が変わらない版。
+  // 中身は毎回の描画で最新の onMobileScore に差し替えるので、古い mobileRecords を掴むことはない
+  const onMobileScoreRef = useRef(onMobileScore);
+  useEffect(() => {
+    onMobileScoreRef.current = onMobileScore;
+  });
+  const stableOnMobileScore = useCallback(
+    (id: number) => void onMobileScoreRef.current(id),
+    [],
+  );
 
   const goLogin = () => router.push("/login");
   const reload = () => {
@@ -542,19 +596,19 @@ export default function HomeView() {
                 <CarouselContent className="-ml-3">
                   {Array.from({ length: mobileTotal }, (_, i) => {
                     const item = mobileRecords[i];
+                    const kind: SlideKind = item
+                      ? "card"
+                      : Math.abs(i - currentSlide) <= MOBILE_SKELETON_WINDOW
+                        ? "skeleton"
+                        : "placeholder";
                     return (
                       // key は位置(i)で固定: 読み込み完了でスライド自体を差し替えず、中身だけ入れ替える
-                      <CarouselItem key={i} className="basis-4/5 pl-3">
-                        {item ? (
-                          <HymnCard
-                            item={item}
-                            onScore={onMobileScore}
-                            className="is-slide h-full"
-                          />
-                        ) : (
-                          <SkeletonCard className="is-slide h-full" />
-                        )}
-                      </CarouselItem>
+                      <CarouselSlide
+                        key={i}
+                        kind={kind}
+                        item={item}
+                        onScore={stableOnMobileScore}
+                      />
                     );
                   })}
                 </CarouselContent>
