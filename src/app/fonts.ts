@@ -1,53 +1,33 @@
 // src/app/fonts.ts
-// Google Fonts は next/font で読み込む(ビルド時にダウンロードして自前サーバーから配信する)。
-// 以前は globals.css の @import url("https://fonts.googleapis.com/...") で読み込んでいたが、
-// HTML → CSS → Google の CSS → woff2 と直列に待つため初回描画が遅れていた。
+// フォントはすべてビルド時にネットワークへ出ずに自前配信する。
+// (next/font/google はビルド中に Google へ数百件を並列取得するため、
+//  Colima 上の Jenkins ビルドで接続数制限にかかり ETIMEDOUT で失敗していた)
 //
-// 日本語・韓国語フォントは文字数が多く、Google 側で unicode-range ごとに細かく分割されている。
-// next/font は分割をそのまま保ち、ブラウザは画面に出ている文字の分だけを取得する。
-// これらは「先読み(preload)すべき1ファイル」が決まらないため preload: false にしている
-// (Next.js の subsets にも japanese / korean は無い)。
-// また adjustFontFallback: false にして、CSS 変数を「フォント名だけ」にしている。
-// 既定の自動フォールバック(Times New Roman 等)が変数に入ると、"Noto Serif JP" に無いハングルが
-// 次の "Noto Serif KR" より先にそのフォールバックで描かれてしまうため。
-import { Niconne, Noto_Sans_JP, Noto_Serif_JP, Noto_Serif_KR } from "next/font/google";
+// 日本語・韓国語: Fontsource(npm パッケージ)の CSS を読み込む。
+//   Google Fonts と同じく unicode-range ごとに分割された woff2 が入っており、
+//   ブラウザは画面に出ている文字の分だけを取得する(従来の挙動と同じ)。
+//   font-display: swap、preload なし、自動フォールバックなし(従来の
+//   preload: false / adjustFontFallback: false と同じ状態)。
+//   CSS 変数は globals.css の :root で「フォント名だけ」を定義している。
+import "@fontsource/noto-serif-jp/400.css";
+import "@fontsource/noto-serif-jp/600.css";
+import "@fontsource/noto-serif-jp/700.css";
+import "@fontsource/noto-serif-kr/400.css";
+import "@fontsource/noto-serif-kr/600.css";
+import "@fontsource/noto-serif-kr/700.css";
+import "@fontsource/noto-sans-jp/400.css";
+import "@fontsource/noto-sans-jp/500.css";
+import "@fontsource/noto-sans-jp/700.css";
 
-// ロゴ(.effect-shine)用。ラテン文字だけなので先読みする
-export const niconne = Niconne({
+import localFont from "next/font/local";
+
+// ロゴ(.effect-shine)用。ラテン文字だけの小さいファイルなので next/font/local で先読みする
+export const niconne = localFont({
+  src: "../../node_modules/@fontsource/niconne/files/niconne-latin-400-normal.woff2",
   weight: "400",
-  subsets: ["latin"],
   display: "swap",
   variable: "--font-niconne",
 });
 
-export const notoSerifJp = Noto_Serif_JP({
-  weight: ["400", "600", "700"],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--font-noto-serif-jp",
-});
-
-export const notoSerifKr = Noto_Serif_KR({
-  weight: ["400", "600", "700"],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--font-noto-serif-kr",
-});
-
-export const notoSansJp = Noto_Sans_JP({
-  weight: ["400", "500", "700"],
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  variable: "--font-noto-sans-jp",
-});
-
-// <html> に付けると、上記4つの CSS 変数がアプリ全体で使えるようになる
-export const fontVariables = [
-  niconne.variable,
-  notoSerifJp.variable,
-  notoSerifKr.variable,
-  notoSansJp.variable,
-].join(" ");
+// <html> に付ける。Noto 系の変数は globals.css の :root で定義
+export const fontVariables = niconne.variable;

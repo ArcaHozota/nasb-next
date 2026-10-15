@@ -41,7 +41,8 @@ button:not(:disabled) {
   --accent-foreground: #1f2937;
   --destructive: #d32f2f;
   --border: #e5e7eb;
-  --input: #d1d5db; /* 従来の入力欄(border-gray-300)と同じ濃さ */
+  --input: #d1d5db;
+  /* 従来の入力欄(border-gray-300)と同じ濃さ */
   --ring: #800020;
   --success: #355e3b;
   --warning: #f6c91c;
@@ -55,6 +56,10 @@ button:not(:disabled) {
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: rgba(255, 255, 255, 0.4);
+  /* フォント(src/app/fonts.ts で Fontsource から読み込み)。フォント名だけを入れる */
+  --font-noto-serif-jp: "Noto Serif JP";
+  --font-noto-serif-kr: "Noto Serif KR";
+  --font-noto-sans-jp: "Noto Sans JP";
 }
 
 @theme inline {
@@ -97,6 +102,7 @@ button:not(:disabled) {
    shadcn/ui のコンポーネント(data-slot 属性を持つ要素)だけに限定して適用する。
    @layer base なので border-primary 等のユーティリティクラスが指定されていればそちらが優先される。 */
 @layer base {
+
   [data-slot],
   [data-slot] * {
     border-color: var(--border);
