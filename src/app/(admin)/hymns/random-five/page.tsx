@@ -4,7 +4,7 @@
 // 旧 views/RandomFive.vue を移植
 // shadcn/ui 版: 検索欄 = InputGroup、結果一覧 = Item(日本語名/韓国語名の2行表示)、
 // 読み込み中 = Skeleton、結果なし = Empty、読み込みアイコン = Spinner。
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   LayoutGrid,
@@ -67,43 +67,44 @@ function RandomFiveInner() {
   const [searched, setSearched] = useState(false);
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
 
-  const onRandom = async () => {
+  // 検索の通し番号。連続で検索したとき、後から届いた古い応答で
+  // 新しい結果を上書きしないよう、最後に出した検索の応答だけを画面に反映する
+  // (画面内の検索ボタンとヘッダー検索の両方で共有する)
+  const latestRequest = useRef(0);
+
+  const runSearch = async (path: string, q: string) => {
+    const requestNo = ++latestRequest.current;
     setLoading(true);
     try {
-      const { data } = await api.get("/hymns/random", {
-        params: { keyword: keyword.normalize("NFC") },
+      const { data } = await api.get(path, {
+        params: { keyword: q.normalize("NFC") },
       });
+      if (requestNo !== latestRequest.current) return; // もっと新しい検索がある
       setRecords(data);
     } catch (e: unknown) {
+      if (requestNo !== latestRequest.current) return;
       toast(extractErrorMessage(e, "通信エラー"));
     } finally {
-      setLoading(false);
-      setSearched(true);
+      if (requestNo === latestRequest.current) {
+        setLoading(false);
+        setSearched(true);
+      }
     }
   };
 
-  // ナビバーの検索ボックスから ?keyword=xxx 付きで遷移してきた場合、自動検索
+  const onRandom = () => runSearch("/hymns/random", keyword);
+
+  // ヘッダーの検索欄から ?keyword=xxx&t=yyy 付きで遷移してきたら自動検索する。
+  // t はヘッダーで検索した時刻。同じキーワードでも t が変わるので、この画面にいる状態で
+  // ヘッダーから検索し直しても(同じキーワードでも)毎回検索が走り、新しい5曲を引き直せる。
+  const headerKeyword = searchParams.get("keyword");
+  const headerSearchAt = searchParams.get("t");
   useEffect(() => {
-    const q = searchParams.get("keyword");
-    if (q) {
-      setKeyword(q);
-      (async () => {
-        setLoading(true);
-        try {
-          const { data } = await api.get("/common/search", {
-            params: { keyword: q.normalize("NFC") },
-          });
-          setRecords(data);
-        } catch (e: unknown) {
-          toast(extractErrorMessage(e, "通信エラー"));
-        } finally {
-          setLoading(false);
-          setSearched(true);
-        }
-      })();
-    }
+    if (!headerKeyword) return;
+    setKeyword(headerKeyword); // 画面内の検索欄もヘッダーのキーワードに合わせる
+    void runSearch("/common/search", headerKeyword);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [headerKeyword, headerSearchAt]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") onRandom();
@@ -170,7 +171,7 @@ function RandomFiveInner() {
             aria-level={1}
             className="text-lg leading-normal"
           >
-            賛美歌ランドム選択
+            賛美歌ランダム選択
           </CardTitle>
         </CardHeader>
 
@@ -221,7 +222,7 @@ function RandomFiveInner() {
           </div>
 
           <p className="mb-1 text-center text-xs text-black/60">
-            ランドム選択した賛美歌情報一覧
+            ランダム選択した賛美歌情報一覧
           </p>
           <div className="header-mint mb-1.5 px-2 py-2 text-center font-bold">
             名称

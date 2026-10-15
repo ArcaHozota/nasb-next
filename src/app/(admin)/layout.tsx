@@ -172,7 +172,7 @@ export default function AdminLayout({
     {
       key: "randomFive",
       icon: Shuffle,
-      title: "ランダム五つ",
+      title: "ランダム検索",
       action: () => router.push("/hymns/random-five"),
       isActive: pathname.startsWith("/hymns/random-five"),
     },
@@ -187,7 +187,7 @@ export default function AdminLayout({
 
   const onLogout = async () => {
     const ok = await feedback.confirm(
-      "これからログアウトしています、よろしいでしょうか。",
+      "ログアウトしますか？",
       "警告",
     );
     if (!ok) return;
@@ -199,7 +199,17 @@ export default function AdminLayout({
   const onSearch = () => {
     const trimmed = keyword.trim();
     if (!trimmed) return;
-    router.push(`/hymns/random-five?keyword=${encodeURIComponent(trimmed)}`);
+    // t(検索した時刻)を付けて、同じキーワードでも毎回別のURLにする。
+    // ランダム検索の画面は keyword と t の変化を見て検索し直す。
+    const url = `/hymns/random-five?keyword=${encodeURIComponent(trimmed)}&t=${Date.now()}`;
+    // ランダム検索の画面にいるときは履歴を積まずに置き換える
+    // (何度ヘッダー検索しても「戻る」1回で前の画面へ戻れるように)。
+    // 他の画面から来るときは今までどおり履歴に積む。
+    if (pathname.startsWith("/hymns/random-five")) {
+      router.replace(url);
+    } else {
+      router.push(url);
+    }
   };
 
   const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

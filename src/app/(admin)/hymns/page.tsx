@@ -157,7 +157,7 @@ function HymnListInner() {
       return;
     }
     const ok = await feedback.confirm(
-      `この「${item.nameJp}」という歌の情報を削除するとよろしいでしょうか。`,
+      `この「${item.nameJp}」という歌の情報を削除してもよろしいですか？`,
       "メッセージ",
     );
     if (!ok) return;
