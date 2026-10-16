@@ -611,6 +611,7 @@ a.glass-item:hover {
     opacity: 0;
   }
 }
+
 /* ===== PC版ホーム「開いた讃美歌集」(components/home/OpenHymnalHome.tsx) ===== */
 .open-hymnal {
   display: flex;

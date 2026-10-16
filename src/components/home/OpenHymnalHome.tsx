@@ -142,17 +142,14 @@ function HymnPage({
         <span>調を選ぶ</span>
         {keysQuery.isPending &&
           [0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-[30px] w-11 bg-[#e8dcc1]" />
+            <Skeleton key={i} className="h-7.5 w-11 bg-[#e8dcc1]" />
           ))}
         {keys.map((k) => (
           <button
             key={k.chord}
             type="button"
             aria-pressed={k.chord === chord}
-            className={cn(
-              "book-key-chip",
-              k.chord === chord && "is-selected",
-            )}
+            className={cn("book-key-chip", k.chord === chord && "is-selected")}
             onClick={() => setPicked(k.chord)}
           >
             {keyLabel(k.chord)}
@@ -177,7 +174,10 @@ function HymnPage({
 
       <div className="mt-1 flex min-h-0 flex-1 flex-col border-t border-[#e3d5b8] pt-2.5">
         {terms.length > 0 && lyricQuery.isSuccess && (
-          <p className="book-sans mb-1 text-xs text-[#6b5338]" aria-live="polite">
+          <p
+            className="book-sans mb-1 text-xs text-[#6b5338]"
+            aria-live="polite"
+          >
             {hits > 0
               ? `「${terms.join("・")}」に一致: ${hits}箇所`
               : `「${terms.join("・")}」は歌詞に含まれていません（歌詞が似ている曲）`}
@@ -191,7 +191,10 @@ function HymnPage({
           )}
           {lyricQuery.error && (
             <p className="book-sans py-6 text-sm">
-              {extractErrorMessage(lyricQuery.error, "歌詞の取得に失敗しました")}
+              {extractErrorMessage(
+                lyricQuery.error,
+                "歌詞の取得に失敗しました",
+              )}
             </p>
           )}
           {lyricQuery.isSuccess &&
@@ -342,7 +345,9 @@ export default function OpenHymnalHome({
                 <li className="book-sans m-auto flex flex-col items-center gap-2 py-10 text-center text-[#6b5338]">
                   <BookOpen className="size-8" aria-hidden="true" />
                   <span className="text-base font-bold">該当データなし</span>
-                  <span className="text-sm">別の韓国語単語で検索してください。</span>
+                  <span className="text-sm">
+                    別の韓国語単語で検索してください。
+                  </span>
                 </li>
               )}
               {records.map((r, i) => {
@@ -357,7 +362,9 @@ export default function OpenHymnalHome({
                       aria-current={active ? "true" : undefined}
                       onClick={() => setSelectedId(r.id)}
                     >
-                      <span className="book-row-no">{hymnNo(page, pageSize, i)}</span>
+                      <span className="book-row-no">
+                        {hymnNo(page, pageSize, i)}
+                      </span>
                       <span className="flex min-w-0 flex-1 flex-col">
                         <span className="flex items-baseline gap-1.5">
                           <span className="truncate text-[15px] font-bold">
@@ -366,7 +373,10 @@ export default function OpenHymnalHome({
                           <span className="book-leader" aria-hidden="true" />
                           {match && (
                             <span
-                              className={cn("shrink-0 text-[11px] tracking-[1px]", match.tone)}
+                              className={cn(
+                                "shrink-0 text-[11px] tracking-[1px]",
+                                match.tone,
+                              )}
                               aria-label={match.label}
                             >
                               {match.mark}
