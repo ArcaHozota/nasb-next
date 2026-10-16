@@ -14,6 +14,10 @@ import {
   CirclePlus,
   Search,
   ListMusic,
+  Music,
+  NotebookPen,
+  Trash2,
+  FileDown,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -73,12 +77,17 @@ type HymnRow = {
   lineNumber: string;
 };
 
-const rowClass = (line: string) =>
-  ({
-    BURGUNDY: "row-burgundy",
-    NAPLES: "row-naples",
-    CADMIUM: "row-cadmium",
-  })[line] ?? EMPTY_STRING;
+// 検索時に「番号」列へ出す一致度(lineNumber の値 → 表示)
+const MATCH_LEVEL: Record<string, { label: string; chip: string }> = {
+  CADMIUM: { label: "よく一致", chip: "bg-emerald-100 text-emerald-800" },
+  BURGUNDY: { label: "一致", chip: "bg-rose-100 text-[#800020]" },
+  NAPLES: { label: "やや一致", chip: "bg-amber-100 text-amber-900" },
+};
+const MATCH_RELATED = { label: "関連", chip: "bg-gray-100 text-gray-600" };
+
+// 操作列のアイコンボタン(白地・薄い枠・角丸の正方形)
+const ACTION_BUTTON =
+  "size-8 rounded-lg border border-gray-200 bg-white shadow-none hover:bg-gray-50";
 
 const asStr = (v: string | null) => v ?? EMPTY_STRING;
 
@@ -122,6 +131,14 @@ function HymnListInner() {
   const totalRecords = data?.totalRecords ?? 0;
   const pageSizeOptions = [5, 10, 15];
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+
+  // 検索中は「番号」列を一致度に切り替える(検索確定後のキーワードで判定)
+  const isSearching = submittedKeyword.trim() !== EMPTY_STRING;
+
+  // 行クリック: 曲のYouTubeリンクを新しいタブで開く
+  const openYoutube = (row: HymnRow) => {
+    if (row.link) window.open(row.link, "_blank", "noopener,noreferrer");
+  };
 
   const onSearch = () => {
     setPage(1);
@@ -294,7 +311,7 @@ function HymnListInner() {
         </CardHeader>
 
         <CardContent className="p-6">
-          <div className="mb-4 grid grid-cols-[30%_26%_10%_10%_24%] items-center gap-2">
+          <div className="mb-4 grid grid-cols-[12%_34%_30%_24%] items-center gap-2">
             <div className="col-span-2">
               <InputGroup className="max-w-120 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
                 <InputGroupInput
@@ -317,12 +334,11 @@ function HymnListInner() {
               </InputGroup>
             </div>
 
-            {/* リンク・楽譜列に対応する空セル(グリッド比率合わせのためのスペーサー) */}
-            <div />
+            {/* 韓国語名列に対応する空セル(グリッド比率合わせのためのスペーサー) */}
             <div />
 
-            {/* 操作列と同じ30%+26%+10%+10%=76%幅のセルに収め、列内で中央寄せにする
-                (下の操作列の「楽譜」等ボタンと同じjustify-center) */}
+            {/* 操作列と同じ幅のセルに収め、列内で中央寄せにする
+                (下の操作列のアイコンボタンと同じjustify-center) */}
             <div className="flex items-center justify-center gap-2">
               <Button
                 variant="success"
@@ -353,25 +369,21 @@ function HymnListInner() {
           <div className="overflow-hidden rounded-md border border-gray-200">
             <Table className="hymn-table table-fixed">
               <colgroup>
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "34%" }} />
                 <col style={{ width: "30%" }} />
-                <col style={{ width: "26%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "10%" }} />
                 <col style={{ width: "24%" }} />
               </colgroup>
               <TableHeader className="bg-gray-50">
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="px-3 font-bold text-gray-600">
-                    名称
+                    {isSearching ? "一致度" : "番号"}
                   </TableHead>
                   <TableHead className="px-3 font-bold text-gray-600">
-                    韓国語名称
+                    曲名
                   </TableHead>
-                  <TableHead className="px-3 text-center font-bold text-gray-600">
-                    リンク
-                  </TableHead>
-                  <TableHead className="px-3 text-center font-bold text-gray-600">
-                    楽譜
+                  <TableHead className="px-3 font-bold text-gray-600">
+                    韓国語名
                   </TableHead>
                   <TableHead className="px-3 text-center font-bold text-gray-600">
                     操作
@@ -388,116 +400,164 @@ function HymnListInner() {
                       className="hover:bg-transparent"
                     >
                       <TableCell className="px-3 py-2">
+                        <Skeleton className="h-4 w-8 bg-gray-300/70" />
+                      </TableCell>
+                      <TableCell className="px-3 py-2">
                         <Skeleton className="h-4 w-3/4 bg-gray-300/70" />
                       </TableCell>
                       <TableCell className="px-3 py-2">
                         <Skeleton className="h-4 w-2/3 bg-gray-300/70" />
                       </TableCell>
                       <TableCell className="px-3 py-2">
-                        <Skeleton className="mx-auto h-4 w-8 bg-gray-300/70" />
-                      </TableCell>
-                      <TableCell className="px-3 py-2">
-                        <Skeleton className="mx-auto h-4 w-4 bg-gray-300/70" />
-                      </TableCell>
-                      <TableCell className="px-3 py-2">
-                        <Skeleton className="mx-auto h-6 w-32 bg-gray-300/70" />
+                        <Skeleton className="mx-auto h-8 w-32 bg-gray-300/70" />
                       </TableCell>
                     </TableRow>
                   ))}
                 {!isFetching && records.length === 0 && (
                   <TableRow className="hover:bg-transparent">
                     <TableCell
-                      colSpan={5}
+                      colSpan={4}
                       className="px-3 py-6 text-center text-gray-400"
                     >
                       データがありません
                     </TableCell>
                   </TableRow>
                 )}
-                {records.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className={cn(
-                      rowClass(row.lineNumber),
-                      // ページ切替中は前ページの行を薄く表示する
-                      isFetching && "opacity-50",
-                    )}
-                  >
-                    <TableCell className="col-name px-3 py-2">
-                      {/* 長い名称は文字サイズを縮小(表示幅34〜66: 0.8倍 / 67以上: 0.66倍)。
-                          2行まで折り返し、それ以上は「…」で省略。省略時のみホバーで全文を表示 */}
-                      <ClampText
-                        text={row.nameJp}
-                        className={hymnNameSizeClass(row.nameJp)}
-                      />
-                    </TableCell>
-                    <TableCell className="col-name px-3 py-2">
-                      {/* 日本語名称と同じルールで縮小・2行まで */}
-                      <ClampText
-                        text={row.nameKr}
-                        className={cn(
-                          "col-name-kr",
-                          hymnNameSizeClass(row.nameKr),
-                        )}
-                      />
-                    </TableCell>
-                    <TableCell className="px-3 py-2 text-center">
-                      <a
-                        href={row.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Link
-                      </a>
-                    </TableCell>
-                    <TableCell className="px-3 py-2 text-center">
-                      {/* 楽譜が複数あるときは、アイコンの右にふきだしで調を選ばせる */}
-                      <ScoreKeyPopover
-                        id={row.id}
-                        fetchKeys={fetchScoreKeys}
-                        download={downloadScore}
-                        side="right"
-                      >
-                        {({ onClick, loading, open, anchorRef }) => (
-                          <a
-                            ref={anchorRef}
-                            href="#"
-                            aria-label="楽譜をダウンロード"
-                            aria-haspopup="menu"
-                            aria-expanded={open}
+                {records.map((row, i) => {
+                  const level = MATCH_LEVEL[row.lineNumber] ?? MATCH_RELATED;
+                  return (
+                    <TableRow
+                      key={row.id}
+                      // 行をクリック(またはEnter)すると YouTube を新しいタブで開く
+                      tabIndex={row.link ? 0 : undefined}
+                      aria-label={
+                        row.link ? `${row.nameJp}をYouTubeで開く` : undefined
+                      }
+                      className={cn(
+                        row.link && "cursor-pointer",
+                        // ページ切替中は前ページの行を薄く表示する
+                        isFetching && "opacity-50",
+                      )}
+                      onClick={() => openYoutube(row)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && e.target === e.currentTarget)
+                          openYoutube(row);
+                      }}
+                    >
+                      <TableCell className="px-3 py-2">
+                        {isSearching ? (
+                          <span
                             className={cn(
-                              loading && "pointer-events-none opacity-50",
+                              "inline-block rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap",
+                              level.chip,
                             )}
-                            onClick={onClick}
                           >
-                            𝄞
-                          </a>
+                            {level.label}
+                          </span>
+                        ) : (
+                          <span className="font-bold text-gray-500 tabular-nums">
+                            {String((page - 1) * pageSize + i + 1).padStart(
+                              2,
+                              "0",
+                            )}
+                          </span>
                         )}
-                      </ScoreKeyPopover>
-                    </TableCell>
-                    <TableCell className="px-3 py-2">
-                      <div className="flex justify-center gap-1">
-                        <Button
-                          variant="secondary"
-                          size="xs"
-                          onClick={() => openScoreModal(row)}
-                        >
-                          楽譜
-                        </Button>
-                        <Button size="xs" onClick={() => goEdit(row.id)}>
-                          編集
-                        </Button>
-                        <Button
-                          variant="warning"
-                          size="xs"
-                          onClick={() => onDelete(row)}
-                        >
-                          削除
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="col-name px-3 py-2">
+                        {/* 長い名称は文字サイズを縮小(表示幅34〜66: 0.8倍 / 67以上: 0.66倍)。
+                            2行まで折り返し、それ以上は「…」で省略。省略時のみホバーで全文を表示 */}
+                        <ClampText
+                          text={row.nameJp}
+                          className={hymnNameSizeClass(row.nameJp)}
+                        />
+                      </TableCell>
+                      <TableCell className="col-name px-3 py-2">
+                        {/* 日本語名称と同じルールで縮小・2行まで */}
+                        <ClampText
+                          text={row.nameKr}
+                          className={cn(
+                            "col-name-kr",
+                            hymnNameSizeClass(row.nameKr),
+                          )}
+                        />
+                      </TableCell>
+                      {/* 操作列のクリックは行(YouTube)へ伝えない。
+                          調を選ぶふきだしは Portal だが React 上は子なので、ここで止まる */}
+                      <TableCell
+                        className="px-3 py-2"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex justify-center gap-1.5">
+                          <Hint label="楽譜アップロード">
+                            <Button
+                              variant="outline"
+                              size="icon-sm"
+                              className={cn(ACTION_BUTTON, "text-gray-700")}
+                              aria-label="楽譜アップロード"
+                              onClick={() => openScoreModal(row)}
+                            >
+                              <Music />
+                            </Button>
+                          </Hint>
+                          <Hint label="編集">
+                            <Button
+                              variant="outline"
+                              size="icon-sm"
+                              className={cn(ACTION_BUTTON, "text-gray-700")}
+                              aria-label="編集"
+                              onClick={() => goEdit(row.id)}
+                            >
+                              <NotebookPen />
+                            </Button>
+                          </Hint>
+                          <Hint label="削除">
+                            <Button
+                              variant="outline"
+                              size="icon-sm"
+                              className={cn(
+                                ACTION_BUTTON,
+                                "text-red-600 hover:text-red-700",
+                              )}
+                              aria-label="削除"
+                              onClick={() => onDelete(row)}
+                            >
+                              <Trash2 />
+                            </Button>
+                          </Hint>
+                          {/* 楽譜が複数あるときは、アイコンの右にふきだしで調を選ばせる */}
+                          <ScoreKeyPopover
+                            id={row.id}
+                            fetchKeys={fetchScoreKeys}
+                            download={downloadScore}
+                            side="right"
+                          >
+                            {({ onClick, loading, open, anchorRef }) => (
+                              <Hint label="楽譜をダウンロード">
+                                <Button
+                                  ref={anchorRef}
+                                  variant="outline"
+                                  size="icon-sm"
+                                  className={cn(
+                                    ACTION_BUTTON,
+                                    "text-gray-700",
+                                    loading && "pointer-events-none opacity-50",
+                                  )}
+                                  aria-label="楽譜をダウンロード"
+                                  aria-haspopup="menu"
+                                  aria-expanded={open}
+                                  onClick={onClick}
+                                >
+                                  <FileDown />
+                                </Button>
+                              </Hint>
+                            )}
+                          </ScoreKeyPopover>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
