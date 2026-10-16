@@ -13,26 +13,26 @@ const SCORE_KEYS_STALE_MS = 60 * 1000;
 export const scoreKeysQueryKey = (id: number | string) =>
   ["score-keys", String(id)] as const;
 
+/** 調の一覧のクエリ設定(useQuery・fetchQuery の両方で使う) */
+export const scoreKeysQueryOptions = (id: number | string) => ({
+  queryKey: scoreKeysQueryKey(id),
+  queryFn: async (): Promise<ScoreKey[]> => {
+    const { data } = await api.get(`/hymns/${id}/score`, {
+      params: { keysOnly: true },
+    });
+    const list = Array.isArray(data) ? data : [];
+    return list.map((k: { chord: string; isOriginal?: boolean | string }) => ({
+      chord: k.chord,
+      isOriginal: k.isOriginal === true || k.isOriginal === "true",
+    }));
+  },
+  staleTime: SCORE_KEYS_STALE_MS,
+});
+
 export const fetchScoreKeysCached = (
   queryClient: QueryClient,
   id: number,
-): Promise<ScoreKey[]> =>
-  queryClient.fetchQuery({
-    queryKey: scoreKeysQueryKey(id),
-    queryFn: async () => {
-      const { data } = await api.get(`/hymns/${id}/score`, {
-        params: { keysOnly: true },
-      });
-      const list = Array.isArray(data) ? data : [];
-      return list.map(
-        (k: { chord: string; isOriginal?: boolean | string }) => ({
-          chord: k.chord,
-          isOriginal: k.isOriginal === true || k.isOriginal === "true",
-        }),
-      );
-    },
-    staleTime: SCORE_KEYS_STALE_MS,
-  });
+): Promise<ScoreKey[]> => queryClient.fetchQuery(scoreKeysQueryOptions(id));
 
 export const invalidateScoreKeys = (
   queryClient: QueryClient,

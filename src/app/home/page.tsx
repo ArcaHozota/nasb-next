@@ -11,24 +11,15 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import {
-  ChevronLeft,
-  ChevronRight,
-  LogIn,
-  ScrollText,
-  Search,
-  SearchX,
-} from "lucide-react";
+import { LogIn, ScrollText, Search, SearchX } from "lucide-react";
 import api from "@/api/axios";
-import RippleButton from "@/components/RippleButton";
-import ScoreKeyPopover, { type ScoreKey } from "@/components/ScoreKeyPopover";
+import { type ScoreKey } from "@/components/ScoreKeyPopover";
 import ScoreKeyDialog from "@/components/ScoreKeyDialog";
-import Highlighted from "@/components/Highlighted";
 import LyricViewer, { type LyricTarget } from "@/components/LyricViewer";
+import OpenHymnalHome from "@/components/home/OpenHymnalHome";
 import { extractTerms } from "@/lib/lyrics";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
-import { getPageItems } from "@/lib/pagination";
 import { fetchScoreKeysCached } from "@/lib/scoreKeys";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,12 +36,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-} from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -73,9 +58,7 @@ type PaginationResponse = {
   totalRecords: number;
 };
 
-// デスクトップ: 1ページあたりのカード数(ページャーで切替)。
-// 4列なら2行、2列なら4行でぴったり揃い、ページ送りまで1画面に収まる
-// (3列になる約750〜1000pxの幅だけ、最後の行が2枚になる)
+// デスクトップ(開いた讃美歌集): 左ページの目次に並べる曲数(ページ送りで切替)
 const PAGE_SIZE = 8;
 // モバイル: カルーセルに一度に追加読み込みする件数
 const MOBILE_BATCH_SIZE = 10;
@@ -93,9 +76,10 @@ const lineClass = (line: string) =>
     CADMIUM: "is-cadmium",
   })[line] ?? EMPTY_STRING;
 
-// ===== カード部品(デスクトップ・モバイル共通) =====
+// ===== カード部品(モバイルのカルーセル) =====
+// PC版は components/home/OpenHymnalHome.tsx(開いた讃美歌集)で表示する。
 
-// 楽譜の「調を選ぶふきだし」をカードと同じガラス風にする(PC版のみ)。
+// 調を選ぶダイアログ・歌詞シートをカードと同じガラス風にする。
 // 色はカードの色(.glass-card.is-burgundy 等)に合わせ、カードの兄弟のように見せる。
 const BUBBLE_GLASS =
   "rounded-[18px] border-white/45 text-white backdrop-blur-[20px] backdrop-saturate-[180%] shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)]";
@@ -126,27 +110,14 @@ const HymnCard = memo(function HymnCard({
   item,
   onScore,
   onLyric,
-  snippetTerms,
-  bubble,
   className,
 }: {
   item: HymnRecord;
   onScore: (id: number) => void;
-  /** 歌詞を表示する(モバイル: シート / PC: ダイアログ) */
+  /** 歌詞を表示する(画面の下から出るシート) */
   onLyric: (item: HymnRecord) => void;
-  /**
-   * 指定すると、歌詞の抜粋(検索キーワードを含む一行)をハイライト付きで表示する(PC版)。
-   * 省略時は抜粋を出さない(モバイルは今のカードの見た目のまま)
-   */
-  snippetTerms?: string[];
-  /** 指定すると、楽譜が複数ある曲では調を選ぶふきだしを出す(PC版)。省略時は直接ダウンロード(モバイル) */
-  bubble?: {
-    fetchKeys: (id: number) => Promise<ScoreKey[] | null>;
-    download: (id: number, chord?: string) => Promise<void>;
-  };
   className?: string;
 }) {
-  const tone = bubbleTone(item.lineNumber);
   return (
     <article
       className={cn("glass-card", lineClass(item.lineNumber), className)}
@@ -160,17 +131,6 @@ const HymnCard = memo(function HymnCard({
         >
           {item.nameJp} / {item.nameKr}
         </a>
-        {snippetTerms && item.snippet && (
-          // 一致した歌詞の一行。押すと歌詞の全文を表示する
-          <button
-            type="button"
-            className="lyric-snippet noto-serif"
-            aria-label="歌詞の全文を表示"
-            onClick={() => onLyric(item)}
-          >
-            <Highlighted text={item.snippet} terms={snippetTerms} />
-          </button>
-        )}
       </div>
       <div className="card-actions">
         <Tooltip>
@@ -186,35 +146,6 @@ const HymnCard = memo(function HymnCard({
           </TooltipTrigger>
           <TooltipContent side="bottom">歌詞</TooltipContent>
         </Tooltip>
-        {bubble ? (
-          <ScoreKeyPopover
-            id={item.id}
-            fetchKeys={bubble.fetchKeys}
-            download={bubble.download}
-            side="right"
-            contentClassName={cn(BUBBLE_GLASS, tone.bg)}
-            arrowClassName={tone.arrow}
-            itemClassName={BUBBLE_ITEM}
-          >
-            {({ onClick, loading, open, anchorRef }) => (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    ref={anchorRef}
-                    className={cn("score-btn", loading && "opacity-50")}
-                    aria-label="楽譜ダウンロード"
-                    aria-haspopup="menu"
-                    aria-expanded={open}
-                    onClick={onClick}
-                  >
-                    𝄞
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
-              </Tooltip>
-            )}
-          </ScoreKeyPopover>
-        ) : (
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -227,7 +158,6 @@ const HymnCard = memo(function HymnCard({
             </TooltipTrigger>
             <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
           </Tooltip>
-        )}
       </div>
     </article>
   );
@@ -536,7 +466,8 @@ export default function HomeView() {
   );
 
   // ===== 歌詞の表示(照合) =====
-  // 表示中の曲(null なら閉じている)。モバイルはシート、PCはダイアログで表示する
+  // 表示中の曲(null なら閉じている)。モバイルは画面の下から出るシートで表示する
+  // (PC版は開いた讃美歌集の右ページに歌詞を常に表示する)
   const [lyricTarget, setLyricTarget] = useState<LyricTarget | null>(null);
   // setState は参照が変わらないので、memo したカードに渡しても再描画を起こさない
   const openLyric = useCallback(
@@ -563,9 +494,29 @@ export default function HomeView() {
     resetCarousel();
   };
 
-  // 旧 MUI <Pagination siblingCount={2}> 相当(前後2ページずつ表示)。
-  // 計算は賛美歌一覧と共通の src/lib/pagination.ts に集約。
-  const pageItems = getPageItems(page, totalPages, 2);
+  // ===== PC版: 開いた讃美歌集 =====
+  // 左ページに目次、右ページに選んだ曲(調号つき五線譜で楽譜ダウンロード・歌詞の照合)
+  if (isMobile === false) {
+    return (
+      <OpenHymnalHome
+        records={records}
+        totalRecords={totalRecords}
+        page={page}
+        totalPages={totalPages}
+        pageSize={PAGE_SIZE}
+        isFetching={isFetching}
+        keyword={keyword}
+        submittedKeyword={submittedKeyword}
+        terms={lyricTerms}
+        onKeywordChange={setKeyword}
+        onSearch={onSearch}
+        onReload={reload}
+        onLogin={goLogin}
+        onPageChange={setPage}
+        onDownload={downloadScore}
+      />
+    );
+  }
 
   return (
     <div className="home relative z-0 min-h-screen bg-cover bg-fixed bg-center">
@@ -623,39 +574,6 @@ export default function HomeView() {
           </Button>
         </div>
 
-        {/* ===== デスクトップ: 横一列のカード + ページャー ===== */}
-        {isMobile === false && (
-          <div
-            // 薄くするのは「前のページのカードを表示したまま次を読み込む」時だけ
-            // (初回のスケルトンまで薄くなると見えにくいため)
-            className={`card-row ${isFetching && records.length > 0 ? "card-row--loading" : EMPTY_STRING}`}
-          >
-            {/* 初回読み込み中: カードと同じ形のスケルトン
-                (2回目以降のページ切替は keepPreviousData + .card-row--loading で前のカードを薄く表示) */}
-            {isFetching &&
-              records.length === 0 &&
-              Array.from({ length: PAGE_SIZE }, (_, i) => (
-                <SkeletonCard key={`skeleton-${i}`} />
-              ))}
-            {!isFetching && records.length === 0 && (
-              // グリッドの全列にまたがって中央に表示する
-              <div className="col-span-full">
-                <NoResults />
-              </div>
-            )}
-            {records.map((item) => (
-              <HymnCard
-                key={item.id}
-                item={item}
-                onScore={downloadScore}
-                onLyric={openLyric}
-                snippetTerms={lyricTerms}
-                bubble={{ fetchKeys: fetchScoreKeys, download: downloadScore }}
-              />
-            ))}
-          </div>
-        )}
-
         {/* ===== モバイル: 1枚+次の端がのぞくカルーセル(横スワイプ、終わりに近づくと自動で追加読み込み) ===== */}
         {isMobile === true && (
           <>
@@ -708,7 +626,7 @@ export default function HomeView() {
         <LyricViewer
           target={lyricTarget}
           terms={lyricTerms}
-          variant={isMobile ? "sheet" : "dialog"}
+          variant="sheet"
           onClose={() => setLyricTarget(null)}
           contentClassName={cn(
             BUBBLE_GLASS,
@@ -738,67 +656,6 @@ export default function HomeView() {
           )}
           itemClassName={BUBBLE_ITEM}
         />
-
-        {isMobile === false && (
-          <div className="pager-row mt-7 flex flex-wrap items-center justify-between gap-3">
-            <span className="page-info text-xs text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
-              {totalPages}ページ中の{page}ページ、{totalRecords}件
-            </span>
-            {/* 見た目は従来のすりガラス(.pager-glass / .pager-item)のまま、構造を shadcn/ui の Pagination に */}
-            <Pagination className="mx-0 w-auto">
-              <PaginationContent className="pager-glass gap-0">
-                <PaginationItem>
-                  <RippleButton
-                    className="pager-item inline-flex items-center justify-center"
-                    rippleColor="rgba(0, 0, 0, 0.15)"
-                    aria-label="前のページ"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                  >
-                    <ChevronLeft className="size-4" />
-                  </RippleButton>
-                </PaginationItem>
-                {pageItems.map((item, idx) =>
-                  item === "ellipsis" ? (
-                    <PaginationItem key={`e-${idx}`}>
-                      <PaginationEllipsis className="pager-ellipsis size-8" />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={item}>
-                      <RippleButton
-                        className={cn(
-                          "pager-item",
-                          item === page && "is-selected",
-                        )}
-                        rippleColor={
-                          item === page
-                            ? "rgba(255, 255, 255, 0.45)"
-                            : "rgba(0, 0, 0, 0.15)"
-                        }
-                        aria-label={`${item}ページ目`}
-                        aria-current={item === page ? "page" : undefined}
-                        onClick={() => setPage(item)}
-                      >
-                        {item}
-                      </RippleButton>
-                    </PaginationItem>
-                  ),
-                )}
-                <PaginationItem>
-                  <RippleButton
-                    className="pager-item inline-flex items-center justify-center"
-                    rippleColor="rgba(0, 0, 0, 0.15)"
-                    aria-label="次のページ"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    <ChevronRight className="size-4" />
-                  </RippleButton>
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        )}
 
         {isMobile && (
           <p className="hint-verse mt-5 text-[13px] font-bold text-[#fffff0] [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">

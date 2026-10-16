@@ -153,22 +153,7 @@ button:not(:disabled) {
   }
 }
 
-/* ===== HomeView =====
-   デスクトップ(701px以上)はカードをグリッドで並べる。
-   1列の最小幅を240pxにすると、本文の最大幅(1080px)で4列、約750〜1000pxで3列、
-   それ未満で2列になる。PAGE_SIZE(8件)は4列なら2行、2列なら4行で揃う
-   (3列のときだけ最後の行が2枚)。モバイル(700px以下)はカルーセルなので .card-row は使わない。 */
-.card-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
-  transition: opacity 0.15s ease;
-}
-
-.card-row--loading {
-  opacity: 0.45;
-  pointer-events: none;
-}
+/* ===== HomeView(モバイルのカルーセル。PC版は末尾の「開いた讃美歌集」) ===== */
 
 /* カードは横長〜正方形。名前が長い曲は高さが伸び、同じ行のカードもそれに揃う */
 .glass-card {
@@ -333,30 +318,6 @@ button:not(:disabled) {
   width: 0.85em;
   height: 0.85em;
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.66));
-}
-
-/* PC版: 検索キーワードを含む歌詞の一行(押すと全文) */
-.lyric-snippet {
-  position: relative;
-  z-index: 1;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  padding: 0 0 0 8px;
-  border: none;
-  border-left: 2px solid rgba(255, 255, 255, 0.6);
-  background: none;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.85rem;
-  line-height: 1.5;
-  text-align: left;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.66);
-  cursor: pointer;
-}
-
-.lyric-snippet:hover {
-  color: #fff;
 }
 
 /* 一致した語のハイライト(抜粋・全文の両方) */
@@ -649,4 +610,306 @@ a.glass-item:hover {
     transform: scale(1);
     opacity: 0;
   }
+}
+/* ===== PC版ホーム「開いた讃美歌集」(components/home/OpenHymnalHome.tsx) ===== */
+.open-hymnal {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  background: #2b1519;
+  color: #2b1d14;
+  font-family: var(--font-noto-serif-jp), var(--font-noto-serif-kr), "Noto Serif JP", "Noto Serif KR", serif;
+}
+
+.open-hymnal .noto-serif-kr {
+  font-family: var(--font-noto-serif-kr), "Noto Serif KR", serif;
+}
+
+.open-hymnal .book-sans {
+  font-family: var(--font-noto-sans-jp), "Noto Sans JP", sans-serif;
+}
+
+.open-hymnal-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 64px;
+  padding: 0 40px;
+}
+
+.open-hymnal-logo {
+  font-family: var(--font-niconne), "Niconne", cursive;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.open-hymnal-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(420px, 40vw);
+  padding: 6px 2px;
+  border-bottom: 1px solid rgba(243, 227, 195, 0.6);
+  color: #f3e3c3;
+}
+
+.open-hymnal-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  font-size: 16px;
+  font-family: var(--font-noto-serif-kr), "Noto Serif KR", serif;
+}
+
+.open-hymnal-search input::placeholder {
+  color: rgba(243, 227, 195, 0.55);
+  font-family: var(--font-noto-sans-jp), "Noto Sans JP", sans-serif;
+  font-size: 13px;
+}
+
+.open-hymnal-search:focus-within {
+  border-bottom-color: #f3e3c3;
+}
+
+.open-hymnal-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid #f3e3c3;
+  border-radius: 4px;
+  background: transparent;
+  color: #f3e3c3;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.open-hymnal-login:hover {
+  background: rgba(243, 227, 195, 0.12);
+}
+
+.open-hymnal-main {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 24px 26px;
+}
+
+/* 見開きの本。高さは画面に合わせる。大きな画面では目次の下が空きすぎないよう上限を設けて上下中央に置き、
+   低すぎる画面では最低限を確保してページ全体をスクロールさせる */
+.book {
+  display: flex;
+  width: min(1180px, 100%);
+  height: calc(100svh - 64px - 32px);
+  min-height: 600px;
+  max-height: 780px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.book-page {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.book-page--left {
+  width: 40%;
+  max-width: 470px;
+  flex-shrink: 0;
+  padding: 24px 30px 14px 32px;
+  background: #f8f1e1;
+  border-right: 1px solid #d8c7a6;
+  box-shadow: inset -18px 0 24px -18px rgba(74, 48, 20, 0.35);
+}
+
+.book-page--right {
+  flex: 1;
+  gap: 10px;
+  padding: 28px 48px 20px 44px;
+  background: #fcf7ea;
+  box-shadow: inset 18px 0 24px -18px rgba(74, 48, 20, 0.3);
+}
+
+.book-caption {
+  margin: 0 0 6px;
+  padding-bottom: 10px;
+  border-bottom: 3px double #800020;
+  color: #6b5338;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+.book-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 8px;
+  border: none;
+  border-bottom: 1px dotted #c9b48d;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+
+button.book-row:hover {
+  background: #f3e8cf;
+}
+
+button.book-row.is-active {
+  background: #efe2c4;
+}
+
+button.book-row:focus-visible {
+  outline: 2px solid #800020;
+  outline-offset: -2px;
+}
+
+.book-row-no {
+  width: 30px;
+  flex-shrink: 0;
+  color: #800020;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* 目次の点線(曲名と◆の間) */
+.book-leader {
+  flex: 1;
+  min-width: 12px;
+  border-bottom: 2px dotted #c9b48d;
+  transform: translateY(-4px);
+}
+
+.book-pager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding-top: 10px;
+  color: #6b5338;
+  font-size: 13px;
+}
+
+.book-pager button {
+  border: none;
+  background: none;
+  color: #800020;
+  font: inherit;
+}
+
+.book-pager button:disabled {
+  color: #b8a888;
+  cursor: default;
+}
+
+.book-outline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid #800020;
+  border-radius: 4px;
+  color: #800020;
+  font-family: var(--font-noto-sans-jp), "Noto Sans JP", sans-serif;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.book-outline-btn:hover {
+  background: #800020;
+  color: #fff;
+}
+
+.book-key-chip {
+  min-width: 44px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid #c9b48d;
+  border-radius: 4px;
+  background: transparent;
+  color: #2b1d14;
+  font: inherit;
+}
+
+.book-key-chip:hover {
+  background: #f3e8cf;
+}
+
+.book-key-chip.is-selected {
+  border-color: #800020;
+  background: #800020;
+  color: #fff;
+}
+
+/* 調号つき五線譜(components/home/KeyStaff.tsx)。五線譜そのものがダウンロードボタン */
+.key-staff {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  align-self: flex-start;
+  padding: 6px 14px 6px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #4a3426;
+  font: inherit;
+}
+
+.key-staff:not(:disabled):hover {
+  background: #f3e8cf;
+  border-color: #c9b48d;
+}
+
+.key-staff:focus-visible {
+  outline: 2px solid #800020;
+  outline-offset: 2px;
+}
+
+.key-staff.is-disabled {
+  color: #b8a888;
+  cursor: default;
+}
+
+.key-staff-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #800020;
+  font-family: var(--font-noto-sans-jp), "Noto Sans JP", sans-serif;
+  font-size: 12px;
+}
+
+.book-lyric {
+  color: #2d2318;
+  font-family: var(--font-noto-serif-kr), "Noto Serif KR", serif;
+  font-size: 17px;
+  line-height: 2.05;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* 本の中の一致箇所は、黄色の背景ではなく臙脂の下線で示す */
+.lyric-mark.book-mark {
+  padding: 0;
+  background: none;
+  color: #800020;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  text-shadow: none;
 }
