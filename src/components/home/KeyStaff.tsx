@@ -9,11 +9,17 @@ import {
   keySignature,
 } from "@/lib/keySignature";
 import { cn } from "@/lib/utils";
+import { TREBLE_CLEF_G_LINE, TREBLE_CLEF_PATH } from "@/lib/trebleClef";
 
 // 五線の位置(viewBox 上の y)。線の間隔 8、段(線と間)の間隔 4
-const TOP_LINE_Y = 16;
+const TOP_LINE_Y = 20;
 const STEP = 4;
 const LINES = [0, 1, 2, 3, 4].map((i) => TOP_LINE_Y + i * STEP * 2);
+// ト音記号: 線の間隔 8 に対して約 7.4 段分の高さ(楽譜の標準的な大きさ)。
+// 渦巻きの中心が第2線(G4)に来るように置く
+const CLEF_SCALE = 0.034;
+const G_LINE_Y = LINES[3];
+const CLEF_TRANSFORM = `translate(4 ${G_LINE_Y + TREBLE_CLEF_G_LINE * CLEF_SCALE}) scale(${CLEF_SCALE} ${-CLEF_SCALE})`;
 
 // ♯・♭はフォントの字形ではなく線で描く(OS・フォントによって位置がずれないように)
 function Sharp({ cx, cy }: { cx: number; cy: number }) {
@@ -74,19 +80,17 @@ export default function KeyStaff({
       aria-label={sig && state === "ready" ? `${sig.nameJa}の楽譜をダウンロード` : title}
       onClick={onDownload}
     >
-      <svg width="300" height="64" viewBox="0 0 300 64" aria-hidden="true">
+      <svg width="300" height="72" viewBox="0 0 300 72" aria-hidden="true">
         <g stroke="currentColor" strokeWidth="1">
           {LINES.map((y) => (
             <line key={y} x1="0" y1={y} x2="300" y2={y} />
           ))}
           <line x1="299" y1={LINES[0]} x2="299" y2={LINES[4]} />
         </g>
-        <text x="2" y="55" fontSize="52" fill="currentColor">
-          𝄞
-        </text>
+        <path d={TREBLE_CLEF_PATH} transform={CLEF_TRANSFORM} fill="currentColor" />
         {steps.map((s, i) => {
           // 記号の中心を、その音の線(または間)の高さにぴったり合わせる
-          const cx = 42 + i * 11;
+          const cx = 48 + i * 11;
           const cy = TOP_LINE_Y + s * STEP;
           return isSharp ? <Sharp key={i} cx={cx} cy={cy} /> : <Flat key={i} cx={cx} cy={cy} />;
         })}
@@ -95,7 +99,7 @@ export default function KeyStaff({
         <span className="text-[17px] font-bold">{title}</span>
         {state === "ready" && (
           <span className="key-staff-hint">
-            五線譜をクリックして楽譜をダウンロード
+            楽譜をダウンロード
             <Download className="size-3.5" aria-hidden="true" />
           </span>
         )}

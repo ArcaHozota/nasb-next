@@ -137,7 +137,14 @@ function HymnPage({
         </a>
       </div>
 
-      {/* 調を選ぶ → 五線譜の調号が変わる → 五線譜を押すとその調の楽譜をダウンロード */}
+      {/* 五線譜: 選んだ調の調号を描き、押すとその調の楽譜をダウンロードする */}
+      <KeyStaff
+        chord={chord}
+        isOriginal={isOriginal}
+        state={staffState}
+        onDownload={() => void download()}
+      />
+      {/* 調を選ぶと上の五線譜の調号が変わる */}
       <div className="book-sans flex flex-wrap items-center gap-2 text-[13px] text-[#6b5338]">
         <span>調を選ぶ</span>
         {keysQuery.isPending &&
@@ -165,12 +172,6 @@ function HymnPage({
           </span>
         )}
       </div>
-      <KeyStaff
-        chord={chord}
-        isOriginal={isOriginal}
-        state={staffState}
-        onDownload={() => void download()}
-      />
 
       <div className="mt-1 flex min-h-0 flex-1 flex-col border-t border-[#e3d5b8] pt-2.5">
         {terms.length > 0 && lyricQuery.isSuccess && (
