@@ -59,7 +59,7 @@ type PaginationResponse = {
 };
 
 // デスクトップ(開いた讃美歌集): 左ページの目次に並べる曲数(ページ送りで切替)
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
 // モバイル: カルーセルに一度に追加読み込みする件数
 const MOBILE_BATCH_SIZE = 10;
 // カルーセルの残りがこの枚数以下になったら次の分を先読みする
@@ -146,18 +146,18 @@ const HymnCard = memo(function HymnCard({
           </TooltipTrigger>
           <TooltipContent side="bottom">歌詞</TooltipContent>
         </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                className="score-btn"
-                aria-label="楽譜ダウンロード"
-                onClick={() => onScore(item.id)}
-              >
-                𝄞
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
-          </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              className="score-btn"
+              aria-label="楽譜ダウンロード"
+              onClick={() => onScore(item.id)}
+            >
+              𝄞
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
+        </Tooltip>
       </div>
     </article>
   );
