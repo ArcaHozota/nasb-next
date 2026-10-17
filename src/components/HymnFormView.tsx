@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import { required, asStr } from "@/lib/form";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -57,12 +58,7 @@ const emptyForm: FormState = {
   updatedUser: EMPTY_STRING,
 };
 
-const required = (v: string) =>
-  !!v && v.trim() !== EMPTY_STRING
-    ? EMPTY_STRING
-    : "上記の入力ボックスを空になってはいけません。";
 
-const asStr = (v: string | null) => v ?? EMPTY_STRING;
 
 export default function HymnFormView() {
   const searchParams = useSearchParams();
@@ -215,6 +211,8 @@ export default function HymnFormView() {
 
   const listQueryStr = useMemo(
     () => buildListQuery(),
+    // buildListQuery は pageNum/pageSize/keyword だけに依存する
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [pageNum, pageSize, keyword],
   );
 

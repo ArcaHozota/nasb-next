@@ -2,7 +2,7 @@
 // ページャー(shadcn/ui の Pagination)に並べるページ番号の列を作る共通ヘルパー。
 // 賛美歌一覧(siblingCount=1)とホーム(siblingCount=2、旧 MUI Pagination 相当)で共用する。
 
-export type PageItem = number | "ellipsis";
+type PageItem = number | "ellipsis";
 
 /**
  * 先頭・末尾のページと、現在ページの前後 siblingCount 件を常に表示し、

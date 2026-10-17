@@ -19,7 +19,7 @@ import { countHits, lyricQueryOptions } from "@/lib/lyrics";
 import { scoreKeysQueryOptions } from "@/lib/scoreKeys";
 import { cn } from "@/lib/utils";
 
-export type BookHymn = {
+type BookHymn = {
   id: number;
   nameJp: string;
   nameKr: string;

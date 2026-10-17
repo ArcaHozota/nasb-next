@@ -156,7 +156,6 @@ const RedLetterEditor = forwardRef<RedLetterEditorHandle, RedLetterEditorProps>(
       const el = containerRef.current;
       if (!el) return;
       renderSegments(el, parseToSegments(value));
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [value]);
 
     // 初回マウント時にも描画する(旧 watch(..., {immediate:true}) 相当)

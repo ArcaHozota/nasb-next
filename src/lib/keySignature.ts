@@ -2,7 +2,7 @@
 // 長調12種(楽譜の調。HymnScoreModal の MAJOR_KEYS と同じ値)の調号と日本語名。
 // ト音記号の五線譜に調号(♯・♭)を描くための位置もここで決める。
 
-export type KeySignature = {
+type KeySignature = {
   /** 調号の種類(ハ長調は null) */
   accidental: "sharp" | "flat" | null;
   /** 調号の数 */

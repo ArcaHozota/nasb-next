@@ -20,7 +20,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-export type BookOption = { id: number | string; name: string };
+type BookOption = { id: number | string; name: string };
 
 type Props = {
   id?: string;

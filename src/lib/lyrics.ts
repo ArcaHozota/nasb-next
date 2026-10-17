@@ -22,7 +22,7 @@ export function extractTerms(keyword: string): string[] {
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export type TextPart = { text: string; hit: boolean };
+type TextPart = { text: string; hit: boolean };
 
 /** 文字列を「一致した部分」と「それ以外」に分ける(大文字・小文字は区別しない) */
 export function splitByTerms(text: string, terms: string[]): TextPart[] {
@@ -47,7 +47,7 @@ export function splitByTerms(text: string, terms: string[]): TextPart[] {
 export const countHits = (text: string, terms: string[]) =>
   splitByTerms(text, terms).filter((p) => p.hit).length;
 
-export const lyricQueryKey = (id: number | string) =>
+const lyricQueryKey = (id: number | string) =>
   ["lyric", String(id)] as const;
 
 /** 歌詞(GET /hymns/{id}/lyric、未ログインでも可)。歌詞はめったに変わらないので5分キャッシュする */

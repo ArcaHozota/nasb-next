@@ -10,7 +10,7 @@ import type { ScoreKey } from "@/components/ScoreKeyPopover";
 /** 調の一覧を新鮮とみなす時間。他の端末でのアップロードもこの時間内には反映される */
 const SCORE_KEYS_STALE_MS = 60 * 1000;
 
-export const scoreKeysQueryKey = (id: number | string) =>
+const scoreKeysQueryKey = (id: number | string) =>
   ["score-keys", String(id)] as const;
 
 /** 調の一覧のクエリ設定(useQuery・fetchQuery の両方で使う) */

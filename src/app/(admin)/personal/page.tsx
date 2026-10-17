@@ -26,6 +26,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import { required } from "@/lib/form";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -59,10 +60,6 @@ const emptyForm: StudentForm = {
   email: EMPTY_STRING,
 };
 
-const required = (v: string) =>
-  !!v && v.trim() !== EMPTY_STRING
-    ? EMPTY_STRING
-    : "上記の入力ボックスを空になってはいけません。";
 
 const toDateInputValue = (src: string) => {
   if (!src) return EMPTY_STRING;

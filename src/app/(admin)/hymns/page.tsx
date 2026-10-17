@@ -29,6 +29,7 @@ import {
   extractErrorMessage,
   utf8ToBase64,
 } from "@/lib/constants";
+import { asStr } from "@/lib/form";
 import HymnScoreModal from "@/components/HymnScoreModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,7 +90,6 @@ const MATCH_RELATED = { label: "関連", chip: "bg-gray-100 text-gray-600" };
 const ACTION_BUTTON =
   "size-8 rounded-lg border border-gray-200 bg-white shadow-none hover:bg-gray-50";
 
-const asStr = (v: string | null) => v ?? EMPTY_STRING;
 
 // ページャーのボタン(shadcn/ui の Button。現在ページは default=burgundy の塗り)
 const PAGER_BUTTON =

@@ -6,7 +6,7 @@ import { EMPTY_STRING } from "@/lib/constants";
  * 全角文字(漢字・ひらがな・カタカナ・ハングル・全角記号など)は2、
  * それ以外(半角英数字・半角記号など)は1としてカウントする。
  */
-export const getDisplayWidth = (str: string): number => {
+const getDisplayWidth = (str: string): number => {
   let width = 0;
   for (const char of str) {
     const code = char.codePointAt(0) ?? 0;
