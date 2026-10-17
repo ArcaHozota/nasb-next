@@ -709,8 +709,8 @@ a.glass-item:hover {
   display: flex;
   width: min(1180px, 100%);
   height: calc(100svh - 64px - 32px);
-  min-height: 670px;
-  max-height: 780px;
+  min-height: 730px;
+  max-height: 820px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
 }
 
