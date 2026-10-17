@@ -48,7 +48,7 @@ export default function LoginView() {
     <div className="relative flex min-h-screen items-center justify-center">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/assets/mainmenu-bg6.webp"
+        src="/assets/login-bg.webp"
         alt=""
         className="fixed inset-0 -z-10 h-full w-full object-cover"
       />
