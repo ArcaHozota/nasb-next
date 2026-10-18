@@ -59,7 +59,7 @@ type PaginationResponse = {
 };
 
 // デスクトップ(開いた讃美歌集): 左ページの目次に並べる曲数(ページ送りで切替)
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 11;
 // モバイル: カルーセルに一度に追加読み込みする件数
 const MOBILE_BATCH_SIZE = 10;
 // カルーセルの残りがこの枚数以下になったら次の分を先読みする
