@@ -18,6 +18,11 @@ import ScoreKeyDialog from "@/components/ScoreKeyDialog";
 import LyricViewer, { type LyricTarget } from "@/components/LyricViewer";
 import OpenHymnalHome from "@/components/home/OpenHymnalHome";
 import { extractTerms } from "@/lib/lyrics";
+import {
+  searchIndexQueryOptions,
+  searchLocal,
+  shouldSearchOnServer,
+} from "@/lib/localSearch";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { fetchScoreKeysCached } from "@/lib/scoreKeys";
@@ -272,6 +277,36 @@ export default function HomeView() {
   const [keyword, setKeyword] = useState(EMPTY_STRING); // 入力欄の値(即時反映)
   const [submittedKeyword, setSubmittedKeyword] = useState(EMPTY_STRING); // 検索確定値(クエリキー用)
 
+  // ===== 検索の振り分け =====
+  // ハングルを含む / 先頭が * ★ # / & を含む入力はサーバー検索(従来どおり)。
+  // それ以外(日本語・英語など)は、画面側で曲名・日本語/英語の歌詞に照らして並べる。
+  const localCandidate = useMemo(
+    () => submittedKeyword.trim() !== "" && !shouldSearchOnServer(submittedKeyword),
+    [submittedKeyword],
+  );
+  const indexQuery = useQuery({
+    ...searchIndexQueryOptions,
+    enabled: localCandidate,
+  });
+  // 索引の取得に失敗したときは、画面検索をあきらめてサーバー検索に戻す
+  const isLocal = localCandidate && !indexQuery.isError;
+  const local = useMemo(
+    () =>
+      isLocal && indexQuery.data
+        ? searchLocal(indexQuery.data, submittedKeyword)
+        : null,
+    [isLocal, indexQuery.data, submittedKeyword],
+  );
+  const localAll: HymnRecord[] = local?.records ?? [];
+  // モバイル: カルーセルの現在位置(画面検索では、この位置から先読み分だけカードを描く)
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  // 一致が1曲も無かったときの案内(全曲を通常の順序で出している)
+  const localNotice =
+    isLocal && local && local.hitCount === 0
+      ? "一致する曲が見つからなかったため、通常の順序で表示しています"
+      : null;
+
   // モバイル/デスクトップが切り替わったらデスクトップ側は1ページ目に戻す
   // (初回マウント時は実行しない)
   const isMobileMounted = useRef(false);
@@ -296,7 +331,7 @@ export default function HomeView() {
       return data;
     },
     placeholderData: keepPreviousData, // 旧: loading中もDOMを維持しopacity制御、と同じ狙い
-    enabled: isMobile === false,
+    enabled: isMobile === false && !isLocal,
   });
 
   // ===== モバイル: カルーセル用の無限読み込み =====
@@ -325,7 +360,7 @@ export default function HomeView() {
       allPages.length * MOBILE_BATCH_SIZE < lastPage.totalRecords
         ? allPages.length + 1
         : undefined,
-    enabled: isMobile === true,
+    enabled: isMobile === true && !isLocal,
   });
 
   const anyError = error ?? mobileError;
@@ -338,16 +373,23 @@ export default function HomeView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anyError]);
 
-  const records = data?.records ?? [];
-  const totalRecords = data?.totalRecords ?? 0;
+  const records: HymnRecord[] = isLocal
+    ? localAll.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    : (data?.records ?? []);
+  const totalRecords = isLocal ? localAll.length : (data?.totalRecords ?? 0);
   const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+  // 画面検索では、索引を取得し終えるまでが「読み込み中」
+  const desktopBusy = isLocal ? indexQuery.isPending : isFetching;
 
-  const mobileRecords = mobileData?.pages.flatMap((p) => p.records) ?? [];
-  const mobileTotal = mobileData?.pages[0]?.totalRecords ?? 0;
+  const mobileRecords: HymnRecord[] = isLocal
+    ? localAll.slice(0, currentSlide + MOBILE_BATCH_SIZE)
+    : (mobileData?.pages.flatMap((p) => p.records) ?? []);
+  const mobileTotal = isLocal
+    ? localAll.length
+    : (mobileData?.pages[0]?.totalRecords ?? 0);
+  const mobileBusy = isLocal ? indexQuery.isPending : mobileFetching;
 
   // ===== モバイル: カルーセルの現在位置と先読み =====
-  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const [currentSlide, setCurrentSlide] = useState(0);
 
   // スライドの枚数は最初から「全件数」で固定し、未取得の分はスケルトンカードで埋めておく。
   // 追加読み込みではスライドの「中身」が入れ替わるだけで枚数は変わらないため、
@@ -377,6 +419,7 @@ export default function HomeView() {
   useEffect(() => {
     if (
       isMobile &&
+      !isLocal &&
       hasNextPage &&
       !isFetchingNextPage &&
       currentSlide >= mobileRecords.length - MOBILE_PREFETCH_REMAINING
@@ -385,6 +428,7 @@ export default function HomeView() {
     }
   }, [
     isMobile,
+    isLocal,
     currentSlide,
     mobileRecords.length,
     hasNextPage,
@@ -504,10 +548,12 @@ export default function HomeView() {
         page={page}
         totalPages={totalPages}
         pageSize={PAGE_SIZE}
-        isFetching={isFetching}
+        isFetching={desktopBusy}
         keyword={keyword}
         submittedKeyword={submittedKeyword}
         terms={lyricTerms}
+        hitCount={isLocal && local ? local.hitCount : undefined}
+        notice={localNotice}
         onKeywordChange={setKeyword}
         onSearch={onSearch}
         onReload={reload}
@@ -551,13 +597,13 @@ export default function HomeView() {
 
       <main className="mx-auto max-w-270 px-4 pb-16 pt-8 md:px-4 md:pb-16 md:pt-8">
         <div
-          className={`search-row ${isFetching || mobileFetching ? "search-loading" : EMPTY_STRING}`}
+          className={`search-row ${desktopBusy || mobileBusy ? "search-loading" : EMPTY_STRING}`}
         >
           <input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             type="text"
-            placeholder="韓国語単語で検索してください"
+            placeholder="曲名・歌詞のキーワードで検索してください"
             aria-label="キーワード"
             className="w-full rounded-full border-none bg-white/67 py-3 pl-5 pr-11 text-base outline-none"
             onKeyDown={onSearchKeyDown}
@@ -574,10 +620,19 @@ export default function HomeView() {
           </Button>
         </div>
 
+        {isMobile === true && localNotice && (
+          <p
+            className="mb-3 text-center text-xs text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]"
+            role="status"
+          >
+            {localNotice}
+          </p>
+        )}
+
         {/* ===== モバイル: 1枚+次の端がのぞくカルーセル(横スワイプ、終わりに近づくと自動で追加読み込み) ===== */}
         {isMobile === true && (
           <>
-            {mobileFetching && mobileRecords.length === 0 ? (
+            {mobileBusy && mobileRecords.length === 0 ? (
               <div className="flex gap-3 overflow-hidden">
                 <SkeletonCard className="is-slide w-4/5 shrink-0" />
                 <SkeletonCard className="is-slide w-4/5 shrink-0" />

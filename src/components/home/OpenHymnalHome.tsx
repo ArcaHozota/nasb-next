@@ -226,6 +226,8 @@ export default function OpenHymnalHome({
   keyword,
   submittedKeyword,
   terms,
+  hitCount,
+  notice,
   onKeywordChange,
   onSearch,
   onReload,
@@ -242,6 +244,10 @@ export default function OpenHymnalHome({
   keyword: string;
   submittedKeyword: string;
   terms: string[];
+  /** 画面側検索で一致した曲数(サーバー検索のときは未指定) */
+  hitCount?: number;
+  /** 画面側検索で一致が無かったときの案内 */
+  notice?: string | null;
   onKeywordChange: (v: string) => void;
   onSearch: () => void;
   onReload: () => void;
@@ -279,7 +285,11 @@ export default function OpenHymnalHome({
 
   const firstLoad = isFetching && records.length === 0;
   const caption = submittedKeyword.trim()
-    ? `「${submittedKeyword.trim()}」を含む賛美歌 ・ ${totalRecords}曲`
+    ? hitCount !== undefined
+      ? hitCount > 0
+        ? `「${submittedKeyword.trim()}」に近い賛美歌 ・ ${hitCount}曲(全${totalRecords}曲)`
+        : `賛美歌 ・ ${totalRecords}曲`
+      : `「${submittedKeyword.trim()}」を含む賛美歌 ・ ${totalRecords}曲`
     : `賛美歌 ・ ${totalRecords}曲`;
 
   return (
@@ -303,7 +313,7 @@ export default function OpenHymnalHome({
               if (e.key === "Enter") onSearch();
             }}
             type="text"
-            placeholder="韓国語単語で検索してください"
+            placeholder="曲名・歌詞のキーワードで検索してください"
             aria-label="キーワード"
           />
           <button type="button" aria-label="検索" onClick={onSearch}>
@@ -324,6 +334,11 @@ export default function OpenHymnalHome({
           {/* ===== 左ページ: 目次 ===== */}
           <section className="book-page book-page--left" aria-label="目次">
             <p className="book-caption">{caption}</p>
+            {notice && (
+              <p className="book-sans px-1 pb-1 text-xs text-[#8a6400]" role="status">
+                {notice}
+              </p>
+            )}
             <ol
               ref={listRef}
               className={cn(
@@ -347,7 +362,7 @@ export default function OpenHymnalHome({
                   <BookOpen className="size-8" aria-hidden="true" />
                   <span className="text-base font-bold">該当データなし</span>
                   <span className="text-sm">
-                    別の韓国語単語で検索してください。
+                    別のキーワードで検索してください。
                   </span>
                 </li>
               )}
