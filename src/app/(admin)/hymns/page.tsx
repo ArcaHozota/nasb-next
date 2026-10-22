@@ -22,6 +22,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import api from "@/api/axios";
+import { getYoutubeReauthConfirmText } from "@/lib/youtube";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import {
@@ -275,9 +276,16 @@ function HymnListInner() {
         "response" in e &&
         (e as { response?: { status?: number } }).response?.status === 409
       ) {
-        const ok = await feedback.confirm(
-          "YouTube連携がまだ完了していません。連携ページへ移動しますか？",
-        );
+        // 連携トークン失効・取り消し(再認証が必要)の場合は、専用文言で「はい／いいえ」を確認する
+        const reauthText = getYoutubeReauthConfirmText(e);
+        const ok = reauthText
+          ? await feedback.confirm(reauthText, "確認", {
+              cancelLabel: "いいえ",
+              confirmLabel: "はい",
+            })
+          : await feedback.confirm(
+              "YouTube連携がまだ完了していません。連携ページへ移動しますか？",
+            );
         if (ok) router.push(`/personal?userId=${userId}`);
         return;
       }
