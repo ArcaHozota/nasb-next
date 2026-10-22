@@ -14,7 +14,8 @@ import api from "@/api/axios";
 // ===== 索引(GET /hymns/search-index) =====
 
 export type SearchIndexEntry = {
-  id: string | number;
+  /** Snowflake ID(19桁)。JSON上は文字列。絶対に Number に変換しないこと(桁が丸まる) */
+  id: string;
   /** 日本語名(表示用。クラシックは先頭に★) */
   nameJp: string;
   /** 韓国語名(表示用。「韓国語名(英語名)」のまま) */
@@ -300,7 +301,10 @@ export function searchLocal(
     lineNumber: LocalHymnRecord["lineNumber"],
     snippet: string | null,
   ): LocalHymnRecord => ({
-    id: Number(p.entry.id),
+    // IDはサーバーが返した値のまま(実体は文字列)。Snowflake ID は19桁で、
+    // Number にすると 2^53 を超えて末尾が丸まり、/hymns/{id}/lyric などが「見つかりません」になる。
+    // 他の画面コードが id を number として扱っているため、型だけ合わせている
+    id: p.entry.id as unknown as number,
     nameJp: p.entry.nameJp,
     nameKr: p.entry.nameKr,
     link: p.entry.link,
