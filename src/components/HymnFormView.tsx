@@ -19,7 +19,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import { invalidateLyric } from "@/lib/lyrics";
 import { Input } from "@/components/ui/input";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+} from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/stores/feedback";
@@ -57,8 +65,6 @@ const emptyForm: FormState = {
   updatedTime: EMPTY_STRING,
   updatedUser: EMPTY_STRING,
 };
-
-
 
 export default function HymnFormView() {
   const searchParams = useSearchParams();
@@ -222,8 +228,12 @@ export default function HymnFormView() {
     ? "not-aria-invalid:focus-visible:border-primary not-aria-invalid:focus-visible:ring-primary/20"
     : "not-aria-invalid:focus-visible:border-success not-aria-invalid:focus-visible:ring-success/20";
 
+  // 背景画像の上でも読みやすいよう、入力欄は白ベタにする。
+  const inputClass = `bg-white ${focusClass}`;
+
   return (
     <div className="noto-sans relative min-h-full bg-cover bg-fixed bg-center">
+      {/* 背景画像(変更なし) */}
       <div className="fixed inset-0 -z-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -234,7 +244,7 @@ export default function HymnFormView() {
       </div>
 
       {/* パンくずリスト */}
-      <Breadcrumb className="mb-2">
+      <Breadcrumb className="mx-auto mb-2 max-w-3xl">
         <BreadcrumbList className="font-semibold text-[#fffff0] [text-shadow:0_1px_3px_rgba(0,0,0,0.45)]">
           <BreadcrumbItem>
             <BreadcrumbLink
@@ -262,11 +272,15 @@ export default function HymnFormView() {
         </BreadcrumbList>
       </Breadcrumb>
 
+      {/*
+        glass-panel(globals.css・レイヤー外)の背景に勝つため、末尾 ! (Tailwind v4 の important) を付けている。
+        カードは中央寄せ・幅制限(max-w-3xl。歌詞の入力幅を確保するため personal より少し広い)。
+      */}
       <Card
-        className={`form-card glass-panel ${isEdit ? "glass-panel--burgundy" : "glass-panel--green"} relative overflow-hidden rounded-[18px] gap-0 py-0`}
+        className={`form-card glass-panel ${isEdit ? "glass-panel--burgundy" : "glass-panel--green"} relative mx-auto max-w-3xl gap-0 overflow-hidden rounded-[18px] bg-white/85! py-0 backdrop-blur-md`}
       >
         <CardHeader
-          className={`gap-0 flex items-center px-4 py-3 text-white ${isEdit ? "bg-primary" : "bg-success"}`}
+          className={`flex items-center gap-0 px-4 py-3 text-white ${isEdit ? "bg-primary" : "bg-success"}`}
         >
           <LayoutGrid className="mr-2 h-5 w-5" />
           <CardTitle
@@ -278,125 +292,160 @@ export default function HymnFormView() {
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="p-6 pt-5">
-          <Field className="mb-5 gap-1.5">
-            <FieldLabel htmlFor="hymn-name-jp" className="form-label">
-              日本語名称
-            </FieldLabel>
-            <Input
-              id="hymn-name-jp"
-              value={form.nameJp}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, nameJp: e.target.value }))
-              }
-              type="text"
-              placeholder="日本語名称を入力してください"
-              aria-invalid={!!errors.nameJp}
-              aria-describedby={
-                errors.nameJp ? "hymn-name-jp-error" : undefined
-              }
-              className={focusClass}
-              onBlur={checkNameJp}
-            />
-            <FieldError id="hymn-name-jp-error" className="text-xs">
-              {errors.nameJp}
-            </FieldError>
-          </Field>
+        <CardContent className="p-6">
+          <FieldGroup className="gap-6">
+            {/* ===== 基本情報 ===== */}
+            <FieldSet>
+              <FieldLegend variant="label" className="text-base font-bold">
+                基本情報
+              </FieldLegend>
+              <FieldGroup className="gap-5">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="hymn-name-jp" className="form-label">
+                      日本語名称
+                    </FieldLabel>
+                    <Input
+                      id="hymn-name-jp"
+                      value={form.nameJp}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, nameJp: e.target.value }))
+                      }
+                      type="text"
+                      placeholder="日本語名称を入力してください"
+                      aria-invalid={!!errors.nameJp}
+                      aria-describedby={
+                        errors.nameJp ? "hymn-name-jp-error" : undefined
+                      }
+                      className={inputClass}
+                      onBlur={checkNameJp}
+                    />
+                    <FieldError id="hymn-name-jp-error" className="text-xs">
+                      {errors.nameJp}
+                    </FieldError>
+                  </Field>
 
-          <Field className="mb-5 gap-1.5">
-            <FieldLabel htmlFor="hymn-name-kr" className="form-label">
-              韓国語名称
-            </FieldLabel>
-            <Input
-              id="hymn-name-kr"
-              value={form.nameKr}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, nameKr: e.target.value }))
-              }
-              type="text"
-              placeholder="韓国語名称を入力してください"
-              aria-invalid={!!errors.nameKr}
-              aria-describedby={
-                errors.nameKr ? "hymn-name-kr-error" : undefined
-              }
-              className={focusClass}
-              onBlur={checkNameKr}
-            />
-            <FieldError id="hymn-name-kr-error" className="text-xs">
-              {errors.nameKr}
-            </FieldError>
-          </Field>
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="hymn-name-kr" className="form-label">
+                      韓国語名称
+                    </FieldLabel>
+                    <Input
+                      id="hymn-name-kr"
+                      value={form.nameKr}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, nameKr: e.target.value }))
+                      }
+                      type="text"
+                      placeholder="韓国語名称を入力してください"
+                      aria-invalid={!!errors.nameKr}
+                      aria-describedby={
+                        errors.nameKr ? "hymn-name-kr-error" : undefined
+                      }
+                      className={inputClass}
+                      onBlur={checkNameKr}
+                    />
+                    <FieldError id="hymn-name-kr-error" className="text-xs">
+                      {errors.nameKr}
+                    </FieldError>
+                  </Field>
+                </div>
+              </FieldGroup>
+            </FieldSet>
 
-          <div className="link-row mb-5 flex items-start gap-4">
-            <Field className="link-field min-w-0 flex-1 gap-1.5">
-              <FieldLabel htmlFor="hymn-link" className="form-label">
-                リンク
-              </FieldLabel>
-              <Input
-                id="hymn-link"
-                value={form.link}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, link: e.target.value }))
-                }
-                type="text"
-                placeholder="リンクを入力してください"
-                aria-invalid={!!errors.link}
-                aria-describedby={errors.link ? "hymn-link-error" : undefined}
-                className={focusClass}
-              />
-              <FieldError id="hymn-link-error" className="text-xs">
-                {errors.link}
-              </FieldError>
-            </Field>
-            <Field className="classic-field w-24 shrink-0 gap-1.5">
-              <FieldLabel htmlFor="hymn-classic" className="form-label">
-                クラシック
-              </FieldLabel>
-              <Switch
-                id="hymn-classic"
-                size="lg"
-                checked={form.classic}
-                onCheckedChange={(checked) =>
-                  setForm((f) => ({ ...f, classic: checked }))
-                }
-                className={
-                  isEdit
-                    ? "data-[state=checked]:bg-primary"
-                    : "data-[state=checked]:bg-success"
-                }
-              />
-            </Field>
-          </div>
+            <FieldSeparator />
 
-          <Field className="mb-5 gap-1.5">
-            <FieldLabel htmlFor="hymn-lyric" className="form-label">
-              歌詞
-            </FieldLabel>
-            <Textarea
-              id="hymn-lyric"
-              value={form.lyric}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, lyric: e.target.value }))
-              }
-              rows={6}
-              placeholder="セリフを入力してください"
-              aria-invalid={!!errors.lyric}
-              aria-describedby={errors.lyric ? "hymn-lyric-error" : undefined}
-              className={`field-sizing-fixed ${focusClass}`}
-            />
-            <FieldError id="hymn-lyric-error" className="text-xs">
-              {errors.lyric}
-            </FieldError>
-          </Field>
+            {/* ===== リンク・分類 ===== */}
+            <FieldSet>
+              <FieldLegend variant="label" className="text-base font-bold">
+                リンク・分類
+              </FieldLegend>
+              <FieldGroup className="gap-5">
+                <Field className="gap-1.5">
+                  <FieldLabel htmlFor="hymn-link" className="form-label">
+                    リンク
+                  </FieldLabel>
+                  <Input
+                    id="hymn-link"
+                    value={form.link}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, link: e.target.value }))
+                    }
+                    type="text"
+                    placeholder="リンクを入力してください"
+                    aria-invalid={!!errors.link}
+                    aria-describedby={
+                      errors.link ? "hymn-link-error" : undefined
+                    }
+                    className={inputClass}
+                  />
+                  <FieldError id="hymn-link-error" className="text-xs">
+                    {errors.link}
+                  </FieldError>
+                </Field>
 
+                {/* ラベルとスイッチを同じ行に置く(personal の外部連携行と同じ見た目) */}
+                <div className="flex items-center justify-between gap-4 rounded-lg border bg-white p-4">
+                  <FieldLabel htmlFor="hymn-classic" className="form-label">
+                    クラシック
+                  </FieldLabel>
+                  <Switch
+                    id="hymn-classic"
+                    size="lg"
+                    checked={form.classic}
+                    onCheckedChange={(checked) =>
+                      setForm((f) => ({ ...f, classic: checked }))
+                    }
+                    className={
+                      isEdit
+                        ? "data-[state=checked]:bg-primary"
+                        : "data-[state=checked]:bg-success"
+                    }
+                  />
+                </div>
+              </FieldGroup>
+            </FieldSet>
+
+            <FieldSeparator />
+
+            {/* ===== 歌詞 ===== */}
+            <FieldSet>
+              <FieldLegend variant="label" className="text-base font-bold">
+                歌詞
+              </FieldLegend>
+              <FieldGroup>
+                <Field className="gap-1.5">
+                  <FieldLabel htmlFor="hymn-lyric" className="sr-only">
+                    歌詞
+                  </FieldLabel>
+                  <Textarea
+                    id="hymn-lyric"
+                    value={form.lyric}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, lyric: e.target.value }))
+                    }
+                    rows={8}
+                    placeholder="セリフを入力してください"
+                    aria-invalid={!!errors.lyric}
+                    aria-describedby={
+                      errors.lyric ? "hymn-lyric-error" : undefined
+                    }
+                    className={`field-sizing-fixed ${inputClass}`}
+                  />
+                  <FieldError id="hymn-lyric-error" className="text-xs">
+                    {errors.lyric}
+                  </FieldError>
+                </Field>
+              </FieldGroup>
+            </FieldSet>
+          </FieldGroup>
+        </CardContent>
+
+        <CardFooter className="flex flex-wrap items-center justify-end gap-2 border-t bg-white/60 px-6 py-4">
           {isEdit && (
-            <p className="text-xs text-gray-500">
+            <p className="mr-auto text-xs text-gray-500">
               最終更新者：{form.updatedUser}＠{form.updatedTime}日本標準時間
             </p>
           )}
-        </CardContent>
-
-        <CardFooter className="flex justify-end gap-2 px-6 pb-4">
           <Button
             variant={isEdit ? "default" : "success"}
             type="button"
