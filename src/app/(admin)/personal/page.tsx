@@ -152,7 +152,7 @@ function StudentEditionInner() {
   const onYoutubeConnect = () => {
     // 連携開始はバックエンドが直接Google同意画面へリダイレクトするため、
     // fetch/XHRではなく普通の画面遷移にする。
-    window.location.href = "/api/youtube/authorize-url";
+    router.push("/api/youtube/authorize-url");
   };
 
   const fetchInitial = async (id: string) => {
