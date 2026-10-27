@@ -22,7 +22,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import api from "@/api/axios";
-import { getYoutubeReauthConfirmText } from "@/lib/youtube";
+import {
+  createPlaylistAndWait,
+  getYoutubeReauthConfirmText,
+  PlaylistError,
+} from "@/lib/youtube";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import {
@@ -90,7 +94,6 @@ const MATCH_RELATED = { label: "関連", chip: "bg-gray-100 text-gray-600" };
 // 操作列のアイコンボタン(白地・薄い枠・角丸の正方形)
 const ACTION_BUTTON =
   "size-8 rounded-lg border border-gray-200 bg-white shadow-none hover:bg-gray-50";
-
 
 // ページャーのボタン(shadcn/ui の Button。現在ページは default=burgundy の塗り)
 const PAGER_BUTTON =
@@ -256,7 +259,7 @@ function HymnListInner() {
         feedback.toast("対象の賛美歌（BURGUNDY・CADMIUM）がありません");
         return;
       }
-      await api.post("/youtube/create-playlist", { hymnIds });
+      await createPlaylistAndWait(hymnIds);
       const proceed = await feedback.confirm(
         "プレイリストを作成しました。今はYouTubeへ移動してよろしいでしょうか。",
         "お知らせ",
@@ -289,7 +292,11 @@ function HymnListInner() {
         if (ok) router.push(`/personal?userId=${userId}`);
         return;
       }
-      feedback.toast(extractErrorMessage(e, "プレイリスト作成に失敗しました"));
+      feedback.toast(
+        e instanceof PlaylistError
+          ? e.message
+          : extractErrorMessage(e, "プレイリスト作成に失敗しました"),
+      );
     } finally {
       setCreatingPlaylist(false);
     }

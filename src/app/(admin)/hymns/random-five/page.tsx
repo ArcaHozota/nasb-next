@@ -15,7 +15,11 @@ import {
   SquarePlay,
 } from "lucide-react";
 import api from "@/api/axios";
-import { getYoutubeReauthConfirmText } from "@/lib/youtube";
+import {
+  createPlaylistAndWait,
+  getYoutubeReauthConfirmText,
+  PlaylistError,
+} from "@/lib/youtube";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
@@ -67,6 +71,7 @@ function RandomFiveInner() {
   // 一度でも検索したか(未検索の案内と「該当データなし」を出し分けるため)
   const [searched, setSearched] = useState(false);
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+  const [playlistProgress, setPlaylistProgress] = useState("");
 
   // 検索の通し番号。連続で検索したとき、後から届いた古い応答で
   // 新しい結果を上書きしないよう、最後に出した検索の応答だけを画面に反映する
@@ -119,9 +124,9 @@ function RandomFiveInner() {
     }
     setCreatingPlaylist(true);
     try {
-      await api.post("/youtube/create-playlist", {
-        hymnIds,
-      });
+      await createPlaylistAndWait(hymnIds, (st) =>
+        setPlaylistProgress(`${st.added}/${st.total}`),
+      );
       const proceed = await confirm(
         "プレイリストを作成しました。今はYouTubeへ移動してよろしいでしょうか。",
         "お知らせ",
@@ -154,9 +159,14 @@ function RandomFiveInner() {
         if (ok) router.push(`/personal?userId=${userId}`);
         return;
       }
-      toast(extractErrorMessage(e, "プレイリスト作成に失敗しました"));
+      toast(
+        e instanceof PlaylistError
+          ? e.message
+          : extractErrorMessage(e, "プレイリスト作成に失敗しました"),
+      );
     } finally {
       setCreatingPlaylist(false);
+      setPlaylistProgress("");
     }
   };
 
@@ -225,6 +235,7 @@ function RandomFiveInner() {
                   <ListMusic className="h-4 w-4" />
                 )}
                 プレイリスト作成
+                {creatingPlaylist && playlistProgress && ` ${playlistProgress}`}
               </Button>
             )}
           </div>
