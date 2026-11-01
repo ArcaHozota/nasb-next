@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -35,21 +36,27 @@ export default function ScoreKeyDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={cn("noto-serif max-w-[min(20rem,calc(100%-2rem))]", contentClassName)}
+        className={cn(
+          "noto-serif max-w-[min(20rem,calc(100%-2rem))]",
+          contentClassName,
+        )}
       >
         <DialogHeader>
           <DialogTitle>調を選択</DialogTitle>
-          <DialogDescription className={cn(contentClassName && "text-inherit opacity-85")}>
+          <DialogDescription
+            className={cn(contentClassName && "text-inherit opacity-85")}
+          >
             {title ?? "ダウンロードする調を選んでください。"}
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-2">
           {keys.map((k) => (
-            <button
+            <Button
               key={k.chord}
               type="button"
+              variant="outline"
               className={cn(
-                "min-h-12 rounded-xl border px-3 py-2 text-lg font-medium transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden",
+                "h-auto min-h-12 rounded-xl bg-transparent px-3 py-2 text-lg shadow-none",
                 itemClassName,
               )}
               onClick={() => {
@@ -59,7 +66,7 @@ export default function ScoreKeyDialog({
             >
               {chordLabel(k.chord)}
               {k.isOriginal ? "*" : ""}
-            </button>
+            </Button>
           ))}
         </div>
         <p className="text-xs opacity-80">* はオリジナルキー</p>

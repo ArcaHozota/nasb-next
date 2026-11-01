@@ -105,8 +105,7 @@ export default function BookAddition() {
         // 書の一覧は変わらないので、一度取得したら画面を出入りしても再取得しない
         const data = await queryClient.fetchQuery({
           queryKey: ["books"],
-          queryFn: async () =>
-            (await api.get<BookOrChapter[]>("/books")).data,
+          queryFn: async () => (await api.get<BookOrChapter[]>("/books")).data,
           staleTime: Infinity,
         });
         setBooks(data);
@@ -130,8 +129,7 @@ export default function BookAddition() {
         const data = await queryClient.fetchQuery({
           queryKey: ["chapters", String(bookId)],
           queryFn: async () =>
-            (await api.get<BookOrChapter[]>(`/books/${bookId}/chapters`))
-              .data,
+            (await api.get<BookOrChapter[]>(`/books/${bookId}/chapters`)).data,
           staleTime: Infinity,
         });
         setChapters(data);
@@ -382,13 +380,15 @@ export default function BookAddition() {
               <span className="text-red-700">
                 この節は登録済みです。保存すると上書き更新されます。
                 {differsFromExisting && existing && (
-                  <button
+                  <Button
                     type="button"
-                    className="ml-2 underline underline-offset-2 hover:opacity-80"
+                    variant="link"
+                    ripple={false}
+                    className="ml-2 h-auto p-0 text-inherit underline hover:opacity-80"
                     onClick={() => loadExisting(existing)}
                   >
                     既存の内容を読み込む
-                  </button>
+                  </Button>
                 )}
               </span>
             )}

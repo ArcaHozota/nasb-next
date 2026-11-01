@@ -7,6 +7,7 @@
 import { useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -43,22 +44,25 @@ export default function BookCombobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
+        <Button
           id={id}
           type="button"
+          variant="outline"
           role="combobox"
           aria-expanded={open}
           disabled={books.length === 0}
           className={cn(
-            "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2 text-left text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50",
+            "w-full justify-between bg-transparent px-2 text-left font-normal hover:bg-transparent focus-visible:border-primary focus-visible:ring-primary/20",
             className,
           )}
         >
-          <span className={cn("truncate", !selected && "text-muted-foreground")}>
+          <span
+            className={cn("truncate", !selected && "text-muted-foreground")}
+          >
             {selected?.name ?? "書を選択"}
           </span>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent
         align="start"
@@ -82,7 +86,9 @@ export default function BookCombobox({
                 <Check
                   className={cn(
                     "ml-auto text-primary",
-                    String(b.id) === String(value) ? "opacity-100" : "opacity-0",
+                    String(b.id) === String(value)
+                      ? "opacity-100"
+                      : "opacity-0",
                   )}
                 />
               </CommandItem>

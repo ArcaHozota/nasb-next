@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 
@@ -234,12 +235,12 @@ export default function HymnScoreModal({
               <CloudUpload className="h-4 w-4" /> ファイルを選択
             </Button>
             <div className="mx-3 flex flex-col items-center gap-3">
-              <label
+              <Label
                 htmlFor="score-original"
-                className="text-xs font-medium text-secondary"
+                className="text-xs text-secondary"
               >
                 オリジナル
-              </label>
+              </Label>
               <Switch
                 id="score-original"
                 checked={isOriginal}

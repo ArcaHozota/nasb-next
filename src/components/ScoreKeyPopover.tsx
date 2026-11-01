@@ -4,10 +4,18 @@
 // 楽譜アイコンの「調を選ぶふきだし」(賛美歌一覧・ホームのPC版で共通)。
 // 楽譜が1件(以下)ならそのままダウンロード、複数あるときはアイコンの横にふきだしを出し、
 // 調を選んでダウンロードする。オリジナルキーは「Ab*」のように星を付ける。
-// ふきだしは Popover(Portal)なので、テーブル等の overflow-hidden に切られない。
+// ふきだしは shadcn/ui の Popover(Portal)なので、テーブル等の overflow-hidden に切られない。
+// 位置はアイコン要素(PopoverAnchor + virtualRef)に合わせる。トリガーは非同期で調を取得してから
+// 開く必要があるため、DropdownMenu(トリガーが開閉を握る)ではなく Popover を使っている。
 // 見た目は呼び出し側の className で上書きできる(管理画面=白、ホーム=ガラス風)。
 import { useRef, useState, type ReactNode } from "react";
 import { Popover as PopoverPrimitive } from "radix-ui";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { EMPTY_STRING } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -78,7 +86,7 @@ export default function ScoreKeyPopover({
   };
 
   return (
-    <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen}>
       {children({
         onClick,
         loading,
@@ -88,52 +96,52 @@ export default function ScoreKeyPopover({
         },
       })}
       {/* アイコン要素そのものを位置の基準にする(ref を呼び出し側から受け取る) */}
-      <PopoverPrimitive.Anchor
+      <PopoverAnchor
         virtualRef={
           anchorEl as unknown as React.ComponentProps<
-            typeof PopoverPrimitive.Anchor
+            typeof PopoverAnchor
           >["virtualRef"]
         }
       />
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Content
-          side={side}
-          align={align}
-          sideOffset={10}
-          collisionPadding={8}
-          className={cn(
-            "noto-serif z-50 min-w-20 rounded-2xl border border-gray-200 bg-white p-1.5 shadow-lg outline-none",
-            contentClassName,
-          )}
-        >
-          <ul role="menu" className="flex flex-col">
-            {keys.map((k) => (
-              <li key={k.chord} role="none">
-                <button
-                  type="button"
-                  role="menuitem"
-                  className={cn(
-                    "block w-full rounded-lg px-5 py-1.5 text-center text-sm font-medium text-gray-700 hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:outline-none",
-                    itemClassName,
-                  )}
-                  onClick={() => {
-                    setOpen(false);
-                    void download(id, k.chord);
-                  }}
-                >
-                  {chordLabel(k.chord)}
-                  {k.isOriginal ? "*" : EMPTY_STRING}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <PopoverPrimitive.Arrow
-            className={cn("fill-white", arrowClassName)}
-            width={14}
-            height={7}
-          />
-        </PopoverPrimitive.Content>
-      </PopoverPrimitive.Portal>
-    </PopoverPrimitive.Root>
+      <PopoverContent
+        side={side}
+        align={align}
+        sideOffset={10}
+        collisionPadding={8}
+        className={cn(
+          "noto-serif w-auto min-w-20 rounded-2xl border-gray-200 bg-white p-1.5 text-gray-700 shadow-lg",
+          contentClassName,
+        )}
+      >
+        <ul role="menu" className="flex flex-col">
+          {keys.map((k) => (
+            <li key={k.chord} role="none">
+              <Button
+                type="button"
+                variant="ghost"
+                role="menuitem"
+                rippleColor="rgba(128, 0, 32, 0.2)"
+                className={cn(
+                  "h-auto w-full rounded-lg px-5 py-1.5 text-center hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:ring-0",
+                  itemClassName,
+                )}
+                onClick={() => {
+                  setOpen(false);
+                  void download(id, k.chord);
+                }}
+              >
+                {chordLabel(k.chord)}
+                {k.isOriginal ? "*" : EMPTY_STRING}
+              </Button>
+            </li>
+          ))}
+        </ul>
+        <PopoverPrimitive.Arrow
+          className={cn("fill-white", arrowClassName)}
+          width={14}
+          height={7}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { CircleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Field, FieldLabel } from "@/components/ui/field";
 
@@ -53,8 +54,8 @@ export default function LoginView() {
         className="fixed inset-0 -z-10 h-full w-full object-cover"
       />
 
-      <div className="w-90 rounded-[18px] border border-white/45 bg-white/25 p-2 shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl backdrop-saturate-150">
-        <div className="p-4">
+      <Card className="w-90 gap-0 rounded-[18px] border-white/45 bg-white/25 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl backdrop-saturate-150">
+        <CardContent className="p-4">
           <h1 className="mb-6 text-center text-2xl font-bold tracking-wide text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.4)]">
             NASB1995
           </h1>
@@ -114,8 +115,8 @@ export default function LoginView() {
           >
             {loading ? <Spinner /> : <span>ログイン</span>}
           </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
