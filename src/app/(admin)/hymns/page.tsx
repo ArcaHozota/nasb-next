@@ -2,8 +2,8 @@
 
 // src/app/(admin)/hymns/page.tsx
 // 旧 views/HymnList.vue を移植
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   useQuery,
   useQueryClient,
@@ -34,8 +34,8 @@ import {
   extractErrorMessage,
   utf8ToBase64,
 } from "@/lib/constants";
-import { asStr } from "@/lib/form";
 import HymnScoreModal from "@/components/HymnScoreModal";
+import HymnFormModal from "@/components/HymnFormModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -101,20 +101,16 @@ const PAGER_BUTTON =
 const PAGER_RIPPLE = "rgba(128, 0, 32, 0.2)";
 
 function HymnListInner() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const feedback = useFeedbackStore();
   const queryClient = useQueryClient();
   const userId = useAuthStore((s) => s.userId);
 
-  const [page, setPage] = useState(Number(searchParams.get("pageNum")) || 1);
-  const [pageSize, setPageSize] = useState(
-    Number(searchParams.get("pageSize")) || 10,
-  );
-  const [keyword, setKeyword] = useState(asStr(searchParams.get("keyword")));
-  const [submittedKeyword, setSubmittedKeyword] = useState(
-    asStr(searchParams.get("keyword")),
-  );
+  // 追加・編集はモーダルなので、ページ位置や検索条件を URL で受け渡す必要はない
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [keyword, setKeyword] = useState(EMPTY_STRING);
+  const [submittedKeyword, setSubmittedKeyword] = useState(EMPTY_STRING);
 
   const { data, isFetching } = useQuery({
     queryKey: ["hymns-list", page, pageSize, submittedKeyword],
@@ -153,13 +149,25 @@ function HymnListInner() {
     if (e.key === "Enter") onSearch();
   };
 
-  const goAdd = () =>
-    router.push(`/hymns/add?pageNum=${page}&pageSize=${pageSize}`);
+  // 追加・編集は画面遷移ではなく、モーダルで行う(一覧の page / pageSize / keyword はそのまま保たれる)。
+  // HYMNS.ID は Snowflake の19桁でJS numberでは精度が壊れるため、編集IDは String で持つ。
+  const [formModal, setFormModal] = useState<
+    { mode: "add" } | { mode: "edit"; id: string } | null
+  >(null);
+  const goAdd = () => setFormModal({ mode: "add" });
+  const goEdit = (id: number) => setFormModal({ mode: "edit", id: String(id) });
+  const closeFormModal = () => setFormModal(null);
 
-  const goEdit = (id: number) =>
-    router.push(
-      `/hymns/edit?editId=${id}&pageNum=${page}&pageSize=${pageSize}&keyword=${encodeURIComponent(submittedKeyword)}`,
-    );
+  const onFormSaved = (result: { mode: "add" | "edit"; pageNum?: number }) => {
+    setFormModal(null);
+    if (result.mode === "add") {
+      // 新しい曲は検索条件なしの一覧の最後のページに載るので、検索を解除してそのページへ移動する
+      setKeyword(EMPTY_STRING);
+      setSubmittedKeyword(EMPTY_STRING);
+      if (result.pageNum) setPage(result.pageNum);
+    }
+    queryClient.invalidateQueries({ queryKey: ["hymns-list"] });
+  };
 
   // 楽譜アップロードは専用画面への遷移ではなく、モーダルで行う
   const [scoreModalHymn, setScoreModalHymn] = useState<{
@@ -665,6 +673,17 @@ function HymnListInner() {
         </CardContent>
       </Card>
 
+      {formModal !== null && (
+        <HymnFormModal
+          key={formModal.mode === "edit" ? formModal.id : "add"}
+          mode={formModal.mode}
+          editId={formModal.mode === "edit" ? formModal.id : undefined}
+          pageSize={pageSize}
+          onClose={closeFormModal}
+          onSaved={onFormSaved}
+        />
+      )}
+
       {scoreModalHymn !== null && (
         <HymnScoreModal
           hymnId={scoreModalHymn.id}
@@ -682,9 +701,5 @@ function HymnListInner() {
 }
 
 export default function HymnList() {
-  return (
-    <Suspense fallback={null}>
-      <HymnListInner />
-    </Suspense>
-  );
+  return <HymnListInner />;
 }
