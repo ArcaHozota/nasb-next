@@ -190,7 +190,7 @@ export default function AdminLayout({
     if (!ok) return;
     await auth.logout();
     // 旧実装同様、状態を完全にリセットするためフルリロードする
-    window.location.href = "/home";
+    router.push("/home");
   };
 
   const onSearch = () => {
@@ -325,26 +325,31 @@ function AdminSidebar({
     <Sidebar collapsible="icon" className="border-r-0">
       {/* ===== ブランド ===== */}
       <SidebarHeader className="bg-[#fffff0] p-0">
-        <button
-          type="button"
-          aria-label="メインメニューへ"
-          className="flex items-center gap-2 px-4 py-6 text-left group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-3"
-          onClick={() => {
-            onBrand();
-            closeOnMobile();
-          }}
-        >
-          <Image
-            src="/assets/jerusalem-cross2.svg"
-            alt=""
-            width={49}
-            height={49}
-            className="h-12.25 w-12.25 shrink-0 object-cover group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
-          />
-          <span className="effect-shine whitespace-nowrap text-[1.9rem] leading-none group-data-[collapsible=icon]:hidden">
-            NASB1995
-          </span>
-        </button>
+        <SidebarMenu className="gap-0">
+          {/* 折りたたみ時は SidebarMenuButton が 32px 角に固定されるため、縦の余白は外側で確保する */}
+          <SidebarMenuItem className="group-data-[collapsible=icon]:py-3">
+            <SidebarMenuButton
+              size="lg"
+              aria-label="メインメニューへ"
+              className="h-auto gap-2 rounded-none px-4 py-6 hover:bg-transparent active:bg-transparent group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-0"
+              onClick={() => {
+                onBrand();
+                closeOnMobile();
+              }}
+            >
+              <Image
+                src="/assets/jerusalem-cross2.svg"
+                alt=""
+                width={49}
+                height={49}
+                className="h-12.25 w-12.25 shrink-0 object-cover group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
+              />
+              <span className="effect-shine whitespace-nowrap text-[1.9rem] leading-none group-data-[collapsible=icon]:hidden">
+                NASB1995
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       {/* ===== メインナビ ===== */}
