@@ -2,7 +2,15 @@
 
 // src/app/home/page.tsx
 // 旧 views/HomeView.vue を移植
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   useInfiniteQuery,
@@ -289,6 +297,14 @@ function NoResults() {
   );
 }
 
+// 画面幅の購読(window.matchMedia)。Effect で setState せず useSyncExternalStore で読む
+const MOBILE_QUERY = "(max-width: 700px)";
+function subscribeMobile(onChange: () => void) {
+  const mql = window.matchMedia(MOBILE_QUERY);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+
 export default function HomeView() {
   const router = useRouter();
   const toast = useFeedbackStore((s) => s.toast);
@@ -297,14 +313,12 @@ export default function HomeView() {
   // --- レスポンシブ判定(旧 useMediaQuery("(max-width:700px)")相当) ---
   // null = まだ判定前。判定が済むまでデスクトップ/モバイルどちらのデータ取得も始めない
   // (以前は初回に必ずデスクトップ用の取得が走り、モバイルでは無駄なリクエストになっていた)
-  const [isMobile, setIsMobile] = useState<boolean | null>(null);
-  useEffect(() => {
-    const mql = window.matchMedia("(max-width: 700px)");
-    setIsMobile(mql.matches);
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
+  // サーバー側(と、ハイドレーション中)のスナップショットは null
+  const isMobile = useSyncExternalStore<boolean | null>(
+    subscribeMobile,
+    () => window.matchMedia(MOBILE_QUERY).matches,
+    () => null,
+  );
 
   // 別端末ログインによる強制ログアウト(axios.ts の401ハンドラ)等で
   // localStorageにセットされたメッセージをトースト表示する。

@@ -65,7 +65,9 @@ function RandomFiveInner() {
   const confirm = useFeedbackStore((s) => s.confirm);
   const userId = useAuthStore((s) => s.userId);
 
-  const [keyword, setKeyword] = useState(EMPTY_STRING);
+  const [keyword, setKeyword] = useState(
+    searchParams.get("keyword") ?? EMPTY_STRING,
+  );
   const [records, setRecords] = useState<HymnRecord[]>([]);
   const [loading, setLoading] = useState(false);
   // 一度でも検索したか(未検索の案内と「該当データなし」を出し分けるため)
@@ -105,10 +107,17 @@ function RandomFiveInner() {
   // ヘッダーから検索し直しても(同じキーワードでも)毎回検索が走り、新しい5曲を引き直せる。
   const headerKeyword = searchParams.get("keyword");
   const headerSearchAt = searchParams.get("t");
+  // 画面内の検索欄もヘッダーのキーワードに合わせる(Effect ではなく描画中に state を調整する)
+  const headerKey = `${headerKeyword ?? ""}|${headerSearchAt ?? ""}`;
+  const [prevHeaderKey, setPrevHeaderKey] = useState(headerKey);
+  if (prevHeaderKey !== headerKey) {
+    setPrevHeaderKey(headerKey);
+    if (headerKeyword) setKeyword(headerKeyword);
+  }
   useEffect(() => {
     if (!headerKeyword) return;
-    setKeyword(headerKeyword); // 画面内の検索欄もヘッダーのキーワードに合わせる
-    void runSearch("/common/search", headerKeyword);
+    // runSearch は最初に setLoading する。Effect 本体で同期的に state を更新しないよう、マイクロタスクへ回す
+    queueMicrotask(() => void runSearch("/common/search", headerKeyword));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [headerKeyword, headerSearchAt]);
 

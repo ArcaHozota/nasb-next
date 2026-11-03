@@ -118,11 +118,16 @@ export default function BookAddition() {
   }, []);
 
   // 書が変わったら章を取り直す(連動の核心)
-  useEffect(() => {
+  // 章の選択・一覧のリセットは、Effect ではなく描画中に state を調整する
+  const [prevBookId, setPrevBookId] = useState(bookId);
+  if (prevBookId !== bookId) {
+    setPrevBookId(bookId);
     setChapterId(EMPTY_STRING);
     setChapters([]);
+    setChapterLoading(!!bookId);
+  }
+  useEffect(() => {
     if (!bookId) return;
-    setChapterLoading(true);
     (async () => {
       try {
         // 章の一覧も変わらないので、書ごとにキャッシュする(同じ書に戻ったときは再取得しない)
@@ -175,15 +180,23 @@ export default function BookAddition() {
   };
 
   // 章・節が決まったら既存の節を探す。あれば編集モード(ボタンが「更新」になる)
+  // 検索前の状態(既存の節の破棄・「確認中」表示)は、Effect ではなく描画中に state を調整する
+  const lookupVerse = verseId.trim();
+  const lookupReady = !!chapterId && /^\d+$/.test(lookupVerse);
+  const lookupKey = `${chapterId}|${lookupVerse}`;
+  const [prevLookupKey, setPrevLookupKey] = useState(lookupKey);
+  if (prevLookupKey !== lookupKey) {
+    setPrevLookupKey(lookupKey);
+    setExisting(null);
+    setLookup(lookupReady ? "loading" : "idle");
+  }
   useEffect(() => {
     const verse = verseId.trim();
-    setExisting(null);
     if (!chapterId || !/^\d+$/.test(verse)) {
-      setLookup("idle");
-      releaseLoaded();
+      // Effect 本体で同期的に state を更新しないよう、マイクロタスクへ回す
+      queueMicrotask(releaseLoaded);
       return;
     }
-    setLookup("loading");
     let cancelled = false;
     const timer = setTimeout(async () => {
       try {
