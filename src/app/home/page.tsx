@@ -111,11 +111,27 @@ const bubbleTone = (line: string) =>
     arrow: "fill-[rgba(255,255,255,0.4)]",
   };
 
-// ホバーで光の筋が左から右へ横切る(シャイン)。.glass-card の position:relative / overflow:hidden を前提に、
-// ::before の帯を左の外側に置き、ホバー中だけ右の外側へ動かす。離したときは逆走させず、すぐ元の位置へ戻す。
-// 文字やボタンは z-index:1 で帯より前に出るので、クリックも文字の見た目も邪魔しない。
-const SHINE =
-  "before:pointer-events-none before:absolute before:inset-0 before:-translate-x-full before:bg-linear-to-r before:from-transparent before:via-white/30 before:to-transparent hover:before:translate-x-full hover:before:transition-transform hover:before:duration-700";
+// カードのエフェクト。
+//   浮き上がり: hover:-translate-y-1 / 押したときの縮み: active:scale-[0.98]
+//   色別の光   : hover:shadow-[...](カードの色に合わせる。下の GLOW)
+// hover: は Tailwind 4 では (hover: hover) のときだけ効くので、タッチ端末では押したときの縮みだけが働く。
+// .glass-card の box-shadow はレイヤー外の指定なので、ホバー時の影は末尾 ! (important) で上書きする。
+// 光は「外側」と「内側(inset)」の2重にする。カルーセルの枠(overflow-hidden)が左右の端で外側の光を切るため、
+// 内側の光で端でも光って見えるようにしている。上端の白いハイライト(inset)も残して質感を保つ。
+// 上下は CAROUSEL_BREATHING で枠の内側に余白を足し、浮き上がりと外側の光が切れないようにする。
+const CARD_MOTION =
+  "transition-[translate,scale,box-shadow] duration-300 hover:-translate-y-1 active:scale-[0.98]";
+// ※ Tailwind はソースの文字列を静的に読んでクラスを作る。色を変数で組み立てると生成されないので、1本ずつ書く。
+const GLOW: Record<string, string> = {
+  BURGUNDY:
+    "hover:shadow-[0_0_28px_rgba(192,64,95,0.6),inset_0_0_22px_rgba(192,64,95,0.35),inset_0_1px_0_rgba(255,255,255,0.8)]!",
+  NAPLES:
+    "hover:shadow-[0_0_28px_rgba(246,201,28,0.6),inset_0_0_22px_rgba(246,201,28,0.35),inset_0_1px_0_rgba(255,255,255,0.8)]!",
+  CADMIUM:
+    "hover:shadow-[0_0_28px_rgba(46,204,113,0.55),inset_0_0_22px_rgba(46,204,113,0.35),inset_0_1px_0_rgba(255,255,255,0.8)]!",
+};
+const GLOW_DEFAULT =
+  "hover:shadow-[0_12px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)]!";
 
 // カード右下の歌詞・楽譜ボタン(shadcn/ui の Button)。
 // 文字の大きさ・白・影・ホバーの拡大は globals.css の .score-btn が持つ。
@@ -138,13 +154,14 @@ const HymnCard = memo(function HymnCard({
   className?: string;
 }) {
   return (
-    // 見た目(ガラス・色・回る枠線)は globals.css の .glass-card が持つ(レイヤー外なので Card の既定スタイルに勝つ)。
+    // 見た目(ガラス・色)は globals.css の .glass-card が持つ(レイヤー外なので Card の既定スタイルに勝つ)。
     // Card の既定の gap / 縦 padding だけは効いてしまうため、打ち消す。
     <Card
       role="article"
       className={cn(
         "glass-card gap-0 py-0",
-        SHINE,
+        CARD_MOTION,
+        GLOW[item.lineNumber] ?? GLOW_DEFAULT,
         lineClass(item.lineNumber),
         className,
       )}
@@ -166,7 +183,6 @@ const HymnCard = memo(function HymnCard({
               type="button"
               variant="ghost"
               size="icon"
-              ripple={false}
               className={cn(SCORE_BTN, "lyric-btn")}
               aria-label="歌詞"
               onClick={() => onLyric(item)}
@@ -182,7 +198,6 @@ const HymnCard = memo(function HymnCard({
               type="button"
               variant="ghost"
               size="icon"
-              ripple={false}
               className={SCORE_BTN}
               aria-label="楽譜ダウンロード"
               onClick={() => onScore(item.id)}
@@ -677,11 +692,13 @@ export default function HomeView() {
               <NoResults />
             ) : (
               <Carousel
+                // 枠の内側に上下 py-7 の余白を足し、-my-7 で相殺して配置は変えない(浮き上がり・光が切れないように)
+                className="-my-7"
                 setApi={setCarouselApi}
                 opts={carouselOptions}
                 aria-label="賛美歌カード"
               >
-                <CarouselContent className="-ml-3">
+                <CarouselContent className="-ml-3 py-7">
                   {Array.from({ length: mobileTotal }, (_, i) => {
                     const item = mobileRecords[i];
                     const kind: SlideKind = item

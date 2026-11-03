@@ -162,7 +162,6 @@ button:not(:disabled) {
     0 8px 32px rgba(0, 0, 0, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   overflow: hidden;
-  transition: box-shadow 0.3s ease;
 }
 
 .glass-card.is-burgundy {
@@ -189,10 +188,6 @@ button:not(:disabled) {
 
 .glass-card.is-slide .score-btn {
   font-size: 2.2rem;
-}
-
-.glass-card:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
 }
 
 .song-name {

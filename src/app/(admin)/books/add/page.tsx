@@ -383,7 +383,6 @@ export default function BookAddition() {
                   <Button
                     type="button"
                     variant="link"
-                    ripple={false}
                     className="ml-2 h-auto p-0 text-inherit underline hover:opacity-80"
                     onClick={() => loadExisting(existing)}
                   >
