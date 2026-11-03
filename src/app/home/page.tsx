@@ -28,6 +28,8 @@ import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { fetchScoreKeysCached } from "@/lib/scoreKeys";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Carousel,
   CarouselContent,
@@ -109,6 +111,12 @@ const bubbleTone = (line: string) =>
     arrow: "fill-[rgba(255,255,255,0.4)]",
   };
 
+// カード右下の歌詞・楽譜ボタン(shadcn/ui の Button)。
+// 文字の大きさ・白・影・ホバーの拡大は globals.css の .score-btn が持つ。
+// ここでは Button 既定の正方形・太字・ホバー背景だけを打ち消す。
+const SCORE_BTN =
+  "score-btn size-auto p-0 font-normal hover:bg-transparent hover:text-white";
+
 // React.memo: モバイルではスワイプのたびに親(HomeView)が再描画されるため、
 // props が変わらないカードは描き直さない
 const HymnCard = memo(function HymnCard({
@@ -124,8 +132,15 @@ const HymnCard = memo(function HymnCard({
   className?: string;
 }) {
   return (
-    <article
-      className={cn("glass-card", lineClass(item.lineNumber), className)}
+    // 見た目(ガラス・色・回る枠線)は globals.css の .glass-card が持つ(レイヤー外なので Card の既定スタイルに勝つ)。
+    // Card の既定の gap / 縦 padding だけは効いてしまうため、打ち消す。
+    <Card
+      role="article"
+      className={cn(
+        "glass-card gap-0 py-0",
+        lineClass(item.lineNumber),
+        className,
+      )}
     >
       <div className="flex flex-col gap-2">
         <a
@@ -140,31 +155,38 @@ const HymnCard = memo(function HymnCard({
       <div className="card-actions">
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
+            <Button
               type="button"
-              className="score-btn lyric-btn"
+              variant="ghost"
+              size="icon"
+              ripple={false}
+              className={cn(SCORE_BTN, "lyric-btn")}
               aria-label="歌詞"
               onClick={() => onLyric(item)}
             >
               <ScrollText aria-hidden="true" />
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">歌詞</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              className="score-btn"
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              ripple={false}
+              className={SCORE_BTN}
               aria-label="楽譜ダウンロード"
               onClick={() => onScore(item.id)}
             >
               𝄞
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
         </Tooltip>
       </div>
-    </article>
+    </Card>
   );
 });
 
@@ -174,14 +196,14 @@ const SkeletonCard = memo(function SkeletonCard({
   className?: string;
 }) {
   return (
-    <div className={cn("glass-card", className)} aria-hidden="true">
+    <Card className={cn("glass-card gap-0 py-0", className)} aria-hidden="true">
       <div className="flex flex-col gap-2">
         <Skeleton className="h-4 w-full bg-white/60" />
         <Skeleton className="h-4 w-4/5 bg-white/60" />
         <Skeleton className="h-4 w-3/5 bg-white/60" />
       </div>
       <Skeleton className="size-7 self-end rounded-full bg-white/60" />
-    </div>
+    </Card>
   );
 });
 
@@ -281,7 +303,8 @@ export default function HomeView() {
   // ハングルを含む / 先頭が * ★ # / & を含む入力はサーバー検索(従来どおり)。
   // それ以外(日本語・英語など)は、画面側で曲名・日本語/英語の歌詞に照らして並べる。
   const localCandidate = useMemo(
-    () => submittedKeyword.trim() !== "" && !shouldSearchOnServer(submittedKeyword),
+    () =>
+      submittedKeyword.trim() !== "" && !shouldSearchOnServer(submittedKeyword),
     [submittedKeyword],
   );
   const indexQuery = useQuery({
@@ -599,13 +622,13 @@ export default function HomeView() {
         <div
           className={`search-row ${desktopBusy || mobileBusy ? "search-loading" : EMPTY_STRING}`}
         >
-          <input
+          <Input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             type="text"
             placeholder="曲名・歌詞のキーワードで検索してください"
             aria-label="キーワード"
-            className="w-full rounded-full border-none bg-white/67 py-3 pl-5 pr-11 text-base outline-none"
+            className="h-auto rounded-full border-none bg-white/67 py-3 pl-5 pr-11 text-base shadow-none placeholder:text-current/50 focus-visible:ring-0 md:text-base"
             onKeyDown={onSearchKeyDown}
           />
           <Button

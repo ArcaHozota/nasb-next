@@ -24,6 +24,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useFeedbackStore } from "@/stores/feedback";
 import { DELAY_APOLOGY, EMPTY_STRING } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -419,9 +420,11 @@ function AdminSidebar({
                   size="lg"
                   className="group/user h-auto rounded-none px-4 py-2 hover:bg-white/10 hover:text-white data-[state=open]:bg-white/10 data-[state=open]:hover:bg-white/10 data-[state=open]:hover:text-white group-data-[collapsible=icon]:mx-auto group-data-[collapsible=icon]:rounded-md group-data-[collapsible=icon]:px-0"
                 >
-                  <span className="inline-flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
-                    {username.slice(0, 1)}
-                  </span>
+                  <Avatar className="size-7.5 group-data-[collapsible=icon]:size-8">
+                    <AvatarFallback className="bg-white/20 text-xs">
+                      {username.slice(0, 1)}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="flex-1 text-[0.9rem]">{username}</span>
                   <ChevronUp className="ml-auto transition-transform group-data-[state=open]/user:rotate-180" />
                 </SidebarMenuButton>

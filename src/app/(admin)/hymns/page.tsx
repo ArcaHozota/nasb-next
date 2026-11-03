@@ -36,6 +36,7 @@ import {
 } from "@/lib/constants";
 import HymnScoreModal from "@/components/HymnScoreModal";
 import HymnFormModal from "@/components/HymnFormModal";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -469,14 +470,14 @@ function HymnListInner() {
                     >
                       <TableCell className="px-3 py-2">
                         {isSearching ? (
-                          <span
+                          <Badge
                             className={cn(
-                              "inline-block rounded-full px-2.5 py-0.5 text-xs font-bold whitespace-nowrap",
+                              "border-0 px-2.5 font-bold",
                               level.chip,
                             )}
                           >
                             {level.label}
-                          </span>
+                          </Badge>
                         ) : (
                           <span className="font-bold text-gray-500 tabular-nums">
                             {String((page - 1) * pageSize + i + 1).padStart(

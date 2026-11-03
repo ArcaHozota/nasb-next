@@ -18,6 +18,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import Highlighted from "@/components/Highlighted";
 import { countHits, lyricQueryOptions } from "@/lib/lyrics";
@@ -111,9 +112,14 @@ export default function LyricViewer({
                   {target.nameKr}
                 </SheetDescription>
               </SheetHeader>
-              <div className="flex min-h-0 flex-col gap-2 overflow-y-auto px-4">
-                <LyricBody id={target.id} terms={terms} />
-              </div>
+              <ScrollArea
+                className="flex min-h-0 flex-col"
+                viewportClassName="min-h-0 flex-1"
+              >
+                <div className="flex flex-col gap-2 px-4">
+                  <LyricBody id={target.id} terms={terms} />
+                </div>
+              </ScrollArea>
             </>
           )}
         </SheetContent>
@@ -137,9 +143,14 @@ export default function LyricViewer({
                 {target.nameKr}
               </DialogDescription>
             </DialogHeader>
-            <div className="flex min-h-0 flex-col gap-2 overflow-y-auto pr-1">
-              <LyricBody id={target.id} terms={terms} />
-            </div>
+            <ScrollArea
+              className="flex min-h-0 flex-col"
+              viewportClassName="min-h-0 flex-1"
+            >
+              <div className="flex flex-col gap-2 pr-3">
+                <LyricBody id={target.id} terms={terms} />
+              </div>
+            </ScrollArea>
           </>
         )}
       </DialogContent>

@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { required } from "@/lib/form";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -505,16 +506,16 @@ function StudentEditionInner() {
                       YouTube連携
                     </FieldLabel>
                     <FieldDescription className="flex items-center gap-2">
-                      <span
+                      <Badge
                         className={cn(
-                          "inline-block rounded-full px-2 py-0.5 text-xs font-semibold",
+                          "border-0 font-semibold",
                           youtubeLinked
                             ? "bg-green-100 text-green-800"
                             : "bg-gray-100 text-gray-600",
                         )}
                       >
                         {youtubeLinked ? "連携済み" : "未連携"}
-                      </span>
+                      </Badge>
                       <span className="text-xs">
                         ONにすると連携ボタンが押せます
                       </span>
