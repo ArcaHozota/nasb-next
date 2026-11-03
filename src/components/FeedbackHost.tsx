@@ -45,8 +45,8 @@ export default function FeedbackHost() {
           if (!open) answer(false);
         }}
       >
-        <AlertDialogContent className="noto-sans max-w-sm gap-0 overflow-hidden rounded-lg border-0 p-0 shadow-xl sm:max-w-sm">
-          <AlertDialogHeader className="block! gap-0 pt-3">
+        <AlertDialogContent className="noto-sans max-w-sm gap-0 overflow-hidden rounded-lg border-0 p-0 shadow-xl data-[size=default]:sm:max-w-sm">
+          <AlertDialogHeader className="place-items-stretch! gap-0 pt-3">
             <AlertDialogTitle
               className={cn(
                 "text-center text-lg font-semibold",
