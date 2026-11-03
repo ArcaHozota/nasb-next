@@ -296,7 +296,7 @@ function StudentEditionInner() {
         文字と入力欄を読みやすくする。背景画像は backdrop-blur 越しにうっすら見える。
         ※もし glass-panel 側の指定が優先されない場合は、この2クラスを外して調整すること。
       */}
-      <Card className="studentedition-card glass-panel glass-panel--gold relative mx-auto max-w-2xl gap-0 overflow-hidden rounded-[18px] bg-white/85! py-0 backdrop-blur-md">
+      <Card className="studentedition-card glass-panel relative mx-auto max-w-2xl gap-0 overflow-hidden rounded-[18px] bg-white/85! py-0 backdrop-blur-md">
         <CardHeader
           className="flex items-center gap-0 px-4 py-3 text-white"
           style={{ backgroundColor: "#ff883e" }}

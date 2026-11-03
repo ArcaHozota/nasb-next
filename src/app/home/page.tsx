@@ -111,6 +111,12 @@ const bubbleTone = (line: string) =>
     arrow: "fill-[rgba(255,255,255,0.4)]",
   };
 
+// ホバーで光の筋が左から右へ横切る(シャイン)。.glass-card の position:relative / overflow:hidden を前提に、
+// ::before の帯を左の外側に置き、ホバー中だけ右の外側へ動かす。離したときは逆走させず、すぐ元の位置へ戻す。
+// 文字やボタンは z-index:1 で帯より前に出るので、クリックも文字の見た目も邪魔しない。
+const SHINE =
+  "before:pointer-events-none before:absolute before:inset-0 before:-translate-x-full before:bg-linear-to-r before:from-transparent before:via-white/30 before:to-transparent hover:before:translate-x-full hover:before:transition-transform hover:before:duration-700";
+
 // カード右下の歌詞・楽譜ボタン(shadcn/ui の Button)。
 // 文字の大きさ・白・影・ホバーの拡大は globals.css の .score-btn が持つ。
 // ここでは Button 既定の正方形・太字・ホバー背景だけを打ち消す。
@@ -138,6 +144,7 @@ const HymnCard = memo(function HymnCard({
       role="article"
       className={cn(
         "glass-card gap-0 py-0",
+        SHINE,
         lineClass(item.lineNumber),
         className,
       )}
@@ -619,9 +626,15 @@ export default function HomeView() {
       </header>
 
       <main className="mx-auto max-w-270 px-4 pb-16 pt-8 md:px-4 md:pb-16 md:pt-8">
-        <div
-          className={`search-row ${desktopBusy || mobileBusy ? "search-loading" : EMPTY_STRING}`}
-        >
+        <div className="relative mx-auto mb-7 max-w-130">
+          {/* 読み込み中は、検索欄のまわりに細いリングを脈打たせる(回る枠線の代わり)。
+              animate-pulse は不透明度を変えるので、入力欄ではなくリング専用の要素に付ける */}
+          {(desktopBusy || mobileBusy) && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-0.5 animate-pulse rounded-full ring-2 ring-primary/60"
+            />
+          )}
           <Input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}

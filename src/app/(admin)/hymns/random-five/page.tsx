@@ -181,7 +181,7 @@ function RandomFiveInner() {
         />
       </div>
 
-      <Card className="randomfive-card noto-serif glass-panel glass-panel--gray relative overflow-hidden rounded-[18px] gap-0 py-0">
+      <Card className="randomfive-card noto-serif glass-panel relative overflow-hidden rounded-[18px] gap-0 py-0">
         <CardHeader className="gap-0 flex items-center bg-gray-800 px-4 py-3 text-white">
           <LayoutGrid className="mr-2 h-5 w-5" />
           <CardTitle

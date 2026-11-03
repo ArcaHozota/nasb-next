@@ -254,9 +254,7 @@ export default function HymnFormModal({
         </DialogDescription>
         {/* glass-panel(globals.css・レイヤー外)の背景に勝つため、末尾 ! (Tailwind v4 の important) を付けている。
             モーダルでは暗い下地の上に載るので、半透明ではなく白ベタにする。 */}
-        <Card
-          className={`form-card glass-panel ${isEdit ? "glass-panel--burgundy" : "glass-panel--green"} relative gap-0 overflow-hidden rounded-[18px] bg-white! py-0`}
-        >
+        <Card className="form-card glass-panel relative gap-0 overflow-hidden rounded-[18px] bg-white! py-0">
           <CardHeader
             className={`flex items-center gap-0 px-4 py-3 text-white ${isEdit ? "bg-primary" : "bg-success"}`}
           >

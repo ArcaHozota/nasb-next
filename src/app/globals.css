@@ -141,18 +141,6 @@ button:not(:disabled) {
   }
 }
 
-@property --angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
-@keyframes rotate-border {
-  to {
-    --angle: 360deg;
-  }
-}
-
 /* ===== HomeView(モバイルのカルーセル。PC版は末尾の「開いた讃美歌集」) ===== */
 
 /* カードは横長〜正方形。名前が長い曲は高さが伸び、同じ行のカードもそれに揃う */
@@ -199,54 +187,6 @@ button:not(:disabled) {
 
 .glass-card.is-slide .score-btn {
   font-size: 2.2rem;
-}
-
-.glass-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 2px;
-  background: conic-gradient(from var(--angle),
-      transparent 0deg,
-      transparent 270deg,
-      #800020 320deg,
-      #c0405f 350deg,
-      #800020 360deg);
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.glass-card.is-naples::before {
-  background: conic-gradient(from var(--angle),
-      transparent 0deg,
-      transparent 270deg,
-      #b8860b 320deg,
-      #f6c91c 350deg,
-      #b8860b 360deg);
-}
-
-.glass-card.is-cadmium::before {
-  background: conic-gradient(from var(--angle),
-      transparent 0deg,
-      transparent 270deg,
-      #0d5c33 320deg,
-      #2ecc71 350deg,
-      #0d5c33 360deg);
-}
-
-.glass-card:hover::before {
-  opacity: 1;
-  animation: rotate-border 2250ms linear infinite;
 }
 
 .glass-card:hover {
@@ -339,42 +279,6 @@ button:not(:disabled) {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
-.search-row {
-  max-width: 520px;
-  margin: 0 auto 28px;
-  position: relative;
-}
-
-.search-row::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: 999px;
-  padding: 3px;
-  background: conic-gradient(from var(--angle),
-      transparent 0deg,
-      transparent 270deg,
-      #800020 320deg,
-      #c0405f 350deg,
-      #800020 360deg);
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.search-row.search-loading::before {
-  opacity: 1;
-  animation: rotate-border 3300ms linear infinite;
-}
-
 /* ===== 共通ガラスカード(HymnList/HymnForm/RandomFive/BookAddition/StudentEdition) ===== */
 .glass-panel {
   background: rgba(255, 255, 255, 0.82);
@@ -384,66 +288,13 @@ button:not(:disabled) {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: border-color 0.3s ease;
 }
 
-.glass-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 2px;
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.glass-panel:hover::before {
-  opacity: 1;
-  animation: rotate-border 3300ms linear infinite;
-}
-
-.glass-panel--gray::before {
-  background: conic-gradient(from var(--angle),
-      transparent 0deg,
-      transparent 270deg,
-      #353542 320deg,
-      #6e6e80 350deg,
-      #353542 360deg);
-}
-
-.glass-panel--burgundy::before {
-  background: conic-gradient(from var(--angle),
-      transparent 0deg,
-      transparent 270deg,
-      #800020 320deg,
-      #c0405f 350deg,
-      #800020 360deg);
-}
-
-.glass-panel--green::before {
-  background: conic-gradient(from var(--angle),
-      transparent 0deg,
-      transparent 270deg,
-      #006400 320deg,
-      #4caf50 350deg,
-      #006400 360deg);
-}
-
-.glass-panel--gold::before {
-  background: conic-gradient(from var(--angle),
-      transparent 0deg,
-      transparent 270deg,
-      #b8860b 320deg,
-      #f6c91c 350deg,
-      #b8860b 360deg);
+/* ホバーで枠線を白くはっきりさせる(回る枠線の代わり)。
+   .glass-panel の border はレイヤー外の指定なので、Tailwind の hover:border-* では上書きできず、ここに書く */
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.8);
 }
 
 /* ===== HymnList ===== */
@@ -686,7 +537,8 @@ a.glass-item:hover {
 
 .book-page--left {
   width: 40%;
-  max-width: 498px; /* 470px × 125/118 */
+  max-width: 498px;
+  /* 470px × 125/118 */
   flex-shrink: 0;
   padding: 24px 30px 14px 32px;
   background: #f8f1e1;
@@ -717,7 +569,8 @@ a.glass-item:hover {
   align-items: baseline;
   gap: 12px;
   width: 100%;
-  padding: 8.7px 8px; /* 行高 57.5px → 約60.9px (×125/118) */
+  padding: 8.7px 8px;
+  /* 行高 57.5px → 約60.9px (×125/118) */
   border: none;
   border-bottom: 1px dotted #c9b48d;
   background: transparent;
