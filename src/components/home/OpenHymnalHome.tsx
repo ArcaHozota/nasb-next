@@ -335,7 +335,10 @@ export default function OpenHymnalHome({
           <section className="book-page book-page--left" aria-label="目次">
             <p className="book-caption">{caption}</p>
             {notice && (
-              <p className="book-sans px-1 pb-1 text-xs text-[#8a6400]" role="status">
+              <p
+                className="book-sans px-1 pb-1 text-xs text-[#8a6400]"
+                role="status"
+              >
                 {notice}
               </p>
             )}

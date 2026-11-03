@@ -4,10 +4,7 @@
 // 選んだ長調の調号を描いたト音記号の五線譜。押すとその調の楽譜をダウンロードする(PC版ホーム)。
 import { Download } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  accidentalSteps,
-  keySignature,
-} from "@/lib/keySignature";
+import { accidentalSteps, keySignature } from "@/lib/keySignature";
 import { cn } from "@/lib/utils";
 import { TREBLE_CLEF_G_LINE, TREBLE_CLEF_PATH } from "@/lib/trebleClef";
 
@@ -27,8 +24,20 @@ function Sharp({ cx, cy }: { cx: number; cy: number }) {
     <g stroke="currentColor" strokeLinecap="butt">
       <line x1={cx - 2} y1={cy - 7} x2={cx - 2} y2={cy + 9} strokeWidth="1.2" />
       <line x1={cx + 2} y1={cy - 9} x2={cx + 2} y2={cy + 7} strokeWidth="1.2" />
-      <line x1={cx - 4.5} y1={cy - 1.5} x2={cx + 4.5} y2={cy - 4} strokeWidth="2.2" />
-      <line x1={cx - 4.5} y1={cy + 4} x2={cx + 4.5} y2={cy + 1.5} strokeWidth="2.2" />
+      <line
+        x1={cx - 4.5}
+        y1={cy - 1.5}
+        x2={cx + 4.5}
+        y2={cy - 4}
+        strokeWidth="2.2"
+      />
+      <line
+        x1={cx - 4.5}
+        y1={cy + 4}
+        x2={cx + 4.5}
+        y2={cy + 1.5}
+        strokeWidth="2.2"
+      />
     </g>
   );
 }
@@ -77,7 +86,9 @@ export default function KeyStaff({
       type="button"
       className={cn("key-staff", disabled && "is-disabled")}
       disabled={disabled}
-      aria-label={sig && state === "ready" ? `${sig.nameJa}の楽譜をダウンロード` : title}
+      aria-label={
+        sig && state === "ready" ? `${sig.nameJa}の楽譜をダウンロード` : title
+      }
       onClick={onDownload}
     >
       <svg width="300" height="72" viewBox="0 0 300 72" aria-hidden="true">
@@ -87,12 +98,20 @@ export default function KeyStaff({
           ))}
           <line x1="299" y1={LINES[0]} x2="299" y2={LINES[4]} />
         </g>
-        <path d={TREBLE_CLEF_PATH} transform={CLEF_TRANSFORM} fill="currentColor" />
+        <path
+          d={TREBLE_CLEF_PATH}
+          transform={CLEF_TRANSFORM}
+          fill="currentColor"
+        />
         {steps.map((s, i) => {
           // 記号の中心を、その音の線(または間)の高さにぴったり合わせる
           const cx = 48 + i * 11;
           const cy = TOP_LINE_Y + s * STEP;
-          return isSharp ? <Sharp key={i} cx={cx} cy={cy} /> : <Flat key={i} cx={cx} cy={cy} />;
+          return isSharp ? (
+            <Sharp key={i} cx={cx} cy={cy} />
+          ) : (
+            <Flat key={i} cx={cx} cy={cy} />
+          );
         })}
       </svg>
       <span className="flex flex-col gap-0.5 text-left">
