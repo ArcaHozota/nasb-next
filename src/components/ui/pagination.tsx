@@ -1,11 +1,11 @@
 import * as React from "react";
+import { cn } from "cn";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MoreHorizontalIcon,
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { buttonVariants, type Button } from "@/components/ui/button";
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
@@ -111,7 +111,7 @@ function PaginationEllipsis({
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />
-      <span className="sr-only">他のページ</span>
+      <span className="sr-only">More pages</span>
     </span>
   );
 }
