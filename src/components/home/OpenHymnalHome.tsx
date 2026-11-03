@@ -6,7 +6,7 @@
 //   右ページ: 左で選んだ曲。調を選ぶと五線譜の調号が変わり、五線譜を押すとその調の楽譜をダウンロード。
 //            歌詞は検索した語を下線で強調して表示する(歌詞の照合)。
 // モバイル版(カルーセル)は page.tsx 側のまま。データ取得・検索・ページ送りの状態も page.tsx が持つ。
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, LogIn, Search, SquarePlay } from "lucide-react";
 import Highlighted from "@/components/Highlighted";
@@ -257,6 +257,14 @@ export default function OpenHymnalHome({
 }) {
   // 選んだ曲。ページや検索が変わってその曲が一覧に無くなったら、先頭の曲を表示する
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  // ページや検索が変わったら目次の先頭へ。Effect ではなく描画中に state を調整する
+  // (https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)
+  const resetKey = `${page}|${submittedKeyword}`;
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (prevResetKey !== resetKey) {
+    setPrevResetKey(resetKey);
+    setSelectedId(null);
+  }
   const selectedIndex = Math.max(
     0,
     records.findIndex((r) => r.id === selectedId),
@@ -277,11 +285,6 @@ export default function OpenHymnalHome({
       ?.querySelectorAll<HTMLButtonElement>("button[data-hymn-row]")
       [next]?.focus();
   };
-
-  // ページが変わったら目次の先頭へ
-  useEffect(() => {
-    setSelectedId(null);
-  }, [page, submittedKeyword]);
 
   const firstLoad = isFetching && records.length === 0;
   const caption = submittedKeyword.trim()
