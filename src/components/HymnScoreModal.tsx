@@ -177,7 +177,6 @@ export default function HymnScoreModal({
               variant="ghost"
               size="icon-sm"
               className="mr-2 justify-self-end text-secondary hover:bg-secondary/10 hover:text-secondary"
-              rippleColor="rgba(0, 51, 153, 0.2)"
               type="button"
               disabled={uploading}
               aria-label="閉じる"
@@ -228,7 +227,6 @@ export default function HymnScoreModal({
             <Button
               variant="outline"
               className="mx-2 scale-[1.33] border-secondary bg-transparent text-secondary hover:bg-secondary/5 hover:text-secondary"
-              rippleColor="rgba(0, 51, 153, 0.2)"
               type="button"
               onClick={() => fileInputRef.current?.click()}
             >
@@ -294,7 +292,6 @@ export default function HymnScoreModal({
                 type="button"
                 disabled={downloading}
                 className="border-secondary text-secondary hover:bg-secondary/5 hover:text-secondary"
-                rippleColor="rgba(0, 51, 153, 0.2)"
                 onClick={onDownloadExisting}
               >
                 {downloading ? <Spinner /> : "既存をダウンロード"}

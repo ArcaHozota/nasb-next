@@ -99,7 +99,6 @@ const ACTION_BUTTON =
 // ページャーのボタン(shadcn/ui の Button。現在ページは default=burgundy の塗り)
 const PAGER_BUTTON =
   "text-sm text-gray-600 hover:bg-primary/10 hover:text-primary disabled:opacity-30";
-const PAGER_RIPPLE = "rgba(128, 0, 32, 0.2)";
 
 function HymnListInner() {
   const router = useRouter();
@@ -617,7 +616,6 @@ function HymnListInner() {
                         variant="ghost"
                         size="icon-sm"
                         className={PAGER_BUTTON}
-                        rippleColor={PAGER_RIPPLE}
                         type="button"
                         aria-label="前のページ"
                         disabled={page <= 1}
@@ -640,7 +638,6 @@ function HymnListInner() {
                           className={
                             item === page ? "pointer-events-none" : PAGER_BUTTON
                           }
-                          rippleColor={PAGER_RIPPLE}
                           type="button"
                           aria-label={`${item}ページ目`}
                           aria-current={item === page ? "page" : undefined}
@@ -657,7 +654,6 @@ function HymnListInner() {
                         variant="ghost"
                         size="icon-sm"
                         className={PAGER_BUTTON}
-                        rippleColor={PAGER_RIPPLE}
                         type="button"
                         aria-label="次のページ"
                         disabled={page >= totalPages}

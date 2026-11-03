@@ -263,7 +263,6 @@ export default function AdminLayout({
                   variant="ghost"
                   size="icon-sm"
                   className="text-red-500 hover:bg-white/10 hover:text-red-500"
-                  rippleColor="rgba(255, 255, 255, 0.25)"
                   type="button"
                   aria-label="ログアウト"
                   onClick={onLogout}

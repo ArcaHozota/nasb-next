@@ -338,7 +338,6 @@ export default function BookAddition() {
                 variant="ghost"
                 size="icon"
                 className="rounded-full text-red-700 hover:bg-red-50 hover:text-red-700"
-                rippleColor="rgba(185, 28, 28, 0.2)"
                 aria-label="選択範囲を赤文字にする"
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}

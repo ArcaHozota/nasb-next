@@ -120,7 +120,6 @@ export default function ScoreKeyPopover({
                 type="button"
                 variant="ghost"
                 role="menuitem"
-                rippleColor="rgba(128, 0, 32, 0.2)"
                 className={cn(
                   "h-auto w-full rounded-lg px-5 py-1.5 text-center hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:ring-0",
                   itemClassName,
