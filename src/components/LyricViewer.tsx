@@ -112,10 +112,7 @@ export default function LyricViewer({
                   {target.nameKr}
                 </SheetDescription>
               </SheetHeader>
-              <ScrollArea
-                className="flex min-h-0 flex-col"
-                viewportClassName="min-h-0 flex-1"
-              >
+              <ScrollArea className="flex min-h-0 flex-col">
                 <div className="flex flex-col gap-2 px-4">
                   <LyricBody id={target.id} terms={terms} />
                 </div>
@@ -143,10 +140,7 @@ export default function LyricViewer({
                 {target.nameKr}
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea
-              className="flex min-h-0 flex-col"
-              viewportClassName="min-h-0 flex-1"
-            >
+            <ScrollArea className="flex min-h-0 flex-col">
               <div className="flex flex-col gap-2 pr-3">
                 <LyricBody id={target.id} terms={terms} />
               </div>
