@@ -1,6 +1,7 @@
 // src/api/axios.ts
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { useCsrfStore } from "@/stores/csrf";
+import { useUnsavedGuard } from "@/stores/unsavedGuard";
 
 // CSRFリトライ済みかどうかをリクエスト単位で持たせるための拡張
 type CsrfRetryableConfig = InternalAxiosRequestConfig & {
@@ -67,6 +68,8 @@ api.interceptors.response.use(
           "redirectMessage",
           "別の端末でログインされたため、ログアウトされました。",
         );
+        // ユーザー操作ではない遷移なので、未保存の警告(beforeunload)は出さない
+        useUnsavedGuard.getState().setBypass();
         // フルリロードでReact Query/Zustand等のクライアント側状態を丸ごとリセットする。
         window.location.href = "/home";
       }

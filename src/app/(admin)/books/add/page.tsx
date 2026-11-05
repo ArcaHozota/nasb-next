@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import Hint from "@/components/Hint";
 import { useFeedbackStore } from "@/stores/feedback";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RedLetterEditor, {
   type RedLetterEditorHandle,
@@ -95,6 +96,19 @@ export default function BookAddition() {
     textEnRef.current = textEn;
     textJpRef.current = textJp;
   }, [textEn, textJp]);
+
+  // 編集内容があるか。本文が空、または既存の節から読み込んだままの未編集なら、なし。
+  // 編集内容があるまま、タブを閉じる・再読み込み・別サイトへ移動しようとしたらブラウザが確認する。
+  // 画面内の移動は (admin)/layout.tsx 側で確認する(useUnsavedGuard の dirty を見る)。
+  const isDirty =
+    (required(textEn) || required(textJp)) &&
+    !(
+      lookup === "found" &&
+      existing &&
+      textEn === existing.textEn &&
+      textJp === existing.textJp
+    );
+  useUnsavedChanges(isDirty);
 
   // 初期表示: 書一覧を取得
   useEffect(() => {

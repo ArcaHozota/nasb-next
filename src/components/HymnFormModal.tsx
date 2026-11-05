@@ -29,6 +29,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useFeedbackStore } from "@/stores/feedback";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { required } from "@/lib/form";
@@ -242,6 +243,9 @@ export default function HymnFormModal({
       form.link !== baseline.link ||
       form.lyric !== baseline.lyric ||
       form.classic !== baseline.classic);
+
+  // 編集内容があるまま、タブを閉じる・再読み込み・別サイトへ移動しようとしたらブラウザが確認する
+  useUnsavedChanges(isDirty);
 
   // 編集内容を捨てて閉じてよいかの確認ダイアログ
   const [discardOpen, setDiscardOpen] = useState(false);

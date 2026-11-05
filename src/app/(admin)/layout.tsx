@@ -22,6 +22,7 @@ import {
 import api from "@/api/axios";
 import { useAuthStore } from "@/stores/auth";
 import { useFeedbackStore } from "@/stores/feedback";
+import { useUnsavedGuard } from "@/stores/unsavedGuard";
 import { DELAY_APOLOGY, EMPTY_STRING } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -155,14 +156,14 @@ export default function AdminLayout({
       key: "bookAdd",
       icon: Package,
       title: "聖書章節入力",
-      action: () => router.push("/books/add"),
+      action: () => go("/books/add"),
       isActive: pathname === "/books/add",
     },
     {
       key: "hymns",
       icon: Music,
       title: "賛美歌一覧",
-      action: () => router.push("/hymns"),
+      action: () => go("/hymns"),
       // /hymns配下の一覧・追加・編集・楽譜画面をまとめて「賛美歌一覧」としてアクティブ扱いにする。
       // ただし /hymns/random-five は別ナビ項目なのでここには含めない。
       isActive:
@@ -174,19 +175,36 @@ export default function AdminLayout({
       key: "randomFive",
       icon: Shuffle,
       title: "ランダム検索",
-      action: () => router.push("/hymns/random-five"),
+      action: () => go("/hymns/random-five"),
       isActive: pathname.startsWith("/hymns/random-five"),
     },
     {
       key: "receipts",
       icon: Receipt,
       title: "レシート明細入力",
-      action: () => router.push("/receipts"),
+      action: () => go("/receipts"),
       isActive: pathname.startsWith("/receipts"),
     },
   ];
 
+  // 編集中の内容(聖書章節入力など)があるまま画面内を移動するとき、先に確認する。
+  // 同じ画面への移動は確認しない。ブラウザを閉じる等は useUnsavedChanges(beforeunload)が担当。
+  const confirmLeave = async (toPath?: string) => {
+    if (!useUnsavedGuard.getState().dirty) return true;
+    if (toPath !== undefined && toPath.split("?")[0] === pathname) return true;
+    return feedback.confirm(
+      "編集中の内容があります。破棄して移動しますか？",
+      "確認",
+      { cancelLabel: "編集を続ける", confirmLabel: "破棄して移動" },
+    );
+  };
+
+  const go = async (url: string) => {
+    if (await confirmLeave(url)) router.push(url);
+  };
+
   const onLogout = async () => {
+    if (!(await confirmLeave())) return;
     const ok = await feedback.confirm("ログアウトしますか？", "警告");
     if (!ok) return;
     await auth.logout();
@@ -194,7 +212,7 @@ export default function AdminLayout({
     router.push("/home");
   };
 
-  const onSearch = () => {
+  const onSearch = async () => {
     const trimmed = keyword.trim();
     if (!trimmed) return;
     // t(検索した時刻)を付けて、同じキーワードでも毎回別のURLにする。
@@ -206,7 +224,7 @@ export default function AdminLayout({
     if (pathname.startsWith("/hymns/random-five")) {
       router.replace(url);
     } else {
-      router.push(url);
+      await go(url);
     }
   };
 
@@ -215,7 +233,7 @@ export default function AdminLayout({
   };
 
   const goPersonal = () => {
-    router.push(`/personal?userId=${auth.userId || EMPTY_STRING}`);
+    void go(`/personal?userId=${auth.userId || EMPTY_STRING}`);
   };
 
   if (!authChecked) return null;
@@ -231,7 +249,7 @@ export default function AdminLayout({
       <AdminSidebar
         navItems={navItems}
         username={auth.username ?? EMPTY_STRING}
-        onBrand={() => router.push("/mainmenu")}
+        onBrand={() => void go("/mainmenu")}
         onPersonal={goPersonal}
         onMessage={() => feedback.toast(DELAY_APOLOGY)}
         onLogout={onLogout}
