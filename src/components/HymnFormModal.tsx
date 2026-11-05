@@ -45,6 +45,8 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -230,8 +232,26 @@ export default function HymnFormModal({
   // 背景画像の上でも読みやすいよう、入力欄は白ベタにする。
   const inputClass = `bg-white ${focusClass}`;
 
+  // 編集内容があるか。追加は空の状態、編集は読み込んだ内容(originalForm)と比べる。
+  // 編集で読み込みがまだ終わっていないときは、変更なし扱い。
+  const baseline = isEdit ? originalForm : emptyForm;
+  const isDirty =
+    !!baseline &&
+    (form.nameJp !== baseline.nameJp ||
+      form.nameKr !== baseline.nameKr ||
+      form.link !== baseline.link ||
+      form.lyric !== baseline.lyric ||
+      form.classic !== baseline.classic);
+
+  // 編集内容を捨てて閉じてよいかの確認ダイアログ
+  const [discardOpen, setDiscardOpen] = useState(false);
+
   const close = () => {
     if (saving) return; // 保存中は誤って閉じられないようにする
+    if (isDirty) {
+      setDiscardOpen(true);
+      return;
+    }
     onClose();
   };
 
@@ -244,9 +264,8 @@ export default function HymnFormModal({
     >
       <DialogContent
         showCloseButton={false}
-        // 入力中の内容が消えないよう、背景クリック・Escでは閉じない(×ボタンのみ)
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
+        // 背景クリック・Esc・×のどれで閉じようとしても close() を通る。
+        // 入力中の内容があれば、閉じる前に確認ダイアログを出す(onOpenChange 側)。
         className="noto-sans max-h-[92vh] max-w-3xl gap-0 overflow-y-auto rounded-[18px] border-0 bg-transparent p-0 shadow-none sm:max-w-3xl"
       >
         <DialogDescription className="sr-only">
@@ -460,6 +479,49 @@ export default function HymnFormModal({
             </Button>
           </CardFooter>
         </Card>
+
+        {/* 編集内容の破棄確認: 外側の Dialog の子として描画し、Radix に入れ子のレイヤーとして扱わせる
+            (楽譜アップロードの上書き確認と同じ作り) */}
+        <Dialog
+          open={discardOpen}
+          onOpenChange={(open) => {
+            if (!open) setDiscardOpen(false);
+          }}
+        >
+          <DialogContent
+            className={`noto-sans max-w-sm gap-4 rounded-[18px] border-0 bg-white sm:max-w-sm ${isEdit ? "**:data-[slot=dialog-close]:text-primary" : "**:data-[slot=dialog-close]:text-success"}`}
+          >
+            <DialogHeader>
+              <DialogTitle className={isEdit ? "text-primary" : "text-success"}>
+                編集内容があります
+              </DialogTitle>
+              <DialogDescription>
+                {isEdit
+                  ? "変更を破棄して閉じますか?"
+                  : "入力した内容を破棄して閉じますか?"}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setDiscardOpen(false)}
+              >
+                編集を続ける
+              </Button>
+              <Button
+                variant={isEdit ? "default" : "success"}
+                type="button"
+                onClick={() => {
+                  setDiscardOpen(false);
+                  onClose();
+                }}
+              >
+                破棄して閉じる
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
