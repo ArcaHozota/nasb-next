@@ -31,14 +31,14 @@ export default function MainMenu() {
     {
       key: "hymns",
       title: "賛美歌集め",
-      color: "#006400",
+      color: "#002fa7",
       img: "/assets/bourbon.svg",
       action: () => router.push("/hymns"),
     },
     {
       key: "random",
       title: "ランダム選択",
-      color: "#002fa7",
+      color: "#006400",
       img: "/assets/newaragon.svg",
       action: () => router.push("/hymns/random-five"),
     },
