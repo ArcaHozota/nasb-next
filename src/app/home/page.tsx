@@ -36,6 +36,7 @@ import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { fetchScoreKeysCached } from "@/lib/scoreKeys";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -686,12 +687,14 @@ export default function HomeView() {
         </div>
 
         {isMobile === true && localNotice && (
-          <p
-            className="mb-3 text-center text-xs text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]"
+          <Alert
             role="status"
+            className="mb-3 rounded-none border-0 bg-transparent p-0 text-white"
           >
-            {localNotice}
-          </p>
+            <AlertDescription className="justify-items-center text-center text-xs text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.5)]">
+              {localNotice}
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* ===== モバイル: 1枚+次の端がのぞくカルーセル(横スワイプ、終わりに近づくと自動で追加読み込み) ===== */}

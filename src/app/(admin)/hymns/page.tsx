@@ -100,6 +100,12 @@ const ACTION_BUTTON =
 const PAGER_BUTTON =
   "text-sm text-gray-600 hover:bg-primary/10 hover:text-primary disabled:opacity-30";
 
+// 名称列: 2行まで折り返す(行数の制限は ClampText 側の line-clamp-2)。
+// 日本語は通常の禁則処理(line-break: strict)で文字間改行、韓国語は break-keep(単語=分かち書きの空白単位)。
+// 空白の無い長い英数字列だけは wrap-anywhere で強制的に折り返す。
+const COL_NAME =
+  "whitespace-normal leading-[1.4] [line-break:strict] wrap-anywhere";
+
 function HymnListInner() {
   const router = useRouter();
   const feedback = useFeedbackStore();
@@ -390,7 +396,7 @@ function HymnListInner() {
           </div>
 
           <div className="overflow-hidden rounded-md border border-gray-200">
-            <Table className="hymn-table table-fixed">
+            <Table className="table-fixed">
               <colgroup>
                 <col style={{ width: "12%" }} />
                 <col style={{ width: "34%" }} />
@@ -457,6 +463,7 @@ function HymnListInner() {
                         row.link ? `${row.nameJp}をYouTubeで開く` : undefined
                       }
                       className={cn(
+                        "hover:brightness-[0.97]",
                         row.link && "cursor-pointer",
                         // ページ切替中は前ページの行を薄く表示する
                         isFetching && "opacity-50",
@@ -486,7 +493,7 @@ function HymnListInner() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="col-name px-3 py-2">
+                      <TableCell className={`${COL_NAME} px-3 py-2`}>
                         {/* 長い名称は文字サイズを縮小(表示幅34〜66: 0.8倍 / 67以上: 0.66倍)。
                             2行まで折り返し、それ以上は「…」で省略。省略時のみホバーで全文を表示 */}
                         <ClampText
@@ -494,12 +501,12 @@ function HymnListInner() {
                           className={hymnNameSizeClass(row.nameJp)}
                         />
                       </TableCell>
-                      <TableCell className="col-name px-3 py-2">
+                      <TableCell className={`${COL_NAME} px-3 py-2`}>
                         {/* 日本語名称と同じルールで縮小・2行まで */}
                         <ClampText
                           text={row.nameKr}
                           className={cn(
-                            "col-name-kr",
+                            "break-keep",
                             hymnNameSizeClass(row.nameKr),
                           )}
                         />

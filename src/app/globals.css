@@ -294,38 +294,6 @@ button:not(:disabled) {
   border-color: rgba(255, 255, 255, 0.8);
 }
 
-/* ===== HymnList ===== */
-/* 名称列: 2行まで折り返す(行数の制限はコンポーネント側の line-clamp-2)。
-   日本語は通常の禁則処理(line-break: strict)で文字間改行、
-   韓国語は .col-name-kr で単語(分かち書きの空白)単位の改行にする。
-   空白の無い長い英数字列だけは overflow-wrap で強制的に折り返す。 */
-.col-name {
-  white-space: normal;
-  line-height: 1.4;
-  line-break: strict;
-  overflow-wrap: anywhere;
-}
-
-.col-name-kr {
-  word-break: keep-all;
-}
-
-.hymn-table .row-burgundy {
-  background-color: #ffebee;
-}
-
-.hymn-table .row-naples {
-  background-color: #fffde7;
-}
-
-.hymn-table .row-cadmium {
-  background-color: #e8f5e9;
-}
-
-.hymn-table tr:hover {
-  filter: brightness(0.97);
-}
-
 /* HymnForm / StudentEdition のトグルスイッチは shadcn/ui の Switch(size="lg")に置き換え済み */
 
 /* ===== RandomFive ===== */
@@ -393,35 +361,6 @@ a.glass-item:hover {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 
-/* ===== AdminLayout: メインエリアのスクロールバーを隠す ===== */
-.admin-main-scroll {
-  scrollbar-width: none;
-  /* Firefox */
-  -ms-overflow-style: none;
-  /* 旧Edge/IE */
-}
-
-.admin-main-scroll::-webkit-scrollbar {
-  display: none;
-  /* Chrome/Safari/新Edge */
-}
-
-/* ===== RippleButton: Vuetify風の波紋エフェクト ===== */
-.ripple {
-  position: absolute;
-  border-radius: 50%;
-  transform: scale(0);
-  pointer-events: none;
-  animation: ripple-effect 550ms ease-out;
-}
-
-@keyframes ripple-effect {
-  to {
-    transform: scale(1);
-    opacity: 0;
-  }
-}
-
 /* ===== PC版ホーム「開いた讃美歌集」(components/home/OpenHymnalHome.tsx) ===== */
 .open-hymnal {
   display: flex;
@@ -454,55 +393,6 @@ a.glass-item:hover {
   font-family: var(--font-niconne), "Niconne", cursive;
   font-size: 28px;
   line-height: 1;
-}
-
-.open-hymnal-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: min(420px, 40vw);
-  padding: 6px 2px;
-  border-bottom: 1px solid rgba(243, 227, 195, 0.6);
-  color: #f3e3c3;
-}
-
-.open-hymnal-search input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: #fff;
-  font-size: 16px;
-  font-family: var(--font-noto-serif-kr), "Noto Serif KR", serif;
-}
-
-.open-hymnal-search input::placeholder {
-  color: rgba(243, 227, 195, 0.55);
-  font-family: var(--font-noto-sans-jp), "Noto Sans JP", sans-serif;
-  font-size: 13px;
-}
-
-.open-hymnal-search:focus-within {
-  border-bottom-color: #f3e3c3;
-}
-
-.open-hymnal-login {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 16px;
-  border: 1px solid #f3e3c3;
-  border-radius: 4px;
-  background: transparent;
-  color: #f3e3c3;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.open-hymnal-login:hover {
-  background: rgba(243, 227, 195, 0.12);
 }
 
 .open-hymnal-main {
@@ -613,58 +503,6 @@ button.book-row:focus-visible {
   padding-top: 10px;
   color: #6b5338;
   font-size: 13px;
-}
-
-.book-pager button {
-  border: none;
-  background: none;
-  color: #800020;
-  font: inherit;
-}
-
-.book-pager button:disabled {
-  color: #b8a888;
-  cursor: default;
-}
-
-.book-outline-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 14px;
-  border: 1px solid #800020;
-  border-radius: 4px;
-  color: #800020;
-  font-family: var(--font-noto-sans-jp), "Noto Sans JP", sans-serif;
-  font-size: 13px;
-  text-decoration: none;
-}
-
-.book-outline-btn:hover {
-  background: #800020;
-  color: #fff;
-}
-
-.book-key-chip {
-  min-width: 44px;
-  height: 30px;
-  padding: 0 12px;
-  border: 1px solid #c9b48d;
-  border-radius: 4px;
-  background: transparent;
-  color: #2b1d14;
-  font: inherit;
-}
-
-.book-key-chip:hover {
-  background: #f3e8cf;
-}
-
-.book-key-chip.is-selected {
-  border-color: #800020;
-  background: #800020;
-  color: #fff;
 }
 
 /* 調号つき五線譜(components/home/KeyStaff.tsx)。五線譜そのものがダウンロードボタン */

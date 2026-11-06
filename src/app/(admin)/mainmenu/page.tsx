@@ -4,7 +4,7 @@
 // 旧 views/MainMenu.vue を移植
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import RippleButton from "@/components/RippleButton";
+import { Card } from "@/components/ui/card";
 import { useFeedbackStore } from "@/stores/feedback";
 import { DELAY_APOLOGY } from "@/lib/constants";
 
@@ -60,28 +60,29 @@ export default function MainMenu() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {cards.map((card) => (
-          <RippleButton
+          // 押せる面なので <button> を土台にし、見た目は Card。
+          // 浮き上がり(hover)・カードごとの色の光・押したときの縮みは、group-* で Card に伝える
+          <button
             key={card.key}
             type="button"
-            className="group relative block h-[66vh] w-full cursor-pointer overflow-hidden rounded-lg p-0 text-left shadow"
-            rippleColor="rgba(255, 255, 255, 0.55)"
+            className="group block w-full cursor-pointer rounded-lg text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            style={{ ["--hover-color" as string]: card.color }}
             onClick={card.action}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={card.img}
-              alt={card.title}
-              className="h-full w-full object-cover"
-            />
-            <div
-              className="absolute bottom-0 w-full bg-black/35 py-3 text-center text-white transition-colors duration-200"
-              style={{ ["--hover-color" as string]: card.color }}
-            >
-              <h2 className="text-xl group-hover:text-(--hover-color)!">
-                {card.title}
-              </h2>
-            </div>
-          </RippleButton>
+            <Card className="relative h-[66vh] gap-0 overflow-hidden rounded-lg border-0 py-0 shadow transition-[translate,scale,box-shadow] duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_12px_32px_color-mix(in_srgb,var(--hover-color)_45%,transparent)] group-active:scale-[0.98]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={card.img}
+                alt={card.title}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute bottom-0 w-full bg-black/35 py-3 text-center text-white transition-colors duration-200">
+                <h2 className="text-xl group-hover:text-(--hover-color)!">
+                  {card.title}
+                </h2>
+              </div>
+            </Card>
+          </button>
         ))}
       </div>
     </div>

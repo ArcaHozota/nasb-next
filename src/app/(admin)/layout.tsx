@@ -20,6 +20,7 @@ import {
   Search,
 } from "lucide-react";
 import api from "@/api/axios";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuthStore } from "@/stores/auth";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useUnsavedGuard } from "@/stores/unsavedGuard";
@@ -294,9 +295,10 @@ export default function AdminLayout({
         </header>
 
         {/* ===== 各画面(ここだけがスクロールする) ===== */}
-        <div className="admin-main-scroll flex-1 overflow-y-auto p-0.75">
+        {/* スクロールバーは出さない(従来どおり)。Radix の中身ラッパー(display: table)は block に戻す */}
+        <ScrollArea className="min-h-0 flex-1 p-0.75 [&_[data-slot=scroll-area-scrollbar]]:hidden [&_[data-slot=scroll-area-viewport]>div]:block!">
           {children}
-        </div>
+        </ScrollArea>
       </SidebarInset>
     </SidebarProvider>
   );

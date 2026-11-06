@@ -11,7 +11,17 @@ import { useQuery } from "@tanstack/react-query";
 import { BookOpen, LogIn, Search, SquarePlay } from "lucide-react";
 import Highlighted from "@/components/Highlighted";
 import KeyStaff from "@/components/home/KeyStaff";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Spinner } from "@/components/ui/spinner";
 import { extractErrorMessage } from "@/lib/constants";
 import { keyLabel } from "@/lib/keySignature";
@@ -35,6 +45,10 @@ const MATCH: Record<string, { label: string; mark: string; tone: string }> = {
 };
 const RELATED = { label: "関連", mark: "◇◇◇", tone: "text-[#8a7a64]" };
 const matchOf = (line: string) => MATCH[line] ?? RELATED;
+
+/** ページ送りのボタン(ホームの本のデザインに合わせて、余白・背景なしの文字だけにしている) */
+const PAGER_BTN =
+  "h-auto p-0 text-[13px] font-normal text-[#800020] hover:bg-transparent hover:text-[#800020] disabled:text-[#b8a888] disabled:opacity-100";
 
 /** 目次の番号(全体での通し番号) */
 const hymnNo = (page: number, pageSize: number, i: number) =>
@@ -126,15 +140,16 @@ function HymnPage({
             {hymn.nameKr}
           </p>
         </div>
-        <a
-          href={hymn.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="book-outline-btn shrink-0"
+        <Button
+          asChild
+          variant="outline"
+          className="book-sans h-9 shrink-0 gap-1.5 rounded-[4px] border-[#800020] bg-transparent! px-3.5 has-[>svg]:px-3.5 text-[13px] font-normal text-[#800020] shadow-none hover:bg-[#800020]! hover:text-white"
         >
-          <SquarePlay className="size-4" aria-hidden="true" />
-          YouTubeで聴く
-        </a>
+          <a href={hymn.link} target="_blank" rel="noopener noreferrer">
+            <SquarePlay className="size-4" aria-hidden="true" />
+            YouTubeで聴く
+          </a>
+        </Button>
       </div>
 
       {/* 五線譜: 選んだ調の調号を描き、押すとその調の楽譜をダウンロードする */}
@@ -151,18 +166,29 @@ function HymnPage({
           [0, 1, 2].map((i) => (
             <Skeleton key={i} className="h-7.5 w-11 bg-[#e8dcc1]" />
           ))}
-        {keys.map((k) => (
-          <button
-            key={k.chord}
-            type="button"
-            aria-pressed={k.chord === chord}
-            className={cn("book-key-chip", k.chord === chord && "is-selected")}
-            onClick={() => setPicked(k.chord)}
+        {keys.length > 0 && (
+          <ToggleGroup
+            type="single"
+            value={chord ?? ""}
+            onValueChange={(v) => {
+              // 選択済みを再クリックすると v が空になるので、選択を維持する
+              if (v) setPicked(v);
+            }}
+            aria-label="調を選ぶ"
+            className="flex-wrap gap-2"
           >
-            {keyLabel(k.chord)}
-            {k.isOriginal ? "＊" : ""}
-          </button>
-        ))}
+            {keys.map((k) => (
+              <ToggleGroupItem
+                key={k.chord}
+                value={k.chord}
+                className="h-7.5 min-w-11 rounded-[4px]! border border-[#c9b48d] bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-[#f3e8cf] hover:text-[#2b1d14] data-[state=on]:border-[#800020] data-[state=on]:bg-[#800020] data-[state=on]:text-white"
+              >
+                {keyLabel(k.chord)}
+                {k.isOriginal ? "＊" : ""}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        )}
         {keys.some((k) => k.isOriginal) && (
           <span className="text-xs">＊オリジナルキー</span>
         )}
@@ -184,33 +210,36 @@ function HymnPage({
               : `「${terms.join("・")}」は歌詞に含まれていません（歌詞が似ている曲）`}
           </p>
         )}
-        <div className="book-lyric min-h-0 flex-1 overflow-y-auto pr-2">
-          {lyricQuery.isPending && (
-            <div className="flex justify-center py-10">
-              <Spinner className="size-6 text-[#800020]" />
-            </div>
-          )}
-          {lyricQuery.error && (
-            <p className="book-sans py-6 text-sm">
-              {extractErrorMessage(
-                lyricQuery.error,
-                "歌詞の取得に失敗しました",
-              )}
-            </p>
-          )}
-          {lyricQuery.isSuccess &&
-            (lyric ? (
-              <Highlighted
-                text={lyric}
-                terms={terms}
-                markClassName="book-mark"
-              />
-            ) : (
-              <p className="book-sans py-6 text-sm text-[#6b5338]">
-                歌詞が登録されていません。
+        {/* Radix の中身ラッパー(display: table)だと長い行で横に伸びるため、block に戻す */}
+        <ScrollArea className="min-h-0 flex-1 [&_[data-slot=scroll-area-viewport]>div]:block!">
+          <div className="book-lyric pr-2">
+            {lyricQuery.isPending && (
+              <div className="flex justify-center py-10">
+                <Spinner className="size-6 text-[#800020]" />
+              </div>
+            )}
+            {lyricQuery.error && (
+              <p className="book-sans py-6 text-sm">
+                {extractErrorMessage(
+                  lyricQuery.error,
+                  "歌詞の取得に失敗しました",
+                )}
               </p>
-            ))}
-        </div>
+            )}
+            {lyricQuery.isSuccess &&
+              (lyric ? (
+                <Highlighted
+                  text={lyric}
+                  terms={terms}
+                  markClassName="book-mark"
+                />
+              ) : (
+                <p className="book-sans py-6 text-sm text-[#6b5338]">
+                  歌詞が登録されていません。
+                </p>
+              ))}
+          </div>
+        </ScrollArea>
       </div>
     </article>
   );
@@ -298,18 +327,22 @@ export default function OpenHymnalHome({
   return (
     <div className="open-hymnal">
       <header className="open-hymnal-header">
-        <button
+        <Button
           type="button"
-          className="flex items-center gap-2.5 text-[#f3e3c3]"
+          variant="ghost"
+          className="h-auto gap-2.5 p-0! font-normal text-[#f3e3c3] hover:bg-transparent hover:text-[#f3e3c3]"
           aria-label="ホーム(検索をリセット)"
           onClick={onReload}
         >
           <JerusalemCross className="size-9" />
           <span className="open-hymnal-logo">NASB1995</span>
-        </button>
-        <div className="open-hymnal-search">
-          <span className="text-[13px] text-[#f3e3c3]/85">索引</span>
-          <input
+        </Button>
+        {/* 下線だけの検索欄(暗いヘッダー用に枠・背景・影を消している) */}
+        <InputGroup className="h-auto w-[min(420px,40vw)] rounded-none border-0 border-b border-[#f3e3c3]/60 bg-transparent px-0.5 py-1.5 text-[#f3e3c3] shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-[#f3e3c3] has-[[data-slot=input-group-control]:focus-visible]:ring-0 dark:bg-transparent">
+          <InputGroupAddon className="p-0 text-[13px] font-normal text-[#f3e3c3]/85">
+            索引
+          </InputGroupAddon>
+          <InputGroupInput
             value={keyword}
             onChange={(e) => onKeywordChange(e.target.value)}
             onKeyDown={(e) => {
@@ -318,18 +351,27 @@ export default function OpenHymnalHome({
             type="text"
             placeholder="曲名・歌詞のキーワードで検索してください"
             aria-label="キーワード"
+            className="noto-serif-kr h-auto px-2 py-0 text-base text-white placeholder:font-sans placeholder:text-[13px] placeholder:text-[#f3e3c3]/55 md:text-base dark:bg-transparent"
           />
-          <button type="button" aria-label="検索" onClick={onSearch}>
-            {isFetching ? (
-              <Spinner className="size-4" />
-            ) : (
-              <Search className="size-4" />
-            )}
-          </button>
-        </div>
-        <button type="button" className="open-hymnal-login" onClick={onLogin}>
-          <LogIn className="size-4" aria-hidden="true" /> ログイン
-        </button>
+          <InputGroupAddon align="inline-end" className="p-0">
+            <InputGroupButton
+              size="icon-xs"
+              aria-label="検索"
+              className="text-[#f3e3c3] hover:bg-[#f3e3c3]/12 hover:text-[#f3e3c3]"
+              onClick={onSearch}
+            >
+              {isFetching ? <Spinner /> : <Search />}
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-8.5 gap-1.5 rounded-[4px] border-[#f3e3c3] bg-transparent! px-4 has-[>svg]:px-4 text-sm font-semibold text-[#f3e3c3] shadow-none hover:bg-[#f3e3c3]/12! hover:text-[#f3e3c3]"
+          onClick={onLogin}
+        >
+          <LogIn aria-hidden="true" /> ログイン
+        </Button>
       </header>
 
       <main className="open-hymnal-main">
@@ -338,12 +380,14 @@ export default function OpenHymnalHome({
           <section className="book-page book-page--left" aria-label="目次">
             <p className="book-caption">{caption}</p>
             {notice && (
-              <p
-                className="book-sans px-1 pb-1 text-xs text-[#8a6400]"
+              <Alert
                 role="status"
+                className="book-sans rounded-none border-0 bg-transparent px-1 pt-0 pb-1 text-xs text-[#8a6400]"
               >
-                {notice}
-              </p>
+                <AlertDescription className="text-xs text-[#8a6400]">
+                  {notice}
+                </AlertDescription>
+              </Alert>
             )}
             <ol
               ref={listRef}
@@ -415,23 +459,27 @@ export default function OpenHymnalHome({
               })}
             </ol>
             <nav className="book-pager" aria-label="ページ送り">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                className={PAGER_BTN}
                 disabled={page <= 1}
                 onClick={() => onPageChange(page - 1)}
               >
                 ← 前
-              </button>
+              </Button>
               <span aria-live="polite">
                 {page} / {totalPages}
               </span>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                className={PAGER_BTN}
                 disabled={page >= totalPages}
                 onClick={() => onPageChange(page + 1)}
               >
                 次 →
-              </button>
+              </Button>
             </nav>
           </section>
 
