@@ -143,7 +143,7 @@ function HymnPage({
         <Button
           asChild
           variant="outline"
-          className="book-sans h-9 shrink-0 gap-1.5 rounded-[4px] border-[#800020] bg-transparent! px-3.5 has-[>svg]:px-3.5 text-[13px] font-normal text-[#800020] shadow-none hover:bg-[#800020]! hover:text-white"
+          className="book-sans h-9 shrink-0 gap-1.5 rounded-lg border-[#800020] bg-transparent! px-3.5 has-[>svg]:px-3.5 text-[13px] font-normal text-[#800020] shadow-none hover:bg-[#800020]! hover:text-white"
         >
           <a href={hymn.link} target="_blank" rel="noopener noreferrer">
             <SquarePlay className="size-4" aria-hidden="true" />
@@ -181,7 +181,7 @@ function HymnPage({
               <ToggleGroupItem
                 key={k.chord}
                 value={k.chord}
-                className="h-7.5 min-w-11 rounded-[4px]! border border-[#c9b48d] bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-[#f3e8cf] hover:text-[#2b1d14] data-[state=on]:border-[#800020] data-[state=on]:bg-[#800020] data-[state=on]:text-white"
+                className="h-7.5 min-w-11 rounded-lg! border border-[#c9b48d] bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-[#f3e8cf] hover:text-[#2b1d14] data-[state=on]:border-[#800020] data-[state=on]:bg-[#800020] data-[state=on]:text-white"
               >
                 {keyLabel(k.chord)}
                 {k.isOriginal ? "＊" : ""}
@@ -367,7 +367,7 @@ export default function OpenHymnalHome({
         <Button
           type="button"
           variant="outline"
-          className="h-8.5 gap-1.5 rounded-[4px] border-[#f3e3c3] bg-transparent! px-4 has-[>svg]:px-4 text-sm font-semibold text-[#f3e3c3] shadow-none hover:bg-[#f3e3c3]/12! hover:text-[#f3e3c3]"
+          className="h-8.5 gap-1.5 rounded-lg border-[#f3e3c3] bg-transparent! px-4 has-[>svg]:px-4 text-sm font-semibold text-[#f3e3c3] shadow-none hover:bg-[#f3e3c3]/12! hover:text-[#f3e3c3]"
           onClick={onLogin}
         >
           <LogIn aria-hidden="true" /> ログイン
