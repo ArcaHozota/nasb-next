@@ -19,6 +19,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { Item, ItemContent, ItemMedia } from "@/components/ui/item";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -49,6 +50,15 @@ const matchOf = (line: string) => MATCH[line] ?? RELATED;
 /** ページ送りのボタン(ホームの本のデザインに合わせて、余白・背景なしの文字だけにしている) */
 const PAGER_BTN =
   "h-auto p-0 text-[13px] font-normal text-[#800020] hover:bg-transparent hover:text-[#800020] disabled:text-[#b8a888] disabled:opacity-100";
+
+/** 目次の1行(shadcn/ui の Item)。点線の下罫線・押せる行のホバーと選択中の背景は、本のデザインに合わせて上書きする */
+const BOOK_ROW =
+  "w-full flex-nowrap! items-baseline! text-base! leading-normal! gap-3! rounded-none! border-0 border-b border-dotted border-[#c9b48d]! px-2! py-[8.7px]! text-left";
+const BOOK_ROW_BTN =
+  "hover:bg-[#f3e8cf] data-[active=true]:bg-[#efe2c4] focus-visible:ring-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#800020]";
+/** 目次の番号 */
+const BOOK_ROW_NO =
+  "w-7.5 justify-start text-lg leading-[27px] font-bold text-[#800020]";
 
 /** 目次の番号(全体での通し番号) */
 const hymnNo = (page: number, pageSize: number, i: number) =>
@@ -399,12 +409,14 @@ export default function OpenHymnalHome({
             >
               {firstLoad &&
                 Array.from({ length: pageSize }, (_, i) => (
-                  <li key={i} className="book-row">
-                    <Skeleton className="h-5 w-7 bg-[#e8dcc1]" />
-                    <span className="flex flex-1 flex-col gap-1.5">
-                      <Skeleton className="h-4 w-3/4 bg-[#e8dcc1]" />
-                      <Skeleton className="h-3 w-1/2 bg-[#e8dcc1]" />
-                    </span>
+                  <li key={i}>
+                    <Item className={BOOK_ROW}>
+                      <Skeleton className="h-5 w-7 bg-[#e8dcc1]" />
+                      <span className="flex flex-1 flex-col gap-1.5">
+                        <Skeleton className="h-4 w-3/4 bg-[#e8dcc1]" />
+                        <Skeleton className="h-3 w-1/2 bg-[#e8dcc1]" />
+                      </span>
+                    </Item>
                   </li>
                 ))}
               {!isFetching && records.length === 0 && (
@@ -421,39 +433,44 @@ export default function OpenHymnalHome({
                 const active = i === selectedIndex;
                 return (
                   <li key={r.id}>
-                    <button
-                      type="button"
-                      data-hymn-row
-                      className={cn("book-row", active && "is-active")}
-                      aria-current={active ? "true" : undefined}
-                      onClick={() => setSelectedId(r.id)}
-                    >
-                      <span className="book-row-no">
-                        {hymnNo(page, pageSize, i)}
-                      </span>
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="flex items-baseline gap-1.5">
-                          <span className="truncate text-[15px] font-bold">
-                            {r.nameJp}
-                          </span>
-                          <span className="book-leader" aria-hidden="true" />
-                          {match && (
-                            <span
-                              className={cn(
-                                "shrink-0 text-[11px] tracking-[1px]",
-                                match.tone,
-                              )}
-                              aria-label={match.label}
-                            >
-                              {match.mark}
+                    <Item asChild className={cn(BOOK_ROW, BOOK_ROW_BTN)}>
+                      <button
+                        type="button"
+                        data-hymn-row
+                        data-active={active}
+                        aria-current={active ? "true" : undefined}
+                        onClick={() => setSelectedId(r.id)}
+                      >
+                        <ItemMedia className={BOOK_ROW_NO}>
+                          {hymnNo(page, pageSize, i)}
+                        </ItemMedia>
+                        <ItemContent className="min-w-0 gap-0">
+                          <span className="flex items-baseline gap-1.5">
+                            <span className="truncate text-[15px] font-bold">
+                              {r.nameJp}
                             </span>
-                          )}
-                        </span>
-                        <span className="noto-serif-kr truncate text-xs text-[#5a4630]">
-                          {r.nameKr}
-                        </span>
-                      </span>
-                    </button>
+                            <span
+                              className="min-w-3 flex-1 -translate-y-1 border-b-2 border-dotted border-[#c9b48d]"
+                              aria-hidden="true"
+                            />
+                            {match && (
+                              <span
+                                className={cn(
+                                  "shrink-0 text-[11px] tracking-[1px]",
+                                  match.tone,
+                                )}
+                                aria-label={match.label}
+                              >
+                                {match.mark}
+                              </span>
+                            )}
+                          </span>
+                          <span className="noto-serif-kr truncate text-xs text-[#5a4630]">
+                            {r.nameKr}
+                          </span>
+                        </ItemContent>
+                      </button>
+                    </Item>
                   </li>
                 );
               })}

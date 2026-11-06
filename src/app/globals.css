@@ -182,81 +182,6 @@ button:not(:disabled) {
   padding: 24px;
 }
 
-.glass-card.is-slide .song-name {
-  font-size: 1.3rem;
-}
-
-.glass-card.is-slide .score-btn {
-  font-size: 2.2rem;
-}
-
-.song-name {
-  font-family: var(--font-noto-serif-jp), var(--font-noto-serif-kr), "Noto Serif JP", "Noto Serif KR", serif;
-  font-weight: 600;
-  font-size: 1.05rem;
-  line-height: 1.5;
-  color: #fff;
-  text-decoration: none;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.66);
-  cursor: pointer;
-  position: relative;
-  z-index: 1;
-}
-
-.song-name:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.score-btn {
-  align-self: flex-end;
-  margin-top: 12px;
-  font-size: 1.8rem;
-  line-height: 1;
-  color: #fff;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.66);
-  position: relative;
-  z-index: 1;
-  transition:
-    transform 0.15s ease,
-    opacity 0.15s ease;
-}
-
-.score-btn:hover {
-  transform: scale(1.2);
-  opacity: 0.85;
-}
-
-/* カード右下の操作ボタン(歌詞・楽譜)を横に並べる */
-.card-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 14px;
-  margin-top: 12px;
-  position: relative;
-  z-index: 1;
-}
-
-.card-actions .score-btn {
-  margin-top: 0;
-}
-
-/* 歌詞ボタン: 𝄞 と同じ大きさ・白・影に揃えたアイコン */
-.lyric-btn {
-  display: inline-flex;
-  align-items: center;
-}
-
-.lyric-btn svg {
-  width: 0.85em;
-  height: 0.85em;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.66));
-}
-
 /* 一致した語のハイライト(抜粋・全文の両方) */
 .lyric-mark {
   padding: 0 2px;
@@ -451,50 +376,6 @@ a.glass-item:hover {
   text-align: center;
 }
 
-.book-row {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  width: 100%;
-  padding: 8.7px 8px;
-  /* 行高 57.5px → 約60.9px (×125/118) */
-  border: none;
-  border-bottom: 1px dotted #c9b48d;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  font: inherit;
-}
-
-button.book-row:hover {
-  background: #f3e8cf;
-}
-
-button.book-row.is-active {
-  background: #efe2c4;
-}
-
-button.book-row:focus-visible {
-  outline: 2px solid #800020;
-  outline-offset: -2px;
-}
-
-.book-row-no {
-  width: 30px;
-  flex-shrink: 0;
-  color: #800020;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-/* 目次の点線(曲名と◆の間) */
-.book-leader {
-  flex: 1;
-  min-width: 12px;
-  border-bottom: 2px dotted #c9b48d;
-  transform: translateY(-4px);
-}
-
 .book-pager {
   display: flex;
   justify-content: center;
@@ -503,44 +384,6 @@ button.book-row:focus-visible {
   padding-top: 10px;
   color: #6b5338;
   font-size: 13px;
-}
-
-/* 調号つき五線譜(components/home/KeyStaff.tsx)。五線譜そのものがダウンロードボタン */
-.key-staff {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  align-self: flex-start;
-  padding: 6px 14px 6px 6px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: #4a3426;
-  font: inherit;
-}
-
-.key-staff:not(:disabled):hover {
-  background: #f3e8cf;
-  border-color: #c9b48d;
-}
-
-.key-staff:focus-visible {
-  outline: 2px solid #800020;
-  outline-offset: 2px;
-}
-
-.key-staff.is-disabled {
-  color: #b8a888;
-  cursor: default;
-}
-
-.key-staff-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #800020;
-  font-family: var(--font-noto-sans-jp), "Noto Sans JP", sans-serif;
-  font-size: 12px;
 }
 
 .book-lyric {

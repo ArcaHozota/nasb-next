@@ -143,10 +143,14 @@ const GLOW_DEFAULT =
   "hover:shadow-[0_12px_40px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)]!";
 
 // カード右下の歌詞・楽譜ボタン(shadcn/ui の Button)。
-// 文字の大きさ・白・影・ホバーの拡大は globals.css の .score-btn が持つ。
-// ここでは Button 既定の正方形・太字・ホバー背景だけを打ち消す。
+// 文字の大きさ・白・影・ホバーの拡大をここで指定し、Button 既定の正方形・太字・ホバー背景は打ち消す。
+// 文字サイズに ! を付けているのは Button 既定の text-sm に勝つため。
+// カルーセル内(Card に付く is-slide)では group-[.is-slide]/card: で大きくする。
 const SCORE_BTN =
-  "score-btn size-auto p-0 font-normal hover:bg-transparent hover:text-white";
+  "relative z-1 size-auto self-end p-0 text-[1.8rem]! leading-none font-normal text-white duration-150 [text-shadow:0_1px_3px_rgba(0,0,0,0.66)] group-[.is-slide]/card:text-[2.2rem]! hover:scale-120 hover:bg-transparent hover:text-white hover:opacity-85";
+// 歌詞ボタン: 𝄞 と同じ大きさ・白・影に揃えたアイコン
+const LYRIC_BTN =
+  "inline-flex items-center [&_svg]:size-[0.85em]! [&_svg]:drop-shadow-[0_1px_3px_rgba(0,0,0,0.66)]";
 
 // React.memo: モバイルではスワイプのたびに親(HomeView)が再描画されるため、
 // props が変わらないカードは描き直さない
@@ -168,7 +172,7 @@ const HymnCard = memo(function HymnCard({
     <Card
       role="article"
       className={cn(
-        "glass-card gap-0 py-0",
+        "glass-card group/card gap-0 py-0",
         CARD_MOTION,
         GLOW[item.lineNumber] ?? GLOW_DEFAULT,
         lineClass(item.lineNumber),
@@ -176,23 +180,24 @@ const HymnCard = memo(function HymnCard({
       )}
     >
       <div className="flex flex-col gap-2">
-        <a
-          className="song-name"
-          href={item.link}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Button
+          asChild
+          variant="link"
+          className="noto-serif relative z-1 h-auto justify-start p-0 text-left text-[1.05rem]! leading-normal font-semibold whitespace-normal text-white underline-offset-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.66)] group-[.is-slide]/card:text-[1.3rem]! hover:text-white hover:underline"
         >
-          {item.nameJp} / {item.nameKr}
-        </a>
+          <a href={item.link} target="_blank" rel="noopener noreferrer">
+            {item.nameJp} / {item.nameKr}
+          </a>
+        </Button>
       </div>
-      <div className="card-actions">
+      <div className="relative z-1 mt-3 flex items-center justify-end gap-3.5">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              className={cn(SCORE_BTN, "lyric-btn")}
+              className={cn(SCORE_BTN, LYRIC_BTN)}
               aria-label="歌詞"
               onClick={() => onLyric(item)}
             >
@@ -227,7 +232,10 @@ const SkeletonCard = memo(function SkeletonCard({
   className?: string;
 }) {
   return (
-    <Card className={cn("glass-card gap-0 py-0", className)} aria-hidden="true">
+    <Card
+      className={cn("glass-card group/card gap-0 py-0", className)}
+      aria-hidden="true"
+    >
       <div className="flex flex-col gap-2">
         <Skeleton className="h-4 w-full bg-white/60" />
         <Skeleton className="h-4 w-4/5 bg-white/60" />
@@ -632,8 +640,10 @@ export default function HomeView() {
       </div>
 
       <header className="home-nav sticky top-0 z-10 flex items-center justify-between bg-[#fffef7] px-6 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
-        <div
-          className="flex cursor-pointer items-center gap-2"
+        <Button
+          type="button"
+          variant="ghost"
+          className="h-auto gap-2 p-0! font-normal hover:bg-transparent"
           onClick={reload}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -644,7 +654,7 @@ export default function HomeView() {
             height={66}
           />
           <span className="effect-shine text-[2.2rem]">NASB1995</span>
-        </div>
+        </Button>
         <Button
           variant="warning"
           size="lg"

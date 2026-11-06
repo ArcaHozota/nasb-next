@@ -3,6 +3,7 @@
 // src/components/home/KeyStaff.tsx
 // 選んだ長調の調号を描いたト音記号の五線譜。押すとその調の楽譜をダウンロードする(PC版ホーム)。
 import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { accidentalSteps, keySignature } from "@/lib/keySignature";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,10 @@ function Flat({ cx, cy }: { cx: number; cy: number }) {
   );
 }
 
+/** 五線譜ボタンの下の小さな案内(ダウンロード・読み込み中) */
+const STAFF_HINT =
+  "book-sans inline-flex items-center gap-1 text-xs leading-normal text-[#800020]";
+
 export default function KeyStaff({
   chord,
   isOriginal,
@@ -82,9 +87,13 @@ export default function KeyStaff({
         : `${sig.nameJa}（${sig.label}）${isOriginal ? "・オリジナルキー" : ""}`;
 
   return (
-    <button
+    <Button
       type="button"
-      className={cn("key-staff", disabled && "is-disabled")}
+      variant="ghost"
+      className={cn(
+        // 五線譜そのものがボタン。Button 既定の高さ・余白・太字を打ち消し、薄い罫線の面にする
+        "h-auto items-center justify-start gap-4.5 self-start rounded-md border border-transparent py-1.5 pr-3.5 pl-1.5 text-base! leading-normal! font-normal whitespace-normal text-[#4a3426] has-[>svg]:pr-3.5 has-[>svg]:pl-1.5 hover:border-[#c9b48d] hover:bg-[#f3e8cf] hover:text-[#4a3426] focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#800020] disabled:text-[#b8a888] disabled:opacity-100 [&>svg]:h-18! [&>svg]:w-75!",
+      )}
       disabled={disabled}
       aria-label={
         sig && state === "ready" ? `${sig.nameJa}の楽譜をダウンロード` : title
@@ -117,17 +126,17 @@ export default function KeyStaff({
       <span className="flex flex-col gap-0.5 text-left">
         <span className="text-[17px] font-bold">{title}</span>
         {state === "ready" && (
-          <span className="key-staff-hint">
+          <span className={STAFF_HINT}>
             楽譜をダウンロード
             <Download className="size-3.5" aria-hidden="true" />
           </span>
         )}
         {state === "downloading" && (
-          <span className="key-staff-hint">
+          <span className={STAFF_HINT}>
             <Spinner className="size-3.5" /> ダウンロードしています…
           </span>
         )}
       </span>
-    </button>
+    </Button>
   );
 }
