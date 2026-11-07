@@ -122,8 +122,41 @@ function RandomFiveInner() {
   }, [headerKeyword, headerSearchAt]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") onRandom();
+    // 入力欄が Enter を処理した後、下の window リスナーで二重実行しないよう止める
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+      onRandom();
+    }
   };
+
+  // 画面を開いた直後(入力欄にフォーカスが無い状態)でも Enter で検索できるようにする。
+  // ボタン・リンク・入力欄にフォーカスがある時やダイアログ表示中は、本来の操作を邪魔しない。
+  const onRandomRef = useRef(onRandom);
+  const busyRef = useRef(false);
+  useEffect(() => {
+    onRandomRef.current = onRandom;
+    busyRef.current = loading || creatingPlaylist;
+  });
+  useEffect(() => {
+    const onWindowKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Enter" || e.isComposing || e.defaultPrevented) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+      if (busyRef.current) return;
+      const t = e.target as HTMLElement | null;
+      if (
+        t?.closest(
+          "input, textarea, select, button, a, summary, [contenteditable], [role=button], [role=menuitem], [role=switch], [role=tab]",
+        )
+      )
+        return;
+      if (document.querySelector("[role=dialog], [role=alertdialog]")) return;
+      e.preventDefault();
+      onRandomRef.current();
+    };
+    window.addEventListener("keydown", onWindowKeyDown);
+    return () => window.removeEventListener("keydown", onWindowKeyDown);
+  }, []);
 
   const onCreatePlaylist = async () => {
     const hymnIds = records.map((r) => r.id).filter((id): id is string => !!id);
@@ -203,8 +236,8 @@ function RandomFiveInner() {
         </CardHeader>
 
         <CardContent className="p-6">
-          <div className="mb-6 flex items-center gap-4">
-            <div className="flex flex-1 justify-center">
+          <div className="mb-6 grid grid-cols-[1fr_minmax(0,30rem)_1fr] items-center gap-4">
+            <div className="col-start-2 flex justify-center">
               <InputGroup className="max-w-120 bg-white/60 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
                 <InputGroupInput
                   value={keyword}
@@ -233,7 +266,7 @@ function RandomFiveInner() {
             {/* 選択結果があるときだけ表示(未検索時の案内は下の Empty が担当) */}
             {records.length > 0 && (
               <Button
-                className="shrink-0"
+                className="col-start-3 shrink-0 justify-self-end"
                 type="button"
                 disabled={creatingPlaylist}
                 onClick={onCreatePlaylist}
