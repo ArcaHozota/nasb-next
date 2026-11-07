@@ -23,6 +23,9 @@ import { Label } from "@/components/ui/label";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 
+/** バックエンドの上限(現行 struts.multipart.maxSize と同じ 30MB) */
+const MAX_FILE_BYTES = 30 * 1024 * 1024;
+
 type Props = {
   hymnId: number;
   hymnNameKr: string;
@@ -75,7 +78,16 @@ export default function HymnScoreModal({
   };
 
   const onFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFile(e.target.files?.[0] ?? null);
+    const picked = e.target.files?.[0] ?? null;
+    // 同じファイルをもう一度選んでも change が起きるよう、選択を空に戻しておく
+    e.target.value = "";
+    if (picked && picked.size > MAX_FILE_BYTES) {
+      // 上限を超えるファイルは、送信を待たずにここで知らせる
+      setFile(null);
+      setError("ファイルが大きすぎます(30MBまで)。");
+      return;
+    }
+    setFile(picked);
     setError(EMPTY_STRING);
   };
 
@@ -88,20 +100,16 @@ export default function HymnScoreModal({
     formData.append("chord", chord);
     formData.append("isOriginal", String(isOriginal));
     formData.append("overwrite", String(overwrite));
-    const controller = new AbortController();
     setUploading(true);
     try {
       const { data } = await api.post(`/hymns/${hymnId}/score`, formData, {
-        signal: controller.signal,
         timeout: 66_000,
       });
       toast(typeof data === "string" ? data : "アップロードしました");
       onUploaded();
       onClose();
     } catch (e: unknown) {
-      if (axios.isCancel(e)) {
-        toast("アップロードをキャンセルしました");
-      } else if (axios.isAxiosError(e) && e.response?.status === 409) {
+      if (axios.isAxiosError(e) && e.response?.status === 409) {
         // この調の楽譜は登録済み: ファイル・調・オリジナルの入力はそのまま残して確認する
         setConfirmOpen(true);
       } else {
@@ -195,7 +203,7 @@ export default function HymnScoreModal({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.gif,.svg"
+            accept=".pdf,.jpg,.jpeg,.png,.gif"
             className="hidden"
             onChange={onFilePick}
           />
@@ -228,6 +236,7 @@ export default function HymnScoreModal({
               variant="outline"
               className="mx-2 scale-[1.33] border-secondary bg-transparent text-secondary hover:bg-secondary/5 hover:text-secondary"
               type="button"
+              disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
             >
               <CloudUpload className="h-4 w-4" /> ファイルを選択

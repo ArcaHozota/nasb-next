@@ -320,6 +320,7 @@ export default function HymnFormModal({
                           setForm((f) => ({ ...f, nameJp: e.target.value }))
                         }
                         type="text"
+                        disabled={saving}
                         placeholder="日本語名称を入力してください"
                         aria-invalid={!!errors.nameJp}
                         aria-describedby={
@@ -344,6 +345,7 @@ export default function HymnFormModal({
                           setForm((f) => ({ ...f, nameKr: e.target.value }))
                         }
                         type="text"
+                        disabled={saving}
                         placeholder="韓国語名称を入力してください"
                         aria-invalid={!!errors.nameKr}
                         aria-describedby={
@@ -379,6 +381,7 @@ export default function HymnFormModal({
                         setForm((f) => ({ ...f, link: e.target.value }))
                       }
                       type="text"
+                      disabled={saving}
                       placeholder="リンクを入力してください"
                       aria-invalid={!!errors.link}
                       aria-describedby={
@@ -400,6 +403,7 @@ export default function HymnFormModal({
                       id="hymn-classic"
                       size="lg"
                       checked={form.classic}
+                      disabled={saving}
                       onCheckedChange={(checked) =>
                         setForm((f) => ({ ...f, classic: checked }))
                       }
@@ -432,6 +436,7 @@ export default function HymnFormModal({
                         setForm((f) => ({ ...f, lyric: e.target.value }))
                       }
                       rows={8}
+                      disabled={saving}
                       placeholder="セリフを入力してください"
                       aria-invalid={!!errors.lyric}
                       aria-describedby={
@@ -473,7 +478,12 @@ export default function HymnFormModal({
                 </span>
               )}
             </Button>
-            <Button variant="neutral" type="button" onClick={onReset}>
+            <Button
+              variant="neutral"
+              type="button"
+              disabled={saving}
+              onClick={onReset}
+            >
               {isEdit ? (
                 <Trash2 className="h-4 w-4" />
               ) : (
