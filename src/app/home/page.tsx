@@ -32,9 +32,13 @@ import {
   shouldSearchOnServer,
 } from "@/lib/localSearch";
 import { useFeedbackStore } from "@/stores/feedback";
-import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
-import { fetchScoreKeysCached } from "@/lib/scoreKeys";
+import { EMPTY_STRING } from "@/lib/constants";
+import { fetchScoreKeysOrToast } from "@/lib/scoreKeys";
+import { downloadScoreOrToast } from "@/lib/download";
+import PageBackground from "@/components/PageBackground";
 import { cn } from "@/lib/utils";
+import { consumeRedirectMessage } from "@/lib/session";
+import { MOBILE_QUERY } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
@@ -60,7 +64,8 @@ import {
 } from "@/components/ui/tooltip";
 
 type HymnRecord = {
-  id: number;
+  /** Snowflake ID(19桁)は文字列のまま扱う(number にすると桁が丸まる) */
+  id: string;
   nameJp: string;
   nameKr: string;
   link: string;
@@ -161,7 +166,7 @@ const HymnCard = memo(function HymnCard({
   className,
 }: {
   item: HymnRecord;
-  onScore: (id: number) => void;
+  onScore: (id: string) => void;
   /** 歌詞を表示する(画面の下から出るシート) */
   onLyric: (item: HymnRecord) => void;
   className?: string;
@@ -265,7 +270,7 @@ const CarouselSlide = memo(function CarouselSlide({
 }: {
   kind: SlideKind;
   item: HymnRecord | undefined;
-  onScore: (id: number) => void;
+  onScore: (id: string) => void;
   onLyric: (item: HymnRecord) => void;
 }) {
   return (
@@ -307,7 +312,6 @@ function NoResults() {
 }
 
 // 画面幅の購読(window.matchMedia)。Effect で setState せず useSyncExternalStore で読む
-const MOBILE_QUERY = "(max-width: 700px)";
 function subscribeMobile(onChange: () => void) {
   const mql = window.matchMedia(MOBILE_QUERY);
   mql.addEventListener("change", onChange);
@@ -319,7 +323,7 @@ export default function HomeView() {
   const toast = useFeedbackStore((s) => s.toast);
   const queryClient = useQueryClient();
 
-  // --- レスポンシブ判定(旧 useMediaQuery("(max-width:700px)")相当) ---
+  // --- レスポンシブ判定(768px未満がモバイル。サイドバーと同じ境目) ---
   // null = まだ判定前。判定が済むまでデスクトップ/モバイルどちらのデータ取得も始めない
   // (以前は初回に必ずデスクトップ用の取得が走り、モバイルでは無駄なリクエストになっていた)
   // サーバー側(と、ハイドレーション中)のスナップショットは null
@@ -332,11 +336,8 @@ export default function HomeView() {
   // 別端末ログインによる強制ログアウト(axios.ts の401ハンドラ)等で
   // localStorageにセットされたメッセージをトースト表示する。
   useEffect(() => {
-    const msg = localStorage.getItem("redirectMessage");
-    if (msg) {
-      toast(msg);
-      localStorage.removeItem("redirectMessage");
-    }
+    const msg = consumeRedirectMessage();
+    if (msg) toast(msg);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -524,47 +525,17 @@ export default function HomeView() {
   };
 
   // この曲で楽譜が登録されている調の一覧(失敗時はトーストを出して null)
-  const fetchScoreKeys = async (id: number): Promise<ScoreKey[] | null> => {
-    try {
-      return await fetchScoreKeysCached(queryClient, id);
-    } catch (e: unknown) {
-      toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
-      return null;
-    }
-  };
-
-  // chord を省略すると、サーバー側がオリジナルキー優先で1件選ぶ
-  const downloadScore = async (id: number, chord?: string) => {
-    try {
-      const res = await api.get(`/hymns/${id}/score`, {
-        params: chord ? { chord } : undefined,
-        responseType: "blob",
-        headers: { Accept: "*/*" },
-      });
-      const url = window.URL.createObjectURL(res.data);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = chord ? `${id}(${chord}).pdf` : `${id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (e: unknown) {
-      toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
-    }
-  };
-
   // モバイル: 調が複数ある曲は中央ダイアログで選ばせ、1件ならそのままダウンロード
   const [keyDialog, setKeyDialog] = useState<{
     item: HymnRecord;
     keys: ScoreKey[];
   } | null>(null);
-  const onMobileScore = async (id: number) => {
-    const keys = await fetchScoreKeys(id);
+  const onMobileScore = async (id: string) => {
+    const keys = await fetchScoreKeysOrToast(queryClient, id);
     if (keys === null) return;
     const item = mobileRecords.find((r) => r?.id === id);
     if (keys.length > 1 && item) setKeyDialog({ item, keys });
-    else await downloadScore(id);
+    else await downloadScoreOrToast(id);
   };
   // カード(memo)に渡すための、参照が変わらない版。
   // 中身は毎回の描画で最新の onMobileScore に差し替えるので、古い mobileRecords を掴むことはない
@@ -573,7 +544,7 @@ export default function HomeView() {
     onMobileScoreRef.current = onMobileScore;
   });
   const stableOnMobileScore = useCallback(
-    (id: number) => void onMobileScoreRef.current(id),
+    (id: string) => void onMobileScoreRef.current(id),
     [],
   );
 
@@ -606,6 +577,12 @@ export default function HomeView() {
     resetCarousel();
   };
 
+  // 画面幅の判定前(サーバー側・ハイドレーション中)は何も描かない。
+  // 以前はここでモバイル版の骨組みが描かれ、PCで開くと一瞬モバイルの画面が見えていた。
+  if (isMobile === null) {
+    return <div className="min-h-screen bg-[#fffef7]" aria-hidden="true" />;
+  }
+
   // ===== PC版: 開いた讃美歌集 =====
   // 左ページに目次、右ページに選んだ曲(調号つき五線譜で楽譜ダウンロード・歌詞の照合)
   if (isMobile === false) {
@@ -627,17 +604,14 @@ export default function HomeView() {
         onReload={reload}
         onLogin={goLogin}
         onPageChange={setPage}
-        onDownload={downloadScore}
+        onDownload={downloadScoreOrToast}
       />
     );
   }
 
   return (
     <div className="home relative z-0 min-h-screen bg-cover bg-fixed bg-center">
-      <div className="fixed inset-0 -z-10">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={currentBg} alt="" className="h-full w-full object-cover" />
-      </div>
+      <PageBackground src={currentBg} />
 
       <header className="home-nav sticky top-0 z-10 flex items-center justify-between bg-[#fffef7] px-6 py-2 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
         <Button
@@ -782,7 +756,7 @@ export default function HomeView() {
           }
           keys={keyDialog?.keys ?? []}
           onSelect={(chord) => {
-            if (keyDialog) void downloadScore(keyDialog.item.id, chord);
+            if (keyDialog) void downloadScoreOrToast(keyDialog.item.id, chord);
           }}
           contentClassName={cn(
             BUBBLE_GLASS,

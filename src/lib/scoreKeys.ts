@@ -5,16 +5,18 @@
 // 楽譜をアップロードしたら invalidateScoreKeys() でその曲のキャッシュを捨てる。
 import type { QueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
+import { extractErrorMessage } from "@/lib/constants";
+import { useFeedbackStore } from "@/stores/feedback";
 import type { ScoreKey } from "@/components/ScoreKeyPopover";
 
 /** 調の一覧を新鮮とみなす時間。他の端末でのアップロードもこの時間内には反映される */
 const SCORE_KEYS_STALE_MS = 60 * 1000;
 
-const scoreKeysQueryKey = (id: number | string) =>
+const scoreKeysQueryKey = (id: string) =>
   ["score-keys", String(id)] as const;
 
 /** 調の一覧のクエリ設定(useQuery・fetchQuery の両方で使う) */
-export const scoreKeysQueryOptions = (id: number | string) => ({
+export const scoreKeysQueryOptions = (id: string) => ({
   queryKey: scoreKeysQueryKey(id),
   queryFn: async (): Promise<ScoreKey[]> => {
     const { data } = await api.get(`/hymns/${id}/score`, {
@@ -31,10 +33,25 @@ export const scoreKeysQueryOptions = (id: number | string) => ({
 
 export const fetchScoreKeysCached = (
   queryClient: QueryClient,
-  id: number,
+  id: string,
 ): Promise<ScoreKey[]> => queryClient.fetchQuery(scoreKeysQueryOptions(id));
 
 export const invalidateScoreKeys = (
   queryClient: QueryClient,
-  id: number | string,
+  id: string,
 ) => queryClient.invalidateQueries({ queryKey: scoreKeysQueryKey(id) });
+
+/** 調の一覧を取得する。失敗したときはトーストを出して null を返す */
+export async function fetchScoreKeysOrToast(
+  queryClient: QueryClient,
+  id: string,
+): Promise<ScoreKey[] | null> {
+  try {
+    return await fetchScoreKeysCached(queryClient, id);
+  } catch (e: unknown) {
+    useFeedbackStore
+      .getState()
+      .toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
+    return null;
+  }
+}

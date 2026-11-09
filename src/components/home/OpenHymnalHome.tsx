@@ -31,7 +31,7 @@ import { scoreKeysQueryOptions } from "@/lib/scoreKeys";
 import { cn } from "@/lib/utils";
 
 type BookHymn = {
-  id: number;
+  id: string;
   nameJp: string;
   nameKr: string;
   link: string;
@@ -94,7 +94,7 @@ function HymnPage({
   hymn: BookHymn;
   no: string;
   terms: string[];
-  onDownload: (id: number, chord?: string) => Promise<void>;
+  onDownload: (id: string, chord?: string) => Promise<void>;
 }) {
   const keysQuery = useQuery(scoreKeysQueryOptions(hymn.id));
   const lyricQuery = useQuery(lyricQueryOptions(hymn.id));
@@ -292,10 +292,10 @@ export default function OpenHymnalHome({
   onReload: () => void;
   onLogin: () => void;
   onPageChange: (p: number) => void;
-  onDownload: (id: number, chord?: string) => Promise<void>;
+  onDownload: (id: string, chord?: string) => Promise<void>;
 }) {
   // 選んだ曲。ページや検索が変わってその曲が一覧に無くなったら、先頭の曲を表示する
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   // ページや検索が変わったら目次の先頭へ。Effect ではなく描画中に state を調整する
   // (https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)
   const resetKey = `${page}|${submittedKeyword}`;

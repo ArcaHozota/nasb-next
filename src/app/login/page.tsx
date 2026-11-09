@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Field, FieldLabel } from "@/components/ui/field";
+import PageBackground from "@/components/PageBackground";
 
 // ガラス風カードの上に置くため半透明の白背景にする
 const LOGIN_INPUT =
@@ -47,12 +48,7 @@ export default function LoginView() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/assets/login-bg.webp"
-        alt=""
-        className="fixed inset-0 -z-10 h-full w-full object-cover"
-      />
+      <PageBackground src="/assets/login-bg.webp" />
 
       <Card className="w-90 gap-0 rounded-[18px] border-white/45 bg-white/25 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl backdrop-saturate-150">
         <CardContent className="p-4">

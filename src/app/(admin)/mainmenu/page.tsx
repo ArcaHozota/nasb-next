@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { useFeedbackStore } from "@/stores/feedback";
 import { DELAY_APOLOGY } from "@/lib/constants";
+import { consumeRedirectMessage } from "@/lib/session";
 
 type MenuCard = {
   key: string;
@@ -46,11 +47,8 @@ export default function MainMenu() {
 
   // 旧 mainmenu.js: localStorageのredirectMessage/loginMsgをトースト表示
   useEffect(() => {
-    const msg = localStorage.getItem("redirectMessage");
-    if (msg) {
-      toast(msg);
-      localStorage.removeItem("redirectMessage");
-    }
+    const msg = consumeRedirectMessage();
+    if (msg) toast(msg);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

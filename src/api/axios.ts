@@ -1,7 +1,8 @@
 // src/api/axios.ts
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { useCsrfStore } from "@/stores/csrf";
-import { useUnsavedGuard } from "@/stores/unsavedGuard";
+import { useAuthStore } from "@/stores/auth";
+import { hardRedirectHome, SESSION_EXPIRED_MESSAGE } from "@/lib/session";
 
 // CSRFリトライ済みかどうかをリクエスト単位で持たせるための拡張
 type CsrfRetryableConfig = InternalAxiosRequestConfig & {
@@ -53,28 +54,27 @@ api.interceptors.response.use(
       return api.request(config);
     }
 
-    // 401 + SESSION_INVALIDATED: 別端末でのログインにより、このセッションが
-    // サーバー側(JsonExpiredSessionStrategy等)で失効させられた場合。
-    // 通常の「未ログイン401」(AdminLayoutの認証チェックが処理する) とは区別し、
-    // ここでは強制ログアウト専用のメッセージ付きリダイレクトのみを行う。
-    if (
-      axios.isAxiosError(error) &&
-      error.response?.status === 401 &&
-      (error.response.data as { error?: string } | undefined)?.error ===
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      // 401 + SESSION_INVALIDATED: 別端末でのログインにより、このセッションが
+      // サーバー側(JsonExpiredSessionStrategy等)で失効させられた場合。
+      if (
+        (error.response.data as { error?: string } | undefined)?.error ===
         "SESSION_INVALIDATED"
-    ) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "redirectMessage",
-          "別の端末でログインされたため、ログアウトされました。",
-        );
-        // ユーザー操作ではない遷移なので、未保存の警告(beforeunload)は出さない
-        useUnsavedGuard.getState().setBypass();
-        // フルリロードでReact Query/Zustand等のクライアント側状態を丸ごとリセットする。
-        window.location.href = "/home";
+      ) {
+        hardRedirectHome("別の端末でログインされたため、ログアウトされました。");
+        // ページ遷移するので、この先のエラーハンドラ(トースト表示等)は走らせない。
+        return new Promise(() => {});
       }
-      // ページ遷移するので、この先のエラーハンドラ(トースト表示等)は走らせない。
-      return new Promise(() => {});
+
+      // 通常の401(セッションの有効期限切れなど)。ログイン中だったのに401になった場合だけ、
+      // メッセージ付きでホームへ戻す。未ログインの閲覧(ホーム等)や、ログイン失敗の401
+      // (/login)、起動時のログイン確認(/common/me)では何もしない。
+      const url = error.config?.url ?? "";
+      const isAuthProbe = url === "/login" || url === "/common/me";
+      if (!isAuthProbe && useAuthStore.getState().isLoggedIn) {
+        hardRedirectHome(SESSION_EXPIRED_MESSAGE);
+        return new Promise(() => {});
+      }
     }
 
     return Promise.reject(error);

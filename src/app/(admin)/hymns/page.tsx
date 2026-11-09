@@ -3,7 +3,6 @@
 // src/app/(admin)/hymns/page.tsx
 // 旧 views/HymnList.vue を移植
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   useQuery,
   useQueryClient,
@@ -22,18 +21,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import api from "@/api/axios";
-import {
-  createPlaylistAndWait,
-  getYoutubeReauthConfirmText,
-  PlaylistError,
-} from "@/lib/youtube";
+import { usePlaylistCreation } from "@/hooks/use-playlist-creation";
 import { useFeedbackStore } from "@/stores/feedback";
-import { useAuthStore } from "@/stores/auth";
-import {
-  EMPTY_STRING,
-  extractErrorMessage,
-  utf8ToBase64,
-} from "@/lib/constants";
+import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import PageBackground from "@/components/PageBackground";
 import HymnScoreModal from "@/components/HymnScoreModal";
 import HymnFormModal from "@/components/HymnFormModal";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +33,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import Hint from "@/components/Hint";
 import ClampText from "@/components/ClampText";
-import ScoreKeyPopover, { type ScoreKey } from "@/components/ScoreKeyPopover";
+import ScoreKeyPopover from "@/components/ScoreKeyPopover";
 import {
   InputGroup,
   InputGroupAddon,
@@ -73,11 +64,13 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { getPageItems } from "@/lib/pagination";
-import { fetchScoreKeysCached, invalidateScoreKeys } from "@/lib/scoreKeys";
+import { fetchScoreKeysOrToast, invalidateScoreKeys } from "@/lib/scoreKeys";
+import { downloadScoreOrToast } from "@/lib/download";
 import { hymnNameSizeClass } from "@/lib/text";
 
 type HymnRow = {
-  id: number;
+  /** Snowflake ID(19桁)は文字列のまま扱う(number にすると桁が丸まる) */
+  id: string;
   nameJp: string;
   nameKr: string;
   link: string;
@@ -106,11 +99,11 @@ const PAGER_BUTTON =
 const COL_NAME =
   "whitespace-normal leading-[1.4] [line-break:strict] wrap-anywhere";
 
-function HymnListInner() {
-  const router = useRouter();
-  const feedback = useFeedbackStore();
+export default function HymnList() {
+  const toast = useFeedbackStore((s) => s.toast);
+  const confirm = useFeedbackStore((s) => s.confirm);
   const queryClient = useQueryClient();
-  const userId = useAuthStore((s) => s.userId);
+  const playlist = usePlaylistCreation();
 
   // 追加・編集はモーダルなので、ページ位置や検索条件を URL で受け渡す必要はない
   const [page, setPage] = useState(1);
@@ -156,12 +149,12 @@ function HymnListInner() {
   };
 
   // 追加・編集は画面遷移ではなく、モーダルで行う(一覧の page / pageSize / keyword はそのまま保たれる)。
-  // HYMNS.ID は Snowflake の19桁でJS numberでは精度が壊れるため、編集IDは String で持つ。
+  // HYMNS.ID は Snowflake の19桁でJS numberでは精度が壊れるため、IDは string で持つ。
   const [formModal, setFormModal] = useState<
     { mode: "add" } | { mode: "edit"; id: string } | null
   >(null);
   const goAdd = () => setFormModal({ mode: "add" });
-  const goEdit = (id: number) => setFormModal({ mode: "edit", id: String(id) });
+  const goEdit = (id: string) => setFormModal({ mode: "edit", id });
   const closeFormModal = () => setFormModal(null);
 
   const onFormSaved = (result: { mode: "add" | "edit"; pageNum?: number }) => {
@@ -177,7 +170,7 @@ function HymnListInner() {
 
   // 楽譜アップロードは専用画面への遷移ではなく、モーダルで行う
   const [scoreModalHymn, setScoreModalHymn] = useState<{
-    id: number;
+    id: string;
     nameKr: string;
   } | null>(null);
   const openScoreModal = (row: HymnRow) =>
@@ -188,10 +181,10 @@ function HymnListInner() {
     try {
       await api.get(`/hymns/${item.id}/delete-check`);
     } catch (e: unknown) {
-      feedback.toast(extractErrorMessage(e, "削除できません"));
+      toast(extractErrorMessage(e, "削除できません"));
       return;
     }
-    const ok = await feedback.confirm(
+    const ok = await confirm(
       `この「${item.nameJp}」という歌の情報を削除してもよろしいですか？`,
       "メッセージ",
     );
@@ -199,42 +192,10 @@ function HymnListInner() {
     try {
       const { headers } = await api.delete(`/hymns/${item.id}`);
       const msg = headers["x-page-num"] ?? "削除しました";
-      feedback.toast(msg);
+      toast(msg);
       queryClient.invalidateQueries({ queryKey: ["hymns-list"] });
     } catch (e: unknown) {
-      feedback.toast(extractErrorMessage(e, "削除に失敗しました"));
-    }
-  };
-
-  // この曲で楽譜が登録されている調の一覧(失敗時はトーストを出して null)
-  const fetchScoreKeys = async (id: number): Promise<ScoreKey[] | null> => {
-    try {
-      return await fetchScoreKeysCached(queryClient, id);
-    } catch (e: unknown) {
-      feedback.toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
-      return null;
-    }
-  };
-
-  // chord を省略すると、サーバー側がオリジナルキー優先で1件選ぶ
-  const downloadScore = async (id: number, chord?: string) => {
-    try {
-      const res = await api.get(`/hymns/${id}/score`, {
-        params: chord ? { chord } : undefined,
-        responseType: "blob",
-        headers: { Accept: "*/*" },
-      });
-      const url = window.URL.createObjectURL(res.data);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = chord ? `${id}(${chord}).pdf` : `${id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (e: unknown) {
-      const msg = extractErrorMessage(e, "楽譜の取得に失敗しました");
-      router.push(`/error?errMsg=${encodeURIComponent(utf8ToBase64(msg))}`);
+      toast(extractErrorMessage(e, "削除に失敗しました"));
     }
   };
 
@@ -245,17 +206,13 @@ function HymnListInner() {
 
   // BURGUNDY・CADMIUM行のみを対象にYouTubeプレイリストを作成する。
   // 表示中の1ページ分ではなく、キーワード検索にヒットした全件(ページ横断)が対象。
-  // HYMNS.IDはSnowflake生成の19桁数値でJS numberでは精度が壊れるため、
-  // String()で文字列として扱う(random-five画面と同じ理由)。
-  const [creatingPlaylist, setCreatingPlaylist] = useState(false);
-
-  const onCreatePlaylist = async () => {
-    if (totalRecords === 0) {
-      feedback.toast("対象の賛美歌がありません");
-      return;
-    }
-    setCreatingPlaylist(true);
-    try {
+  // HYMNS.IDはSnowflake生成の19桁数値なので、number化せず文字列のまま扱う。
+  const onCreatePlaylist = () =>
+    playlist.create(async () => {
+      if (totalRecords === 0) {
+        toast("対象の賛美歌がありません");
+        return null;
+      }
       const { data: allData } = await api.get("/hymns", {
         params: {
           pageNum: 1,
@@ -270,62 +227,15 @@ function HymnListInner() {
         )
         .map((r) => String(r.id));
       if (hymnIds.length === 0) {
-        feedback.toast("対象の賛美歌（BURGUNDY・CADMIUM）がありません");
-        return;
+        toast("対象の賛美歌（BURGUNDY・CADMIUM）がありません");
+        return null;
       }
-      await createPlaylistAndWait(hymnIds);
-      const proceed = await feedback.confirm(
-        "プレイリストを作成しました。今はYouTubeへ移動してよろしいでしょうか。",
-        "お知らせ",
-        { variant: "success", cancelLabel: "いいえ", confirmLabel: "はい" },
-      );
-      if (proceed) {
-        window.open(
-          "https://www.youtube.com/feed/playlists",
-          "_blank",
-          "noopener,noreferrer",
-        );
-      }
-    } catch (e: unknown) {
-      if (
-        e &&
-        typeof e === "object" &&
-        "response" in e &&
-        (e as { response?: { status?: number } }).response?.status === 409
-      ) {
-        // 連携トークン失効・取り消し(再認証が必要)の場合は、専用文言で「はい／いいえ」を確認する
-        const reauthText = getYoutubeReauthConfirmText(e);
-        const ok = reauthText
-          ? await feedback.confirm(reauthText, "確認", {
-              cancelLabel: "いいえ",
-              confirmLabel: "はい",
-            })
-          : await feedback.confirm(
-              "YouTube連携がまだ完了していません。連携ページへ移動しますか？",
-            );
-        if (ok) router.push(`/personal?userId=${userId}`);
-        return;
-      }
-      feedback.toast(
-        e instanceof PlaylistError
-          ? e.message
-          : extractErrorMessage(e, "プレイリスト作成に失敗しました"),
-      );
-    } finally {
-      setCreatingPlaylist(false);
-    }
-  };
+      return hymnIds;
+    });
 
   return (
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
-      <div className="fixed inset-0 -z-10">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/assets/mainmenu-bg5.webp"
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      </div>
+      <PageBackground src="/assets/mainmenu-bg5.webp" />
 
       <Card className="hymnlist-card glass-panel relative overflow-hidden rounded-[18px] gap-0 py-0">
         <CardHeader className="gap-0 noto-serif flex items-center bg-gray-800 px-4 py-3 text-white">
@@ -382,10 +292,10 @@ function HymnListInner() {
                   size="icon"
                   aria-label="プレイリスト作成"
                   type="button"
-                  disabled={creatingPlaylist}
+                  disabled={playlist.creating}
                   onClick={onCreatePlaylist}
                 >
-                  {creatingPlaylist ? (
+                  {playlist.creating ? (
                     <Spinner />
                   ) : (
                     <ListMusic className="h-4 w-4" />
@@ -558,8 +468,10 @@ function HymnListInner() {
                           {/* 楽譜が複数あるときは、アイコンの右にふきだしで調を選ばせる */}
                           <ScoreKeyPopover
                             id={row.id}
-                            fetchKeys={fetchScoreKeys}
-                            download={downloadScore}
+                            fetchKeys={(id) =>
+                              fetchScoreKeysOrToast(queryClient, id)
+                            }
+                            download={downloadScoreOrToast}
                             side="right"
                           >
                             {({ onClick, loading, open, anchorRef }) => (
@@ -702,8 +614,4 @@ function HymnListInner() {
       )}
     </div>
   );
-}
-
-export default function HymnList() {
-  return <HymnListInner />;
 }

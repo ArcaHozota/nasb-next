@@ -3,8 +3,8 @@
 // src/app/(admin)/books/add/page.tsx
 // 旧 views/BookAddition.vue を移植
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Book, Baseline, Cross } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { Spinner } from "@/components/ui/spinner";
 import Hint from "@/components/Hint";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import PageBackground from "@/components/PageBackground";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import RedLetterEditor, {
   type RedLetterEditorHandle,
@@ -55,212 +57,162 @@ type VerseLookup = "idle" | "loading" | "found" | "none" | "error";
 /** 章・節を入力してから既存の節を問い合わせるまでの待ち時間(ms) */
 const LOOKUP_DELAY = 300;
 
-const required = (v: string) => !!v && v.trim() !== EMPTY_STRING;
+/** 空・空白だけでないか */
+const isFilled = (v: string) => !!v && v.trim() !== EMPTY_STRING;
+
+/** 書・章の一覧は変わらないので、一度取得したら再取得しない */
+const STATIC_LIST = { staleTime: Infinity } as const;
+const NO_BOOKS: BookOrChapter[] = [];
 
 export default function BookAddition() {
-  const feedback = useFeedbackStore();
-  const queryClient = useQueryClient();
+  const toast = useFeedbackStore((s) => s.toast);
 
-  const [books, setBooks] = useState<BookOrChapter[]>([]);
-  const [chapters, setChapters] = useState<BookOrChapter[]>([]);
-  const [bookId, setBookId] = useState<number | string>(EMPTY_STRING);
-  const [chapterId, setChapterId] = useState<number | string>(EMPTY_STRING);
+  // ユーザーが選んだ書・章。未選択(または一覧に無い)ときは先頭を使う(下の effectiveXxx)
+  const [pickedBookId, setPickedBookId] = useState<number | string>(
+    EMPTY_STRING,
+  );
+  const [pickedChapterId, setPickedChapterId] = useState<number | string>(
+    EMPTY_STRING,
+  );
   const [verseId, setVerseId] = useState(EMPTY_STRING);
-  const [textEn, setTextEn] = useState(EMPTY_STRING);
-  const [textJp, setTextJp] = useState(EMPTY_STRING);
-  const [chapterLoading, setChapterLoading] = useState(false);
+  // ユーザーが入力した本文。null の間は「既存の節の本文(あれば)」を表示する
+  const [edited, setEdited] = useState<VerseText | null>(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({
     textEn: false,
     textJp: false,
     verseId: false,
   });
-
-  // 編集モード(既存の節を読み込んで更新する)用
-  const [lookup, setLookup] = useState<VerseLookup>("idle");
-  const [existing, setExisting] = useState<ExistingVerse | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const textEnEditorRef = useRef<RedLetterEditorHandle | null>(null);
   const textJpEditorRef = useRef<RedLetterEditorHandle | null>(null);
 
-  const booksLoaded = useRef(false);
+  // ===== 書・章(切り替えの競合は、クエリキーが書ごとに分かれることで起きない) =====
+  const booksQuery = useQuery({
+    queryKey: ["books"],
+    queryFn: async () => (await api.get<BookOrChapter[]>("/books")).data,
+    ...STATIC_LIST,
+  });
+  const books = booksQuery.data ?? NO_BOOKS;
+  const bookId = pickedBookId || books[0]?.id || EMPTY_STRING;
 
-  // 非同期の応答の中から最新の入力値を読むための写し
-  const textEnRef = useRef(textEn);
-  const textJpRef = useRef(textJp);
-  // 既存の節からエディタへ読み込んだ内容(ユーザーが未編集かどうかの判定用)
-  const loadedRef = useRef<VerseText | null>(null);
+  const chaptersQuery = useQuery({
+    queryKey: ["chapters", String(bookId)],
+    queryFn: async () =>
+      (await api.get<BookOrChapter[]>(`/books/${bookId}/chapters`)).data,
+    enabled: !!bookId,
+    ...STATIC_LIST,
+  });
+  const chapters = chaptersQuery.data ?? NO_BOOKS;
+  const chapterLoading = !!bookId && chaptersQuery.isPending;
+  const chapterId = chapters.some(
+    (c) => String(c.id) === String(pickedChapterId),
+  )
+    ? pickedChapterId
+    : (chapters[0]?.id ?? EMPTY_STRING);
+
+  const onBookChange = (id: number | string) => {
+    setPickedBookId(id);
+    setPickedChapterId(EMPTY_STRING); // 書が変わったら章は先頭に戻す
+  };
 
   useEffect(() => {
-    textEnRef.current = textEn;
-    textJpRef.current = textJp;
-  }, [textEn, textJp]);
+    if (booksQuery.error) {
+      toast(extractErrorMessage(booksQuery.error, "書の取得に失敗しました"));
+    }
+  }, [booksQuery.error, toast]);
+  useEffect(() => {
+    if (chaptersQuery.error) {
+      toast(extractErrorMessage(chaptersQuery.error, "章の取得に失敗しました"));
+    }
+  }, [chaptersQuery.error, toast]);
+
+  // ===== 既存の節の確認(章・節を入力して一定時間たったら問い合わせる) =====
+  // 登録済みなら編集モード(ボタンが「更新」になり、本文を読み込む)
+  const lookupVerse = verseId.trim();
+  const lookupReady = !!chapterId && /^\d+$/.test(lookupVerse);
+  const lookupKey = `${chapterId}|${lookupVerse}`;
+  const debouncedKey = useDebouncedValue(lookupKey, LOOKUP_DELAY);
+  const verseQuery = useQuery({
+    queryKey: ["verse", debouncedKey],
+    queryFn: async (): Promise<ExistingVerse | null> => {
+      const [chapter, verse] = debouncedKey.split("|");
+      // 登録済みなら1件、未登録なら空のリストが返る
+      const { data } = await api.get(`/books/${chapter}/verse`, {
+        params: { verseNo: verse },
+      });
+      const row = Array.isArray(data) ? data[0] : undefined;
+      return row
+        ? {
+            name: row.name ?? EMPTY_STRING,
+            textEn: row.textEn ?? EMPTY_STRING,
+            textJp: row.textJp ?? EMPTY_STRING,
+          }
+        : null;
+    },
+    enabled: lookupReady && debouncedKey === lookupKey,
+    gcTime: 0, // 節の内容は他の人が更新するかもしれないので、キャッシュは残さない
+  });
+  const lookup: VerseLookup = !lookupReady
+    ? "idle"
+    : debouncedKey !== lookupKey
+      ? "loading" // 入力が落ち着くのを待っている
+      : verseQuery.isError
+        ? "error"
+        : verseQuery.isPending
+          ? "loading"
+          : verseQuery.data
+            ? "found"
+            : "none";
+  const existing = lookup === "found" ? (verseQuery.data ?? null) : null;
+
+  useEffect(() => {
+    if (verseQuery.error) {
+      toast(
+        extractErrorMessage(verseQuery.error, "既存の節の確認に失敗しました"),
+      );
+    }
+  }, [verseQuery.error, toast]);
+
+  // 画面に出す本文: 入力済みならそれ、未入力なら既存の節の本文(無ければ空)
+  const textEn = edited ? edited.textEn : (existing?.textEn ?? EMPTY_STRING);
+  const textJp = edited ? edited.textJp : (existing?.textJp ?? EMPTY_STRING);
 
   // 編集内容があるか。本文が空、または既存の節から読み込んだままの未編集なら、なし。
   // 編集内容があるまま、タブを閉じる・再読み込み・別サイトへ移動しようとしたらブラウザが確認する。
   // 画面内の移動は (admin)/layout.tsx 側で確認する(useUnsavedGuard の dirty を見る)。
   const isDirty =
-    (required(textEn) || required(textJp)) &&
-    !(
-      lookup === "found" &&
-      existing &&
-      textEn === existing.textEn &&
-      textJp === existing.textJp
-    );
+    (isFilled(textEn) || isFilled(textJp)) &&
+    !(existing && textEn === existing.textEn && textJp === existing.textJp);
   useUnsavedChanges(isDirty);
 
-  // 初期表示: 書一覧を取得
-  useEffect(() => {
-    if (booksLoaded.current) return;
-    booksLoaded.current = true;
-    (async () => {
-      try {
-        // 書の一覧は変わらないので、一度取得したら画面を出入りしても再取得しない
-        const data = await queryClient.fetchQuery({
-          queryKey: ["books"],
-          queryFn: async () => (await api.get<BookOrChapter[]>("/books")).data,
-          staleTime: Infinity,
-        });
-        setBooks(data);
-        if (data.length) setBookId(data[0].id);
-      } catch (e: unknown) {
-        feedback.toast(extractErrorMessage(e, "書の取得に失敗しました"));
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // 書が変わったら章を取り直す(連動の核心)
-  // 章の選択・一覧のリセットは、Effect ではなく描画中に state を調整する
-  const [prevBookId, setPrevBookId] = useState(bookId);
-  if (prevBookId !== bookId) {
-    setPrevBookId(bookId);
-    setChapterId(EMPTY_STRING);
-    setChapters([]);
-    setChapterLoading(!!bookId);
-  }
-  useEffect(() => {
-    if (!bookId) return;
-    (async () => {
-      try {
-        // 章の一覧も変わらないので、書ごとにキャッシュする(同じ書に戻ったときは再取得しない)
-        const data = await queryClient.fetchQuery({
-          queryKey: ["chapters", String(bookId)],
-          queryFn: async () =>
-            (await api.get<BookOrChapter[]>(`/books/${bookId}/chapters`)).data,
-          staleTime: Infinity,
-        });
-        setChapters(data);
-        if (data.length) setChapterId(data[0].id);
-      } catch (e: unknown) {
-        feedback.toast(extractErrorMessage(e, "章の取得に失敗しました"));
-      } finally {
-        setChapterLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookId]);
-
-  // 両方の入力欄が空、または既存の節から読み込んだ内容のまま(未編集)か
-  const isPristine = () => {
-    const en = textEnRef.current;
-    const jp = textJpRef.current;
-    if (!required(en) && !required(jp)) return true;
-    const loaded = loadedRef.current;
-    return !!loaded && en === loaded.textEn && jp === loaded.textJp;
-  };
-
-  // 既存の節の本文を入力欄へ読み込む
-  const loadExisting = (verse: VerseText) => {
-    loadedRef.current = verse;
-    setTextEn(verse.textEn);
-    setTextJp(verse.textJp);
-    setErrors((er) => ({ ...er, textEn: false, textJp: false }));
-  };
-
-  // 別の節から読み込んだままの未編集の内容は、節が変わったら消す(編集済みなら残す)
-  const releaseLoaded = () => {
-    const loaded = loadedRef.current;
-    if (
-      loaded &&
-      textEnRef.current === loaded.textEn &&
-      textJpRef.current === loaded.textJp
-    ) {
-      setTextEn(EMPTY_STRING);
-      setTextJp(EMPTY_STRING);
-    }
-    loadedRef.current = null;
-  };
-
-  // 章・節が決まったら既存の節を探す。あれば編集モード(ボタンが「更新」になる)
-  // 検索前の状態(既存の節の破棄・「確認中」表示)は、Effect ではなく描画中に state を調整する
-  const lookupVerse = verseId.trim();
-  const lookupReady = !!chapterId && /^\d+$/.test(lookupVerse);
-  const lookupKey = `${chapterId}|${lookupVerse}`;
-  const [prevLookupKey, setPrevLookupKey] = useState(lookupKey);
-  if (prevLookupKey !== lookupKey) {
-    setPrevLookupKey(lookupKey);
-    setExisting(null);
-    setLookup(lookupReady ? "loading" : "idle");
-  }
-  useEffect(() => {
-    const verse = verseId.trim();
-    if (!chapterId || !/^\d+$/.test(verse)) {
-      // Effect 本体で同期的に state を更新しないよう、マイクロタスクへ回す
-      queueMicrotask(releaseLoaded);
-      return;
-    }
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      try {
-        // 登録済みなら1件、未登録なら空のリストが返る
-        const { data } = await api.get(`/books/${chapterId}/verse`, {
-          params: { verseNo: verse },
-        });
-        if (cancelled) return;
-        const row = Array.isArray(data) ? data[0] : undefined;
-        if (row) {
-          const found: ExistingVerse = {
-            name: row.name ?? EMPTY_STRING,
-            textEn: row.textEn ?? EMPTY_STRING,
-            textJp: row.textJp ?? EMPTY_STRING,
-          };
-          setExisting(found);
-          setLookup("found");
-          // 入力欄が空、または別の節から読み込んだままなら、既存の内容に置き換える
-          if (isPristine()) loadExisting(found);
-        } else {
-          setLookup("none");
-          releaseLoaded();
-        }
-      } catch (e: unknown) {
-        if (cancelled) return;
-        setLookup("error");
-        feedback.toast(extractErrorMessage(e, "既存の節の確認に失敗しました"));
-      }
-    }, LOOKUP_DELAY);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chapterId, verseId]);
-
   // 入力中でも該当欄が埋まった時点でアラート(エラー表示)を消す
+  const changeText = (next: Partial<VerseText>) => {
+    const value: VerseText = { textEn, textJp, ...next };
+    // 両方空になったら「未入力」に戻す(節を変えたとき既存の本文が読み込まれる)
+    setEdited(isFilled(value.textEn) || isFilled(value.textJp) ? value : null);
+  };
+
   const handleTextEnChange = (v: string) => {
-    setTextEn(v);
-    if (required(v)) setErrors((er) => ({ ...er, textEn: false }));
+    changeText({ textEn: v });
+    if (isFilled(v)) setErrors((er) => ({ ...er, textEn: false }));
   };
 
   const handleTextJpChange = (v: string) => {
-    setTextJp(v);
-    if (required(v)) setErrors((er) => ({ ...er, textJp: false }));
+    changeText({ textJp: v });
+    if (isFilled(v)) setErrors((er) => ({ ...er, textJp: false }));
   };
 
   const handleVerseIdChange = (v: string) => {
     setVerseId(v);
-    if (required(v)) setErrors((er) => ({ ...er, verseId: false }));
+    if (isFilled(v)) setErrors((er) => ({ ...er, verseId: false }));
+  };
+
+  // 既存の節の本文を入力欄へ読み込む(入力済みの内容は捨てる)
+  const loadExisting = () => {
+    setEdited(null);
+    setErrors((er) => ({ ...er, textEn: false, textJp: false }));
   };
 
   const onWrapSelection = () => {
@@ -277,14 +229,12 @@ export default function BookAddition() {
         textEn: textEn.trim(),
         textJp: textJp.trim(),
       });
-      feedback.toast(typeof data === "string" ? data : "追加済み");
-      loadedRef.current = null;
+      toast(typeof data === "string" ? data : "追加済み");
       setVerseId(EMPTY_STRING);
-      setTextEn(EMPTY_STRING);
-      setTextJp(EMPTY_STRING);
+      setEdited(null);
       setErrors({ textEn: false, textJp: false, verseId: false });
     } catch (e: unknown) {
-      feedback.toast(extractErrorMessage(e, "保存に失敗しました"));
+      toast(extractErrorMessage(e, "保存に失敗しました"));
     } finally {
       setSaving(false);
     }
@@ -292,13 +242,13 @@ export default function BookAddition() {
 
   const onStore = () => {
     const nextErrors = {
-      textEn: !required(textEn),
-      textJp: !required(textJp),
-      verseId: !required(verseId),
+      textEn: !isFilled(textEn),
+      textJp: !isFilled(textJp),
+      verseId: !isFilled(verseId),
     };
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) {
-      feedback.toast("入力情報不正");
+      toast("入力情報不正");
       return;
     }
     // 登録済み(更新になる)場合、または既存かどうか確認できなかった場合は、上書き確認を出す
@@ -318,14 +268,7 @@ export default function BookAddition() {
 
   return (
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
-      <div className="fixed inset-0 -z-10">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/assets/mainmenu-bg.webp"
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      </div>
+      <PageBackground src="/assets/mainmenu-bg.webp" />
 
       <Card className="bookaddition-card noto-serif glass-panel relative overflow-hidden rounded-[18px] gap-0 py-0">
         <CardHeader className="gap-0 noto-serif flex items-center bg-gray-800 px-4 py-3 text-white">
@@ -349,9 +292,9 @@ export default function BookAddition() {
                 ref={textEnEditorRef}
                 value={textEn}
                 onChange={handleTextEnChange}
-                error={errors.textEn}
+                error={errors.textEn && !isFilled(textEn)}
                 helperText={
-                  errors.textEn
+                  errors.textEn && !isFilled(textEn)
                     ? "上記の入力ボックスを空になってはいけません。"
                     : undefined
                 }
@@ -384,9 +327,9 @@ export default function BookAddition() {
                 ref={textJpEditorRef}
                 value={textJp}
                 onChange={handleTextJpChange}
-                error={errors.textJp}
+                error={errors.textJp && !isFilled(textJp)}
                 helperText={
-                  errors.textJp
+                  errors.textJp && !isFilled(textJp)
                     ? "上記の入力ボックスを空になってはいけません。"
                     : undefined
                 }
@@ -410,7 +353,7 @@ export default function BookAddition() {
                     type="button"
                     variant="link"
                     className="ml-2 h-auto p-0 text-inherit underline hover:opacity-80"
-                    onClick={() => loadExisting(existing)}
+                    onClick={loadExisting}
                   >
                     既存の内容を読み込む
                   </Button>
@@ -436,7 +379,7 @@ export default function BookAddition() {
                 id="book-select"
                 books={books}
                 value={bookId}
-                onChange={setBookId}
+                onChange={onBookChange}
                 className="noto-serif"
               />
             </Field>
@@ -450,7 +393,7 @@ export default function BookAddition() {
               </FieldLabel>
               <Select
                 value={String(chapterId)}
-                onValueChange={setChapterId}
+                onValueChange={setPickedChapterId}
                 disabled={chapterLoading || chapters.length === 0}
               >
                 <SelectTrigger

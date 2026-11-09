@@ -34,7 +34,8 @@ export type SearchIndex = {
 
 /** 画面側検索の結果1曲分。ホーム画面の HymnRecord と同じ形 */
 export type LocalHymnRecord = {
-  id: number;
+  /** Snowflake ID(19桁)は文字列のまま扱う */
+  id: string;
   nameJp: string;
   nameKr: string;
   link: string;
@@ -301,10 +302,9 @@ export function searchLocal(
     lineNumber: LocalHymnRecord["lineNumber"],
     snippet: string | null,
   ): LocalHymnRecord => ({
-    // IDはサーバーが返した値のまま(実体は文字列)。Snowflake ID は19桁で、
+    // IDはサーバーが返した値のまま(文字列)。Snowflake ID は19桁で、
     // Number にすると 2^53 を超えて末尾が丸まり、/hymns/{id}/lyric などが「見つかりません」になる。
-    // 他の画面コードが id を number として扱っているため、型だけ合わせている
-    id: p.entry.id as unknown as number,
+    id: p.entry.id,
     nameJp: p.entry.nameJp,
     nameKr: p.entry.nameKr,
     link: p.entry.link,

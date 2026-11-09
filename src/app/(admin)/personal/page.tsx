@@ -39,6 +39,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useFeedbackStore } from "@/stores/feedback";
+import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { required } from "@/lib/form";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,7 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import Hint from "@/components/Hint";
+import PageBackground from "@/components/PageBackground";
 
 // フォーカス時の枠・リング色(オレンジ)。エラー時(aria-invalid)は赤枠のままにする。
 const FOCUS_WARNING =
@@ -90,8 +92,10 @@ const toDateInputValue = (src: string) => {
 function StudentEditionInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const feedback = useFeedbackStore();
-  const userId = searchParams.get("userId") || null;
+  const toast = useFeedbackStore((s) => s.toast);
+  // 編集対象は常にログイン中のユーザー本人。URLの userId は信用しない
+  // (URLを書き換えて他人の情報を開けてしまわないように、画面では使わない)。
+  const userId = useAuthStore((s) => s.userId) || null;
   const [form, setForm] = useState<StudentForm>({ ...emptyForm, id: userId });
   const [errors, setErrors] = useState({
     loginAccount: EMPTY_STRING,
@@ -133,9 +137,9 @@ function StudentEditionInner() {
     try {
       await api.post("/youtube/unlink");
       setYoutubeLinked(false);
-      feedback.toast("YouTube連携を解除しました");
+      toast("YouTube連携を解除しました");
     } catch (e: unknown) {
-      feedback.toast(extractErrorMessage(e, "連携解除に失敗しました"));
+      toast(extractErrorMessage(e, "連携解除に失敗しました"));
       // 解除に失敗したので、実態に合わせてトグルもONへ戻す
       setYoutubeToggleOn(true);
     } finally {
@@ -152,8 +156,9 @@ function StudentEditionInner() {
 
   const onYoutubeConnect = () => {
     // 連携開始はバックエンドが直接Google同意画面へリダイレクトするため、
-    // fetch/XHRではなく普通の画面遷移にする。
-    router.push("/api/youtube/authorize-url");
+    // fetch/XHRやNext.jsのクライアント遷移(router.push)ではなく、ブラウザの通常の画面遷移にする。
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.href = "/api/youtube/authorize-url";
   };
 
   const fetchInitial = async (id: string) => {
@@ -168,7 +173,7 @@ function StudentEditionInner() {
         email: data.email,
       }));
     } catch (e: unknown) {
-      feedback.toast(extractErrorMessage(e, "データの取得に失敗しました"));
+      toast(extractErrorMessage(e, "データの取得に失敗しました"));
     }
   };
 
@@ -184,11 +189,11 @@ function StudentEditionInner() {
         invalid_state: "不正なリクエストです。もう一度お試しください。",
         unauthorized: "ログインが必要です",
       };
-      feedback.toast(
+      toast(
         messages[youtubeStatus] ?? "YouTube連携の処理が完了しました",
       );
       // ?youtube=... だけを消してURLをきれいにする（再読み込みで再表示させない）
-      router.replace(`/personal?userId=${form.id}`);
+      router.replace("/personal");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -222,7 +227,7 @@ function StudentEditionInner() {
     };
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) {
-      feedback.toast("入力情報不正");
+      toast("入力情報不正");
       return;
     }
     setSaving(true);
@@ -235,10 +240,10 @@ function StudentEditionInner() {
         email: form.email,
         dateOfBirth: form.dateOfBirth,
       });
-      feedback.toast(typeof data === "string" ? data : "更新しました");
+      toast(typeof data === "string" ? data : "更新しました");
       router.push("/mainmenu");
     } catch (e: unknown) {
-      feedback.toast(extractErrorMessage(e, "更新に失敗しました"));
+      toast(extractErrorMessage(e, "更新に失敗しました"));
     } finally {
       setSaving(false);
     }
@@ -262,14 +267,7 @@ function StudentEditionInner() {
   return (
     <div className="noto-sans relative min-h-full bg-cover bg-fixed bg-center">
       {/* 背景画像(変更なし) */}
-      <div className="fixed inset-0 -z-10">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/assets/mainmenu-bg4.webp"
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      </div>
+      <PageBackground src="/assets/mainmenu-bg4.webp" />
 
       {/* パンくずリスト(旧表記「データリスト / データ更新」は賛美歌画面からの流用だったため修正) */}
       <Breadcrumb className="mx-auto mb-2 max-w-2xl">

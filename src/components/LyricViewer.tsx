@@ -26,13 +26,13 @@ import { extractErrorMessage } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export type LyricTarget = {
-  id: number;
+  id: string;
   nameJp: string;
   nameKr: string;
   lineNumber: string;
 };
 
-function LyricBody({ id, terms }: { id: number; terms: string[] }) {
+function LyricBody({ id, terms }: { id: string; terms: string[] }) {
   const { data, isPending, error } = useQuery(lyricQueryOptions(id));
   if (isPending) {
     return (

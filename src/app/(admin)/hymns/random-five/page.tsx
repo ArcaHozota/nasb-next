@@ -5,7 +5,7 @@
 // shadcn/ui 版: 検索欄 = InputGroup、結果一覧 = Item(日本語名/韓国語名の2行表示)、
 // 読み込み中 = Skeleton、結果なし = Empty、読み込みアイコン = Spinner。
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   LayoutGrid,
   Search,
@@ -15,13 +15,9 @@ import {
   SquarePlay,
 } from "lucide-react";
 import api from "@/api/axios";
-import {
-  createPlaylistAndWait,
-  getYoutubeReauthConfirmText,
-  PlaylistError,
-} from "@/lib/youtube";
+import { usePlaylistCreation } from "@/hooks/use-playlist-creation";
 import { useFeedbackStore } from "@/stores/feedback";
-import { useAuthStore } from "@/stores/auth";
+import PageBackground from "@/components/PageBackground";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,10 +56,8 @@ const SKELETON_ROWS = 5;
 
 function RandomFiveInner() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const toast = useFeedbackStore((s) => s.toast);
-  const confirm = useFeedbackStore((s) => s.confirm);
-  const userId = useAuthStore((s) => s.userId);
+  const playlist = usePlaylistCreation();
 
   const [keyword, setKeyword] = useState(
     searchParams.get("keyword") ?? EMPTY_STRING,
@@ -72,8 +66,6 @@ function RandomFiveInner() {
   const [loading, setLoading] = useState(false);
   // 一度でも検索したか(未検索の案内と「該当データなし」を出し分けるため)
   const [searched, setSearched] = useState(false);
-  const [creatingPlaylist, setCreatingPlaylist] = useState(false);
-  const [playlistProgress, setPlaylistProgress] = useState("");
 
   // 検索の通し番号。連続で検索したとき、後から届いた古い応答で
   // 新しい結果を上書きしないよう、最後に出した検索の応答だけを画面に反映する
@@ -136,7 +128,7 @@ function RandomFiveInner() {
   const busyRef = useRef(false);
   useEffect(() => {
     onRandomRef.current = onRandom;
-    busyRef.current = loading || creatingPlaylist;
+    busyRef.current = loading || playlist.creating;
   });
   useEffect(() => {
     const onWindowKeyDown = (e: KeyboardEvent) => {
@@ -158,70 +150,21 @@ function RandomFiveInner() {
     return () => window.removeEventListener("keydown", onWindowKeyDown);
   }, []);
 
-  const onCreatePlaylist = async () => {
-    const hymnIds = records.map((r) => r.id).filter((id): id is string => !!id);
-    if (hymnIds.length === 0) {
-      toast("先にランダム選択してください");
-      return;
-    }
-    setCreatingPlaylist(true);
-    try {
-      await createPlaylistAndWait(hymnIds, (st) =>
-        setPlaylistProgress(`${st.added}/${st.total}`),
-      );
-      const proceed = await confirm(
-        "プレイリストを作成しました。今はYouTubeへ移動してよろしいでしょうか。",
-        "お知らせ",
-        { variant: "success", cancelLabel: "いいえ", confirmLabel: "はい" },
-      );
-      if (proceed) {
-        window.open(
-          "https://www.youtube.com/feed/playlists",
-          "_blank",
-          "noopener,noreferrer",
-        );
+  const onCreatePlaylist = () =>
+    playlist.create(async () => {
+      const hymnIds = records
+        .map((r) => r.id)
+        .filter((id): id is string => !!id);
+      if (hymnIds.length === 0) {
+        toast("先にランダム選択してください");
+        return null;
       }
-    } catch (e: unknown) {
-      if (
-        e &&
-        typeof e === "object" &&
-        "response" in e &&
-        (e as { response?: { status?: number } }).response?.status === 409
-      ) {
-        // 連携トークン失効・取り消し(再認証が必要)の場合は、専用文言で「はい／いいえ」を確認する
-        const reauthText = getYoutubeReauthConfirmText(e);
-        const ok = reauthText
-          ? await confirm(reauthText, "確認", {
-              cancelLabel: "いいえ",
-              confirmLabel: "はい",
-            })
-          : await confirm(
-              "YouTube連携がまだ完了していません。連携ページへ移動しますか？",
-            );
-        if (ok) router.push(`/personal?userId=${userId}`);
-        return;
-      }
-      toast(
-        e instanceof PlaylistError
-          ? e.message
-          : extractErrorMessage(e, "プレイリスト作成に失敗しました"),
-      );
-    } finally {
-      setCreatingPlaylist(false);
-      setPlaylistProgress("");
-    }
-  };
+      return hymnIds;
+    });
 
   return (
     <div className="relative min-h-full bg-cover bg-fixed bg-center">
-      <div className="fixed inset-0 -z-10">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/assets/mainmenu-bg6.webp"
-          alt=""
-          className="h-full w-full object-cover"
-        />
-      </div>
+      <PageBackground src="/assets/mainmenu-bg6.webp" />
 
       <Card className="randomfive-card noto-serif glass-panel relative overflow-hidden rounded-[18px] gap-0 py-0">
         <CardHeader className="gap-0 flex items-center bg-gray-800 px-4 py-3 text-white">
@@ -268,16 +211,18 @@ function RandomFiveInner() {
               <Button
                 className="col-start-3 shrink-0 justify-self-end"
                 type="button"
-                disabled={creatingPlaylist}
+                disabled={playlist.creating}
                 onClick={onCreatePlaylist}
               >
-                {creatingPlaylist ? (
+                {playlist.creating ? (
                   <Spinner />
                 ) : (
                   <ListMusic className="h-4 w-4" />
                 )}
                 プレイリスト作成
-                {creatingPlaylist && playlistProgress && ` ${playlistProgress}`}
+                {playlist.creating &&
+                  playlist.progress &&
+                  ` ${playlist.progress}`}
               </Button>
             )}
           </div>

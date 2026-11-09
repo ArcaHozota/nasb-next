@@ -22,12 +22,13 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import { downloadScore } from "@/lib/download";
 
 /** バックエンドの上限(現行 struts.multipart.maxSize と同じ 30MB) */
 const MAX_FILE_BYTES = 30 * 1024 * 1024;
 
 type Props = {
-  hymnId: number;
+  hymnId: string;
   hymnNameKr: string;
   onClose: () => void;
   onUploaded: () => void;
@@ -141,21 +142,9 @@ export default function HymnScoreModal({
   const onDownloadExisting = async () => {
     setDownloading(true);
     try {
-      const res = await api.get(`/hymns/${hymnId}/score`, {
-        params: { chord },
-        responseType: "blob",
-        headers: { Accept: "*/*" },
-      });
-      const url = window.URL.createObjectURL(res.data);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${hymnId}(${chord}).pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadScore(hymnId, chord);
     } catch (e: unknown) {
-      toast(extractErrorMessage(e, "楽譜の取得に失敗しました"));
+      toast(e instanceof Error ? e.message : "楽譜の取得に失敗しました");
     } finally {
       setDownloading(false);
     }

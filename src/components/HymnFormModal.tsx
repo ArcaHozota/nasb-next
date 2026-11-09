@@ -91,9 +91,9 @@ export default function HymnFormModal({
   onClose,
   onSaved,
 }: Props) {
-  const feedback = useFeedbackStore();
+  const toast = useFeedbackStore((s) => s.toast);
   const queryClient = useQueryClient();
-  const auth = useAuthStore();
+  const userId = useAuthStore((s) => s.userId);
 
   const isEdit = mode === "edit";
   const editId = isEdit ? (editIdProp ?? null) : null;
@@ -117,7 +117,7 @@ export default function HymnFormModal({
         setForm((f) => ({ ...f, ...data }));
         setOriginalForm((f) => ({ ...(f ?? emptyForm), ...data, id: editId }));
       } catch (e) {
-        feedback.toast(extractErrorMessage(e, "データの取得に失敗しました"));
+        toast(extractErrorMessage(e, "データの取得に失敗しました"));
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -164,14 +164,12 @@ export default function HymnFormModal({
     };
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) {
-      feedback.toast("入力情報不正");
+      toast("入力情報不正");
       return;
     }
-    const uid = auth.userId;
+    const uid = userId;
     if (!uid) {
-      feedback.toast(
-        "ログイン情報の取得に失敗しました。再度ログインしてください。",
-      );
+      toast("ログイン情報の取得に失敗しました。再度ログインしてください。");
       return;
     }
     setSaving(true);
@@ -193,18 +191,18 @@ export default function HymnFormModal({
         const { data } = await api.put(`/hymns/${form.id}`, updatePayload);
         // ホーム画面の歌詞キャッシュ(5分)に古い歌詞が残らないよう、この曲の分を捨てる
         if (form.id) void invalidateLyric(queryClient, form.id);
-        feedback.toast(typeof data === "string" ? data : "更新しました");
+        toast(typeof data === "string" ? data : "更新しました");
         onSaved({ mode: "edit" });
       } else {
         const { headers } = await api.post("/hymns", payload, {
           params: { pageSize: pageSize || 5 },
         });
-        feedback.toast("追加済み");
+        toast("追加済み");
         // axiosはヘッダー名を小文字化して格納する
         onSaved({ mode: "add", pageNum: Number(headers["x-page-num"]) || 1 });
       }
     } catch (e) {
-      feedback.toast(extractErrorMessage(e, "保存に失敗しました"));
+      toast(extractErrorMessage(e, "保存に失敗しました"));
     } finally {
       setSaving(false);
     }

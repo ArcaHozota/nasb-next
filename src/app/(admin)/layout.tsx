@@ -19,11 +19,14 @@ import {
   ChevronUp,
   Search,
 } from "lucide-react";
+import axios from "axios";
 import api from "@/api/axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuthStore } from "@/stores/auth";
 import { useFeedbackStore } from "@/stores/feedback";
 import { useUnsavedGuard } from "@/stores/unsavedGuard";
+import { hardRedirectHome, SESSION_EXPIRED_MESSAGE } from "@/lib/session";
+import { Spinner } from "@/components/ui/spinner";
 import { DELAY_APOLOGY, EMPTY_STRING } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -65,8 +68,14 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const auth = useAuthStore();
-  const feedback = useFeedbackStore();
+  // ストア全体ではなく、使う値・関数だけを購読する
+  // (確認ダイアログの開閉のたびに管理画面全体が再描画されないようにする)
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const username = useAuthStore((s) => s.username);
+  const fetchMe = useAuthStore((s) => s.fetchMe);
+  const logout = useAuthStore((s) => s.logout);
+  const toast = useFeedbackStore((s) => s.toast);
+  const confirm = useFeedbackStore((s) => s.confirm);
 
   const [keyword, setKeyword] = useState(EMPTY_STRING);
   // 認証確認がまだ済んでいない間は描画しない(旧 router.beforeEach 相当)
@@ -77,9 +86,9 @@ export default function AdminLayout({
     if (checking.current) return;
     checking.current = true;
     (async () => {
-      if (!auth.isLoggedIn) {
+      if (!isLoggedIn) {
         try {
-          await auth.fetchMe();
+          await fetchMe();
         } catch {
           // 401以外の予期しないエラー。ひとまずホームへ逃がす。
           router.replace("/home");
@@ -110,10 +119,13 @@ export default function AdminLayout({
   useEffect(() => {
     if (!authChecked) return;
     const checkSession = () => {
-      api.get("/common/me").catch(() => {
-        // 401(SESSION_INVALIDATEDを含む)はaxios.ts側で既に処理済み。
-        // それ以外の一時的な通信エラーでポーリング自体を止めたくないため、
-        // ここでは意図的に何もしない。
+      api.get("/common/me").catch((e: unknown) => {
+        // SESSION_INVALIDATED(別端末ログイン)はaxios.ts側で処理済み。
+        // /common/me の通常の401(セッション切れ)はaxios.tsでは判定対象外なので、ここで処理する。
+        if (axios.isAxiosError(e) && e.response?.status === 401) {
+          hardRedirectHome(SESSION_EXPIRED_MESSAGE);
+        }
+        // それ以外の一時的な通信エラーでポーリング自体を止めたくないため、何もしない。
       });
     };
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -149,7 +161,7 @@ export default function AdminLayout({
       key: "bookSearch",
       icon: Anchor,
       title: "聖書章節選択",
-      action: () => feedback.toast(DELAY_APOLOGY),
+      action: () => toast(DELAY_APOLOGY),
       // 実ページが無い(トースト表示のみ)ため、アクティブ判定の対象外
       isActive: false,
     },
@@ -183,8 +195,10 @@ export default function AdminLayout({
       key: "receipts",
       icon: Receipt,
       title: "レシート明細入力",
-      action: () => go("/receipts"),
-      isActive: pathname.startsWith("/receipts"),
+      // /receipts のページはまだ無い(遷移すると404になる)ため、聖書章節選択と同じく
+      // 「未実装」のトーストだけ出す。ページを作ったら go("/receipts") に戻すこと。
+      action: () => toast(DELAY_APOLOGY),
+      isActive: false,
     },
   ];
 
@@ -193,11 +207,10 @@ export default function AdminLayout({
   const confirmLeave = async (toPath?: string) => {
     if (!useUnsavedGuard.getState().dirty) return true;
     if (toPath !== undefined && toPath.split("?")[0] === pathname) return true;
-    return feedback.confirm(
-      "編集中の内容があります。破棄して移動しますか？",
-      "確認",
-      { cancelLabel: "編集を続ける", confirmLabel: "破棄して移動" },
-    );
+    return confirm("編集中の内容があります。破棄して移動しますか？", "確認", {
+      cancelLabel: "編集を続ける",
+      confirmLabel: "破棄して移動",
+    });
   };
 
   const go = async (url: string) => {
@@ -206,11 +219,13 @@ export default function AdminLayout({
 
   const onLogout = async () => {
     if (!(await confirmLeave())) return;
-    const ok = await feedback.confirm("ログアウトしますか？", "警告");
+    const ok = await confirm("ログアウトしますか？", "警告");
     if (!ok) return;
-    await auth.logout();
-    // 旧実装同様、状態を完全にリセットするためフルリロードする
-    router.push("/home");
+    await logout();
+    // 状態を完全にリセットするためフルリロードする
+    // (React Query のキャッシュを残すと、次にログインした人に前の人のデータが見えてしまう)。
+    // 破棄に同意済みの未保存警告(beforeunload)は出さない。
+    hardRedirectHome();
   };
 
   const onSearch = async () => {
@@ -234,10 +249,21 @@ export default function AdminLayout({
   };
 
   const goPersonal = () => {
-    void go(`/personal?userId=${auth.userId || EMPTY_STRING}`);
+    void go("/personal");
   };
 
-  if (!authChecked) return null;
+  // 認証確認中は、真っ白ではなく読み込み表示を出す
+  if (!authChecked) {
+    return (
+      <div
+        className="flex h-svh items-center justify-center"
+        role="status"
+        aria-label="読み込み中"
+      >
+        <Spinner className="size-6" />
+      </div>
+    );
+  }
 
   return (
     // shadcn/ui の Sidebar。デスクトップ: 折りたたみ可能(アイコンのみ表示、Ctrl/⌘+B でも切替)、
@@ -249,10 +275,10 @@ export default function AdminLayout({
     >
       <AdminSidebar
         navItems={navItems}
-        username={auth.username ?? EMPTY_STRING}
+        username={username ?? EMPTY_STRING}
         onBrand={() => void go("/mainmenu")}
         onPersonal={goPersonal}
-        onMessage={() => feedback.toast(DELAY_APOLOGY)}
+        onMessage={() => toast(DELAY_APOLOGY)}
         onLogout={onLogout}
       />
 
@@ -296,7 +322,7 @@ export default function AdminLayout({
 
         {/* ===== 各画面(ここだけがスクロールする) ===== */}
         {/* スクロールバーは出さない(従来どおり)。Radix の中身ラッパー(display: table)は block に戻す */}
-        <ScrollArea className="min-h-0 flex-1 p-0.75 [&_[data-slot=scroll-area-scrollbar]]:hidden [&_[data-slot=scroll-area-viewport]>div]:block!">
+        <ScrollArea className="min-h-0 flex-1 p-0.75 **:data-[slot=scroll-area-scrollbar]:hidden [&_[data-slot=scroll-area-viewport]>div]:block!">
           {children}
         </ScrollArea>
       </SidebarInset>

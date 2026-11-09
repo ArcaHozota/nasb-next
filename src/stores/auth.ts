@@ -4,6 +4,7 @@ import axios from "axios";
 import api from "@/api/axios";
 import { EMPTY_STRING } from "@/lib/constants";
 import { useCsrfStore } from "@/stores/csrf";
+import { REDIRECT_MESSAGE_KEY } from "@/lib/session";
 
 type User = {
   id: string;
@@ -24,7 +25,6 @@ type AuthState = {
   fetchMe: () => Promise<User>;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  // main.tsx の auth:unauthorized ハンドラ相当
   clearUser: () => void;
 };
 
@@ -74,7 +74,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const body = new URLSearchParams({ username, password });
     const { data } = await api.post<{ message?: string }>("/login", body);
     if (data?.message && typeof window !== "undefined") {
-      localStorage.setItem("redirectMessage", data.message);
+      localStorage.setItem(REDIRECT_MESSAGE_KEY, data.message);
     }
     await get().fetchMe();
     // セッションローテーションでCSRFトークンが変わっている可能性があるため再取得

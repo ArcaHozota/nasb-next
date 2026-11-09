@@ -37,11 +37,11 @@ type TriggerProps = {
 };
 
 type Props = {
-  id: number;
+  id: string;
   /** 調の一覧を取得する(失敗時は null を返す。エラー表示は呼び出し側) */
-  fetchKeys: (id: number) => Promise<ScoreKey[] | null>;
+  fetchKeys: (id: string) => Promise<ScoreKey[] | null>;
   /** ダウンロードする。chord 省略時はサーバーがオリジナルキー優先で1件選ぶ */
-  download: (id: number, chord?: string) => Promise<void>;
+  download: (id: string, chord?: string) => Promise<void>;
   /** アイコン部分を描画する */
   children: (props: TriggerProps) => ReactNode;
   side?: "top" | "right" | "bottom" | "left";
