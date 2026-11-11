@@ -50,7 +50,9 @@ export function saveBlob(blob: Blob, filename: string) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  window.URL.revokeObjectURL(url);
+  // click() 直後に解放すると、ブラウザによって(Safari など)ダウンロードが始まる前に
+  // URL が無効になり失敗するため、少し待ってから解放する
+  setTimeout(() => window.URL.revokeObjectURL(url), 1000);
 }
 
 /**
@@ -67,7 +69,9 @@ export async function downloadScore(id: string, chord?: string) {
     });
     saveBlob(res.data, chord ? `${id}(${chord}).pdf` : `${id}.pdf`);
   } catch (e: unknown) {
-    throw new Error(await extractBlobErrorMessage(e, "楽譜の取得に失敗しました"));
+    throw new Error(
+      await extractBlobErrorMessage(e, "楽譜の取得に失敗しました"),
+    );
   }
 }
 

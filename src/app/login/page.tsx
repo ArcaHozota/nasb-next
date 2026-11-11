@@ -4,6 +4,7 @@
 // 旧 views/LoginView.vue を移植
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { useAuthStore } from "@/stores/auth";
 import { EMPTY_STRING } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
@@ -29,21 +30,27 @@ export default function LoginView() {
   const [loading, setLoading] = useState(false);
 
   const onLogin = async () => {
+    if (loading) return; // Enter の連打などによる二重送信を防ぐ
     setError(EMPTY_STRING);
     setLoading(true);
     try {
       await login(username, password);
       router.push("/mainmenu");
-    } catch {
-      // SecurityConfig の failureHandler が 401 を返す
-      setError("ユーザー名またはパスワードが正しくありません。");
+    } catch (e: unknown) {
+      // 認証失敗はサーバーが 401 を返す。それ以外(通信エラー・500 など)は
+      // パスワードの誤りと区別して伝える
+      setError(
+        axios.isAxiosError(e) && e.response?.status === 401
+          ? "ユーザー名またはパスワードが正しくありません。"
+          : "ログインできませんでした。時間をおいて再度お試しください。",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const onEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") onLogin();
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) onLogin();
   };
 
   return (
@@ -70,6 +77,7 @@ export default function LoginView() {
               onChange={(e) => setUsername(e.target.value)}
               type="text"
               className={LOGIN_INPUT}
+              onKeyDown={onEnter}
             />
           </Field>
 

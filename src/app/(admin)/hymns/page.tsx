@@ -131,6 +131,12 @@ export default function HymnList() {
   const pageSizeOptions = [5, 10, 15];
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
 
+  // 最後のページの最後の1件を削除した等で、今のページが総ページ数を超えたら最終ページへ戻す
+  // (Effect ではなく描画中に state を調整する。取得中は前ページのデータなので判定しない)
+  if (!isFetching && data && page > totalPages) {
+    setPage(totalPages);
+  }
+
   // 検索中は「番号」列を一致度に切り替える(検索確定後のキーワードで判定)
   const isSearching = submittedKeyword.trim() !== EMPTY_STRING;
 

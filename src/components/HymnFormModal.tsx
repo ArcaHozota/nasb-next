@@ -111,15 +111,24 @@ export default function HymnFormModal({
   // 編集時: 既存データをロード
   useEffect(() => {
     if (!isEdit) return;
+    // 応答が届く前にモーダルが閉じられた(別の曲を開いた)ら、古い応答は捨てる
+    let cancelled = false;
     (async () => {
       try {
         const { data } = await api.get(`/hymns/${editId}`);
+        if (cancelled) return;
         setForm((f) => ({ ...f, ...data }));
         setOriginalForm((f) => ({ ...(f ?? emptyForm), ...data, id: editId }));
       } catch (e) {
+        if (cancelled) return;
         toast(extractErrorMessage(e, "データの取得に失敗しました"));
+        // 読み込めないまま空のフォームで更新できてしまわないよう、モーダルを閉じる
+        onClose();
       }
     })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, editId]);
 
