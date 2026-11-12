@@ -10,6 +10,7 @@
 // TF-IDFは使わない: 歌詞のほぼ全曲が韓国語で、日本語・英語は一部の曲にしか無く、語の重みが偏るため。
 // 代わりに「文字列としてどれだけ似ているか」(部分一致 + 文字2-gramの被覆率)で順位をつける。
 import api from "@/api/axios";
+import { hymnKeys } from "@/api/hymns";
 
 // ===== 索引(GET /hymns/search-index) =====
 
@@ -52,9 +53,12 @@ export type LocalSearchResult = {
   hitCount: number;
 };
 
-/** 索引の取得(未ログインでも可)。歌詞はめったに変わらないので5分キャッシュする */
+/**
+ * 索引の取得(未ログインでも可)。歌詞はめったに変わらないので5分キャッシュする。
+ * キーは "hymns" で始まるので、曲の追加・編集・削除(invalidateHymns)で捨てられる。
+ */
 export const searchIndexQueryOptions = {
-  queryKey: ["hymns-search-index"] as const,
+  queryKey: hymnKeys.searchIndex,
   queryFn: async (): Promise<SearchIndex> => {
     const { data } = await api.get<SearchIndex>("/hymns/search-index");
     return data;

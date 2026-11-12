@@ -244,8 +244,10 @@ export default function AdminLayout({
     }
   };
 
-  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") onSearch();
+  // 検索欄は <form> にして、Enter での送信(日本語変換中の Enter は除く)をブラウザに任せる
+  const onSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    void onSearch();
   };
 
   const goPersonal = () => {
@@ -290,7 +292,11 @@ export default function AdminLayout({
             className="size-8 text-white hover:bg-white/10 hover:text-white"
           />
           <div className="flex min-w-0 items-center gap-2">
-            <div className="relative min-w-0">
+            <form
+              role="search"
+              className="relative min-w-0"
+              onSubmit={onSearchSubmit}
+            >
               <Input
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
@@ -298,10 +304,10 @@ export default function AdminLayout({
                 placeholder="検索"
                 aria-label="検索"
                 className="h-8 w-44 rounded border-0 bg-gray-100 pl-8 text-gray-900 shadow-none focus-visible:ring-white/40 sm:w-60"
-                onKeyDown={onSearchKeyDown}
+                enterKeyHint="search"
               />
               <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            </div>
+            </form>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

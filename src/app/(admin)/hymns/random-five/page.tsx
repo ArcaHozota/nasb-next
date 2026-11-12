@@ -6,6 +6,7 @@
 // 読み込み中 = Skeleton、結果なし = Empty、読み込みアイコン = Spinner。
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutGrid,
   Search,
@@ -14,7 +15,12 @@ import {
   Shuffle,
   SquarePlay,
 } from "lucide-react";
-import api from "@/api/axios";
+import {
+  fetchRandomHymns,
+  hymnKeys,
+  type HymnSummary,
+  type RandomPath,
+} from "@/api/hymns";
 import { usePlaylistCreation } from "@/hooks/use-playlist-creation";
 import { useFeedbackStore } from "@/stores/feedback";
 import PageBackground from "@/components/PageBackground";
@@ -47,9 +53,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 
-// HYMNS.IDはSnowflake生成の19桁数値。JavaScriptのnumberでは安全に表現できる
-// 整数の上限(2^53)を超えて精度が壊れるため、number化せず文字列のまま扱う。
-type HymnRecord = { id?: string; nameJp: string; nameKr: string; link: string };
+/** 出した検索。nonce は検索のたびに変える(同じキーワードでも毎回引き直すため) */
+type SearchRequest = { path: RandomPath; keyword: string; nonce: string };
 
 // 読み込み中に表示するスケルトン行の数
 const SKELETON_ROWS = 5;
@@ -59,67 +64,68 @@ function RandomFiveInner() {
   const toast = useFeedbackStore((s) => s.toast);
   const playlist = usePlaylistCreation();
 
-  const [keyword, setKeyword] = useState(
-    searchParams.get("keyword") ?? EMPTY_STRING,
-  );
-  const [records, setRecords] = useState<HymnRecord[]>([]);
-  const [loading, setLoading] = useState(false);
-  // 一度でも検索したか(未検索の案内と「該当データなし」を出し分けるため)
-  const [searched, setSearched] = useState(false);
-
-  // 検索の通し番号。連続で検索したとき、後から届いた古い応答で
-  // 新しい結果を上書きしないよう、最後に出した検索の応答だけを画面に反映する
-  // (画面内の検索ボタンとヘッダー検索の両方で共有する)
-  const latestRequest = useRef(0);
-
-  const runSearch = async (path: string, q: string) => {
-    const requestNo = ++latestRequest.current;
-    setLoading(true);
-    try {
-      const { data } = await api.get(path, {
-        params: { keyword: q.normalize("NFC") },
-      });
-      if (requestNo !== latestRequest.current) return; // もっと新しい検索がある
-      setRecords(data);
-    } catch (e: unknown) {
-      if (requestNo !== latestRequest.current) return;
-      toast(extractErrorMessage(e, "通信エラー"));
-    } finally {
-      if (requestNo === latestRequest.current) {
-        setLoading(false);
-        setSearched(true);
-      }
-    }
-  };
-
-  const onRandom = () => runSearch("/hymns/random", keyword);
-
   // ヘッダーの検索欄から ?keyword=xxx&t=yyy 付きで遷移してきたら自動検索する。
   // t はヘッダーで検索した時刻。同じキーワードでも t が変わるので、この画面にいる状態で
   // ヘッダーから検索し直しても(同じキーワードでも)毎回検索が走り、新しい5曲を引き直せる。
   const headerKeyword = searchParams.get("keyword");
   const headerSearchAt = searchParams.get("t");
-  // 画面内の検索欄もヘッダーのキーワードに合わせる(Effect ではなく描画中に state を調整する)
+  const headerRequest = (): SearchRequest | null =>
+    headerKeyword
+      ? {
+          path: "/common/search",
+          keyword: headerKeyword,
+          nonce: `header:${headerSearchAt ?? ""}`,
+        }
+      : null;
+
+  const [keyword, setKeyword] = useState(headerKeyword ?? EMPTY_STRING);
+  // 最後に出した検索(null = まだ検索していない)。応答はこの検索の分だけが画面に出るので、
+  // 連続で検索しても、後から届いた古い応答で新しい結果が上書きされることはない
+  const [request, setRequest] = useState<SearchRequest | null>(headerRequest);
+
+  // ヘッダーから検索し直されたら、画面内の検索欄もそのキーワードにして検索を出し直す
+  // (Effect ではなく描画中に state を調整する)
   const headerKey = `${headerKeyword ?? ""}|${headerSearchAt ?? ""}`;
   const [prevHeaderKey, setPrevHeaderKey] = useState(headerKey);
   if (prevHeaderKey !== headerKey) {
     setPrevHeaderKey(headerKey);
-    if (headerKeyword) setKeyword(headerKeyword);
-  }
-  useEffect(() => {
-    if (!headerKeyword) return;
-    // runSearch は最初に setLoading する。Effect 本体で同期的に state を更新しないよう、マイクロタスクへ回す
-    queueMicrotask(() => void runSearch("/common/search", headerKeyword));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [headerKeyword, headerSearchAt]);
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // 入力欄が Enter を処理した後、下の window リスナーで二重実行しないよう止める
-    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-      e.stopPropagation();
-      e.nativeEvent.stopImmediatePropagation();
-      onRandom();
+    const next = headerRequest();
+    if (next) {
+      setKeyword(next.keyword);
+      setRequest(next);
     }
+  }
+
+  const randomQuery = useQuery({
+    queryKey: request
+      ? hymnKeys.random(request.path, request.keyword, request.nonce)
+      : hymnKeys.random("/hymns/random", "", ""),
+    queryFn: () => fetchRandomHymns(request!.path, request!.keyword),
+    enabled: request !== null,
+    // ランダムなので、一度出した結果を使い回さない
+    gcTime: 0,
+    staleTime: Infinity,
+    retry: false,
+  });
+  const records: HymnSummary[] = randomQuery.data ?? [];
+  const loading = request !== null && randomQuery.isFetching;
+  // 検索して結果が届いたか(未検索の案内と「該当データなし」を出し分けるため。
+  // 通信エラーのときは「該当データなし」とは言わず、トーストで知らせる)
+  const searched = request !== null && randomQuery.isSuccess;
+
+  useEffect(() => {
+    if (randomQuery.error) {
+      toast(extractErrorMessage(randomQuery.error, "通信エラー"));
+    }
+  }, [randomQuery.error, toast]);
+
+  const onRandom = () =>
+    setRequest({ path: "/hymns/random", keyword, nonce: String(Date.now()) });
+
+  // 検索欄は <form> にして、Enter での送信(日本語変換中の Enter は除く)をブラウザに任せる
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!loading) onRandom();
   };
 
   // 画面を開いた直後(入力欄にフォーカスが無い状態)でも Enter で検索できるようにする。
@@ -152,14 +158,12 @@ function RandomFiveInner() {
 
   const onCreatePlaylist = () =>
     playlist.create(async () => {
-      const hymnIds = records
-        .map((r) => r.id)
-        .filter((id): id is string => !!id);
+      const hymnIds = records.map((r) => r.id).filter(Boolean);
       if (hymnIds.length === 0) {
         toast("先にランダム選択してください");
         return null;
       }
-      return hymnIds;
+      return { hymnIds };
     });
 
   return (
@@ -181,6 +185,7 @@ function RandomFiveInner() {
         <CardContent className="p-6">
           <div className="mb-6 grid grid-cols-[1fr_minmax(0,30rem)_1fr] items-center gap-4">
             <div className="col-start-2 flex justify-center">
+              <form role="search" className="contents" onSubmit={onSubmit}>
               <InputGroup className="max-w-120 bg-white/60 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
                 <InputGroupInput
                   value={keyword}
@@ -188,22 +193,22 @@ function RandomFiveInner() {
                   type="text"
                   placeholder="キーワードを入力してください"
                   aria-label="キーワード"
-                  onKeyDown={onKeyDown}
                 />
                 <InputGroupAddon align="inline-end">
                   {/* InputGroupButton は shadcn/ui の Button なので波紋も付く */}
                   <Hint label="ランダム選択">
                     <InputGroupButton
+                      type="submit"
                       size="icon-xs"
                       aria-label="ランダム選択"
                       disabled={loading}
-                      onClick={onRandom}
                     >
                       {loading ? <Spinner /> : <Search />}
                     </InputGroupButton>
                   </Hint>
                 </InputGroupAddon>
               </InputGroup>
+              </form>
             </div>
 
             {/* 選択結果があるときだけ表示(未検索時の案内は下の Empty が担当) */}

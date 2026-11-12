@@ -20,7 +20,12 @@ import {
 } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import { LogIn, ScrollText, Search, SearchX } from "lucide-react";
-import api from "@/api/axios";
+import {
+  fetchHymnPage,
+  hymnKeys,
+  type HymnPage,
+  type HymnSummary,
+} from "@/api/hymns";
 import { type ScoreKey } from "@/components/ScoreKeyPopover";
 import ScoreKeyDialog from "@/components/ScoreKeyDialog";
 import LyricViewer, { type LyricTarget } from "@/components/LyricViewer";
@@ -63,21 +68,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-type HymnRecord = {
-  /** Snowflake ID(19桁)は文字列のまま扱う(number にすると桁が丸まる) */
-  id: string;
-  nameJp: string;
-  nameKr: string;
-  link: string;
-  lineNumber: "BURGUNDY" | "NAPLES" | "CADMIUM" | string;
-  /** 検索キーワードを含む歌詞の一行(検索したときだけサーバーが付ける) */
-  snippet?: string | null;
-};
-
-type PaginationResponse = {
-  records: HymnRecord[];
-  totalRecords: number;
-};
+type HymnRecord = HymnSummary;
 
 // デスクトップ(開いた讃美歌集): 左ページの目次に並べる曲数(ページ送りで切替)
 const PAGE_SIZE = 11;
@@ -387,18 +378,14 @@ export default function HomeView() {
     setPage(1);
   }, [isMobile]);
 
-  const { data, isFetching, error } = useQuery<PaginationResponse>({
-    queryKey: ["hymns-pagination", page, PAGE_SIZE, submittedKeyword],
-    queryFn: async () => {
-      const { data } = await api.get("/hymns", {
-        params: {
-          pageNum: page,
-          pageSize: PAGE_SIZE,
-          keyword: submittedKeyword.normalize("NFC"),
-        },
-      });
-      return data;
-    },
+  const pageParams = {
+    pageNum: page,
+    pageSize: PAGE_SIZE,
+    keyword: submittedKeyword,
+  };
+  const { data, isFetching, error } = useQuery({
+    queryKey: hymnKeys.page(pageParams),
+    queryFn: () => fetchHymnPage(pageParams),
     placeholderData: keepPreviousData, // 旧: loading中もDOMを維持しopacity制御、と同じ狙い
     enabled: isMobile === false && !isLocal,
   });
@@ -412,18 +399,14 @@ export default function HomeView() {
     hasNextPage,
     fetchNextPage,
     error: mobileError,
-  } = useInfiniteQuery<PaginationResponse>({
-    queryKey: ["hymns-infinite", MOBILE_BATCH_SIZE, submittedKeyword],
-    queryFn: async ({ pageParam }) => {
-      const { data } = await api.get("/hymns", {
-        params: {
-          pageNum: pageParam,
-          pageSize: MOBILE_BATCH_SIZE,
-          keyword: submittedKeyword.normalize("NFC"),
-        },
-      });
-      return data;
-    },
+  } = useInfiniteQuery({
+    queryKey: hymnKeys.infinite(MOBILE_BATCH_SIZE, submittedKeyword),
+    queryFn: ({ pageParam }): Promise<HymnPage> =>
+      fetchHymnPage({
+        pageNum: pageParam,
+        pageSize: MOBILE_BATCH_SIZE,
+        keyword: submittedKeyword,
+      }),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
       allPages.length * MOBILE_BATCH_SIZE < lastPage.totalRecords
@@ -520,8 +503,10 @@ export default function HomeView() {
     resetCarousel();
   };
 
-  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") onSearch();
+  // 検索欄は <form> にして、Enter での送信(日本語変換中の Enter は除く)をブラウザに任せる
+  const onSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onSearch();
   };
 
   // この曲で楽譜が登録されている調の一覧(失敗時はトーストを出して null)
@@ -640,7 +625,11 @@ export default function HomeView() {
       </header>
 
       <main className="mx-auto max-w-270 px-4 pb-16 pt-8 md:px-4 md:pb-16 md:pt-8">
-        <div className="relative mx-auto mb-7 max-w-130">
+        <form
+          role="search"
+          className="relative mx-auto mb-7 max-w-130"
+          onSubmit={onSearchSubmit}
+        >
           {/* 読み込み中は、検索欄のまわりに細いリングを脈打たせる(回る枠線の代わり)。
               animate-pulse は不透明度を変えるので、入力欄ではなくリング専用の要素に付ける */}
           {(desktopBusy || mobileBusy) && (
@@ -656,19 +645,17 @@ export default function HomeView() {
             placeholder="曲名・歌詞のキーワードで検索してください"
             aria-label="キーワード"
             className="h-auto rounded-full border-none bg-white/67 py-3 pl-5 pr-11 text-base shadow-none placeholder:text-current/50 focus-visible:ring-0 md:text-base"
-            onKeyDown={onSearchKeyDown}
           />
           <Button
             variant="ghost"
             size="icon-sm"
             className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full hover:bg-white/50"
-            type="button"
+            type="submit"
             aria-label="検索"
-            onClick={onSearch}
           >
             <Search className="h-4 w-4" />
           </Button>
-        </div>
+        </form>
 
         {isMobile === true && localNotice && (
           <Alert

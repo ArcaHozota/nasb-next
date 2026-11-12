@@ -21,6 +21,12 @@ import {
   ChevronRight,
 } from "lucide-react";
 import api from "@/api/axios";
+import {
+  fetchHymnPage,
+  hymnKeys,
+  invalidateHymns,
+  type HymnSummary,
+} from "@/api/hymns";
 import { usePlaylistCreation } from "@/hooks/use-playlist-creation";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
@@ -68,14 +74,7 @@ import { fetchScoreKeysOrToast, invalidateScoreKeys } from "@/lib/scoreKeys";
 import { downloadScoreOrToast } from "@/lib/download";
 import { hymnNameSizeClass } from "@/lib/text";
 
-type HymnRow = {
-  /** Snowflake ID(19桁)は文字列のまま扱う(number にすると桁が丸まる) */
-  id: string;
-  nameJp: string;
-  nameKr: string;
-  link: string;
-  lineNumber: string;
-};
+type HymnRow = HymnSummary;
 
 // 検索時に「番号」列へ出す一致度(lineNumber の値 → 表示)
 const MATCH_LEVEL: Record<string, { label: string; chip: string }> = {
@@ -111,18 +110,10 @@ export default function HymnList() {
   const [keyword, setKeyword] = useState(EMPTY_STRING);
   const [submittedKeyword, setSubmittedKeyword] = useState(EMPTY_STRING);
 
+  const pageParams = { pageNum: page, pageSize, keyword: submittedKeyword };
   const { data, isFetching } = useQuery({
-    queryKey: ["hymns-list", page, pageSize, submittedKeyword],
-    queryFn: async () => {
-      const { data } = await api.get("/hymns", {
-        params: {
-          pageNum: page,
-          pageSize: pageSize,
-          keyword: submittedKeyword.normalize("NFC"),
-        },
-      });
-      return data as { records: HymnRow[]; totalRecords: number };
-    },
+    queryKey: hymnKeys.page(pageParams),
+    queryFn: () => fetchHymnPage(pageParams),
     placeholderData: keepPreviousData,
   });
 
@@ -150,8 +141,10 @@ export default function HymnList() {
     setSubmittedKeyword(keyword);
   };
 
-  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") onSearch();
+  // 検索欄は <form> にして、Enter での送信(日本語変換中の Enter は除く)をブラウザに任せる
+  const onSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onSearch();
   };
 
   // 追加・編集は画面遷移ではなく、モーダルで行う(一覧の page / pageSize / keyword はそのまま保たれる)。
@@ -171,7 +164,7 @@ export default function HymnList() {
       setSubmittedKeyword(EMPTY_STRING);
       if (result.pageNum) setPage(result.pageNum);
     }
-    queryClient.invalidateQueries({ queryKey: ["hymns-list"] });
+    // キャッシュは HymnFormModal が保存後に捨てている(invalidateHymns)
   };
 
   // 楽譜アップロードは専用画面への遷移ではなく、モーダルで行う
@@ -199,7 +192,7 @@ export default function HymnList() {
       const { headers } = await api.delete(`/hymns/${item.id}`);
       const msg = headers["x-page-num"] ?? "削除しました";
       toast(msg);
-      queryClient.invalidateQueries({ queryKey: ["hymns-list"] });
+      void invalidateHymns(queryClient);
     } catch (e: unknown) {
       toast(extractErrorMessage(e, "削除に失敗しました"));
     }
@@ -210,33 +203,17 @@ export default function HymnList() {
     setPage(1);
   };
 
-  // BURGUNDY・CADMIUM行のみを対象にYouTubeプレイリストを作成する。
-  // 表示中の1ページ分ではなく、キーワード検索にヒットした全件(ページ横断)が対象。
-  // HYMNS.IDはSnowflake生成の19桁数値なので、number化せず文字列のまま扱う。
+  // 検索にヒットした全件(ページ横断)のうち、一致(BURGUNDY)・よく一致(CADMIUM)の曲で
+  // YouTube プレイリストを作成する。全件を取り直して ID を集めるのはサーバー側が行う
+  // (検索条件だけを送る。曲が増えても画面の通信量が膨らまないように)。
+  // 対象が1曲も無いときは、サーバーが「賛美歌情報が見つかりませんでした」を返す。
   const onCreatePlaylist = () =>
     playlist.create(async () => {
       if (totalRecords === 0) {
         toast("対象の賛美歌がありません");
         return null;
       }
-      const { data: allData } = await api.get("/hymns", {
-        params: {
-          pageNum: 1,
-          pageSize: totalRecords,
-          keyword: submittedKeyword.normalize("NFC"),
-        },
-      });
-      const allRecords = (allData?.records ?? []) as HymnRow[];
-      const hymnIds = allRecords
-        .filter(
-          (r) => r.lineNumber === "BURGUNDY" || r.lineNumber === "CADMIUM",
-        )
-        .map((r) => String(r.id));
-      if (hymnIds.length === 0) {
-        toast("対象の賛美歌（BURGUNDY・CADMIUM）がありません");
-        return null;
-      }
-      return hymnIds;
+      return { keyword: submittedKeyword };
     });
 
   return (
@@ -257,7 +234,7 @@ export default function HymnList() {
 
         <CardContent className="p-6">
           <div className="mb-4 grid grid-cols-[12%_34%_30%_24%] items-center gap-2">
-            <div className="col-span-2">
+            <form role="search" className="col-span-2" onSubmit={onSearchSubmit}>
               <InputGroup className="max-w-120 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
                 <InputGroupInput
                   value={keyword}
@@ -265,19 +242,18 @@ export default function HymnList() {
                   type="text"
                   placeholder="キーワードを入力してください"
                   aria-label="キーワード"
-                  onKeyDown={onSearchKeyDown}
                 />
                 <InputGroupAddon align="inline-end">
                   <InputGroupButton
+                    type="submit"
                     size="icon-xs"
                     aria-label="検索"
-                    onClick={onSearch}
                   >
                     <Search />
                   </InputGroupButton>
                 </InputGroupAddon>
               </InputGroup>
-            </div>
+            </form>
 
             {/* 韓国語名列に対応する空セル(グリッド比率合わせのためのスペーサー) */}
             <div />
@@ -612,7 +588,7 @@ export default function HymnList() {
           hymnNameKr={scoreModalHymn.nameKr}
           onClose={closeScoreModal}
           onUploaded={() => {
-            queryClient.invalidateQueries({ queryKey: ["hymns-list"] });
+            void invalidateHymns(queryClient);
             // 調の一覧も変わるので、この曲のキャッシュを捨てる
             void invalidateScoreKeys(queryClient, scoreModalHymn.id);
           }}

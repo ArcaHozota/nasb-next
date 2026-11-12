@@ -29,14 +29,9 @@ import { keyLabel } from "@/lib/keySignature";
 import { countHits, lyricQueryOptions } from "@/lib/lyrics";
 import { scoreKeysQueryOptions } from "@/lib/scoreKeys";
 import { cn } from "@/lib/utils";
+import type { HymnSummary } from "@/api/hymns";
 
-type BookHymn = {
-  id: string;
-  nameJp: string;
-  nameKr: string;
-  link: string;
-  lineNumber: string;
-};
+type BookHymn = HymnSummary;
 
 /** 一致度(lineNumber)ごとの◆表示。検索していないときは出さない */
 const MATCH: Record<string, { label: string; mark: string; tone: string }> = {
@@ -348,6 +343,15 @@ export default function OpenHymnalHome({
           <span className="open-hymnal-logo">NASB1995</span>
         </Button>
         {/* 下線だけの検索欄(暗いヘッダー用に枠・背景・影を消している) */}
+        {/* <form> にして、Enter での送信(日本語変換中の Enter は除く)をブラウザに任せる */}
+        <form
+          role="search"
+          className="contents"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSearch();
+          }}
+        >
         <InputGroup className="h-auto w-[min(420px,40vw)] rounded-none border-0 border-b border-[#f3e3c3]/60 bg-transparent px-0.5 py-1.5 text-[#f3e3c3] shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-[#f3e3c3] has-[[data-slot=input-group-control]:focus-visible]:ring-0 dark:bg-transparent">
           <InputGroupAddon className="p-0 text-[13px] font-normal text-[#f3e3c3]/85">
             索引
@@ -355,9 +359,6 @@ export default function OpenHymnalHome({
           <InputGroupInput
             value={keyword}
             onChange={(e) => onKeywordChange(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onSearch();
-            }}
             type="text"
             placeholder="曲名・歌詞のキーワードで検索してください"
             aria-label="キーワード"
@@ -365,15 +366,16 @@ export default function OpenHymnalHome({
           />
           <InputGroupAddon align="inline-end" className="p-0">
             <InputGroupButton
+              type="submit"
               size="icon-xs"
               aria-label="検索"
               className="text-[#f3e3c3] hover:bg-[#f3e3c3]/12 hover:text-[#f3e3c3]"
-              onClick={onSearch}
             >
               {isFetching ? <Spinner /> : <Search />}
             </InputGroupButton>
           </InputGroupAddon>
         </InputGroup>
+        </form>
         <Button
           type="button"
           variant="outline"

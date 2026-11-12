@@ -31,6 +31,13 @@ export type PlaylistStatus = {
   message?: string;
 };
 
+/**
+ * プレイリストにする曲の指定。
+ *   hymnIds: 曲を直接指定する(ランダム選択)
+ *   keyword: 賛美歌一覧の検索条件。サーバーが同じ検索をして、一致・よく一致の曲を全件集める
+ */
+export type PlaylistTarget = { hymnIds: string[] } | { keyword: string };
+
 const POLL_INTERVAL_MS = 1500;
 // 動画が何百本あっても、これ以上待たない(サーバー側の処理は続くので、YouTube側には出来上がる)
 const POLL_TIMEOUT_MS = 10 * 60 * 1000;
@@ -45,12 +52,16 @@ const POLL_TIMEOUT_MS = 10 * 60 * 1000;
  *   e.message を使う側で表示すること)。
  */
 export async function createPlaylistAndWait(
-  hymnIds: string[],
+  target: PlaylistTarget,
   onProgress?: (s: PlaylistStatus) => void,
 ): Promise<PlaylistStatus> {
+  const body =
+    "keyword" in target
+      ? { keyword: target.keyword.normalize("NFC") }
+      : { hymnIds: target.hymnIds };
   const { data: started } = await api.post<PlaylistStatus>(
     "/youtube/create-playlist",
-    { hymnIds },
+    body,
   );
   let status = started;
   onProgress?.(status);

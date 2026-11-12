@@ -58,14 +58,30 @@ function Carousel({
     },
     plugins,
   );
-  const [canScrollPrev, setCanScrollPrev] = React.useState(false);
-  const [canScrollNext, setCanScrollNext] = React.useState(false);
-
-  const onSelect = React.useCallback((api: CarouselApi) => {
-    if (!api) return;
-    setCanScrollPrev(api.canScrollPrev());
-    setCanScrollNext(api.canScrollNext());
-  }, []);
+  // 前後に送れるかは Embla(外部の状態)を useSyncExternalStore で購読する
+  // (Effect の中で setState すると描画が連鎖するため)
+  const subscribe = React.useCallback(
+    (onChange: () => void) => {
+      if (!api) return () => {};
+      api.on("reInit", onChange);
+      api.on("select", onChange);
+      return () => {
+        api.off("reInit", onChange);
+        api.off("select", onChange);
+      };
+    },
+    [api],
+  );
+  const canScrollPrev = React.useSyncExternalStore(
+    subscribe,
+    () => api?.canScrollPrev() ?? false,
+    () => false,
+  );
+  const canScrollNext = React.useSyncExternalStore(
+    subscribe,
+    () => api?.canScrollNext() ?? false,
+    () => false,
+  );
 
   const scrollPrev = React.useCallback(() => {
     api?.scrollPrev();
@@ -93,16 +109,6 @@ function Carousel({
     setApi(api);
   }, [api, setApi]);
 
-  React.useEffect(() => {
-    if (!api) return;
-    onSelect(api);
-    api.on("reInit", onSelect);
-    api.on("select", onSelect);
-
-    return () => {
-      api?.off("select", onSelect);
-    };
-  }, [api, onSelect]);
 
   return (
     <CarouselContext.Provider

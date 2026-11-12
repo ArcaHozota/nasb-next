@@ -13,8 +13,9 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
+import { fetchHymnDetail, hymnKeys, invalidateHymns } from "@/api/hymns";
 import { invalidateLyric } from "@/lib/lyrics";
 import { Input } from "@/components/ui/input";
 import {
@@ -98,39 +99,60 @@ export default function HymnFormModal({
   const isEdit = mode === "edit";
   const editId = isEdit ? (editIdProp ?? null) : null;
 
-  const [form, setForm] = useState<FormState>({ ...emptyForm, id: editId });
+  // 編集時: 既存データを読み込む。応答が届く前にモーダルを閉じても(別の曲を開いても)、
+  // クエリはこの曲のキーにひも付いているので、古い応答が別の曲のフォームに入ることはない。
+  // 他の人の更新を拾えるよう、開くたびに取り直す(staleTime: 0)。
+  // ただし編集中には取り直さない。途中で取り直すと updatedTime(楽観ロック)が新しくなり、
+  // 他の人の更新を上書きしても保存が通ってしまうため。
+  const detailQuery = useQuery({
+    queryKey: hymnKeys.detail(editId ?? ""),
+    queryFn: () => fetchHymnDetail(editId!),
+    enabled: isEdit && !!editId,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false,
+  });
+
+  // 読み込めないまま空のフォームで更新できてしまわないよう、モーダルを閉じる
+  useEffect(() => {
+    if (!detailQuery.error) return;
+    toast(extractErrorMessage(detailQuery.error, "データの取得に失敗しました"));
+    onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailQuery.error]);
+
+  // 編集の基準(追加は空、編集は読み込んだ内容。読み込み前は null)
+  const originalForm: FormState | null = isEdit
+    ? detailQuery.data
+      ? { ...emptyForm, ...detailQuery.data, id: editId }
+      : null
+    : { ...emptyForm, id: null };
+
+  // ユーザーが入力した分だけを持ち、画面に出す値は「基準 + 入力」で作る
+  // (読み込みが入力より後に届いても、入力した内容は消えない)
+  const [edits, setEdits] = useState<Partial<FormState>>({});
+  const form: FormState = {
+    ...(originalForm ?? { ...emptyForm, id: editId }),
+    ...edits,
+  };
+  // 変わった項目だけを edits に入れる(触っていない項目は、後から届いた読み込み結果を使う)
+  const EDITABLE = ["nameJp", "nameKr", "link", "lyric", "classic"] as const;
+  const setForm = (update: (f: FormState) => FormState) => {
+    const next = update(form);
+    const changed: Partial<FormState> = {};
+    for (const k of EDITABLE) {
+      if (next[k] !== form[k]) Object.assign(changed, { [k]: next[k] });
+    }
+    setEdits((prev) => ({ ...prev, ...changed }));
+  };
+
   const [errors, setErrors] = useState({
     nameJp: EMPTY_STRING,
     nameKr: EMPTY_STRING,
     link: EMPTY_STRING,
     lyric: EMPTY_STRING,
   });
-  const [saving, setSaving] = useState(false);
-  const [originalForm, setOriginalForm] = useState<FormState | null>(null);
-
-  // 編集時: 既存データをロード
-  useEffect(() => {
-    if (!isEdit) return;
-    // 応答が届く前にモーダルが閉じられた(別の曲を開いた)ら、古い応答は捨てる
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await api.get(`/hymns/${editId}`);
-        if (cancelled) return;
-        setForm((f) => ({ ...f, ...data }));
-        setOriginalForm((f) => ({ ...(f ?? emptyForm), ...data, id: editId }));
-      } catch (e) {
-        if (cancelled) return;
-        toast(extractErrorMessage(e, "データの取得に失敗しました"));
-        // 読み込めないまま空のフォームで更新できてしまわないよう、モーダルを閉じる
-        onClose();
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEdit, editId]);
 
   const checkNameJp = async (e: React.FocusEvent<HTMLInputElement>) => {
     const name = e.target.value.trim();
@@ -176,53 +198,62 @@ export default function HymnFormModal({
       toast("入力情報不正");
       return;
     }
-    const uid = userId;
-    if (!uid) {
+    if (!userId) {
       toast("ログイン情報の取得に失敗しました。再度ログインしてください。");
       return;
     }
-    setSaving(true);
-    const payload = {
-      nameJp: form.nameJp.trim(),
-      nameKr: form.nameKr.trim().normalize("NFC"),
-      link: form.link,
-      lyric: form.lyric,
-      classic: form.classic,
-      updatedUser: uid,
-    };
-    try {
-      if (isEdit) {
-        const updatePayload = {
-          ...payload,
-          id: form.id,
-          updatedTime: form.updatedTime,
-        };
-        const { data } = await api.put(`/hymns/${form.id}`, updatePayload);
-        // ホーム画面の歌詞キャッシュ(5分)に古い歌詞が残らないよう、この曲の分を捨てる
-        if (form.id) void invalidateLyric(queryClient, form.id);
-        toast(typeof data === "string" ? data : "更新しました");
-        onSaved({ mode: "edit" });
-      } else {
-        const { headers } = await api.post("/hymns", payload, {
-          params: { pageSize: pageSize || 5 },
-        });
-        toast("追加済み");
-        // axiosはヘッダー名を小文字化して格納する
-        onSaved({ mode: "add", pageNum: Number(headers["x-page-num"]) || 1 });
-      }
-    } catch (e) {
-      toast(extractErrorMessage(e, "保存に失敗しました"));
-    } finally {
-      setSaving(false);
-    }
+    saveMutation.mutate(form);
   };
 
+  const saveMutation = useMutation({
+    mutationFn: async (f: FormState) => {
+      const payload = {
+        nameJp: f.nameJp.trim(),
+        nameKr: f.nameKr.trim().normalize("NFC"),
+        link: f.link,
+        lyric: f.lyric,
+        classic: f.classic,
+        updatedUser: userId,
+      };
+      if (isEdit) {
+        const { data } = await api.put(`/hymns/${f.id}`, {
+          ...payload,
+          id: f.id,
+          updatedTime: f.updatedTime,
+        });
+        return { mode: "edit" as const, message: data };
+      }
+      const { headers } = await api.post("/hymns", payload, {
+        params: { pageSize: pageSize || 5 },
+      });
+      // axiosはヘッダー名を小文字化して格納する
+      return {
+        mode: "add" as const,
+        pageNum: Number(headers["x-page-num"]) || 1,
+      };
+    },
+    onSuccess: (result, f) => {
+      // 一覧・ホーム・画面検索の索引・この曲の編集用データのキャッシュを捨てる
+      void invalidateHymns(queryClient);
+      if (result.mode === "edit") {
+        // ホーム画面の歌詞キャッシュ(5分)に古い歌詞が残らないよう、この曲の分を捨てる
+        if (f.id) void invalidateLyric(queryClient, f.id);
+        toast(
+          typeof result.message === "string" ? result.message : "更新しました",
+        );
+        onSaved({ mode: "edit" });
+      } else {
+        toast("追加済み");
+        onSaved({ mode: "add", pageNum: result.pageNum });
+      }
+    },
+    onError: (e) => toast(extractErrorMessage(e, "保存に失敗しました")),
+  });
+  const saving = saveMutation.isPending;
+
   const onReset = () => {
-    if (isEdit && originalForm) {
-      setForm(originalForm);
-    } else {
-      setForm({ ...emptyForm, id: editId });
-    }
+    // 入力を捨てると、基準(追加は空、編集は読み込んだ内容)に戻る
+    setEdits({});
     setErrors({
       nameJp: EMPTY_STRING,
       nameKr: EMPTY_STRING,
@@ -242,7 +273,7 @@ export default function HymnFormModal({
 
   // 編集内容があるか。追加は空の状態、編集は読み込んだ内容(originalForm)と比べる。
   // 編集で読み込みがまだ終わっていないときは、変更なし扱い。
-  const baseline = isEdit ? originalForm : emptyForm;
+  const baseline = originalForm;
   const isDirty =
     !!baseline &&
     (form.nameJp !== baseline.nameJp ||

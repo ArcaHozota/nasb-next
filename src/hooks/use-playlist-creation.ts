@@ -12,6 +12,7 @@ import {
   createPlaylistAndWait,
   getYoutubeReauthConfirmText,
   PlaylistError,
+  type PlaylistTarget,
 } from "@/lib/youtube";
 import { extractErrorMessage } from "@/lib/constants";
 import { useFeedbackStore } from "@/stores/feedback";
@@ -26,15 +27,18 @@ export function usePlaylistCreation() {
   const [progress, setProgress] = useState("");
 
   /**
-   * resolveIds: 対象の曲IDを集める。対象が無いときは、自分でトーストを出して null を返す。
-   * (集める途中の通信エラーも、プレイリスト作成のエラーと同じ扱いで表示される)
+   * resolveTarget: 対象の曲(ID の一覧か、検索条件)を決める。対象が無いときは、自分でトーストを出して null を返す。
+   * (決める途中の通信エラーも、プレイリスト作成のエラーと同じ扱いで表示される)
    */
-  const create = async (resolveIds: () => Promise<string[] | null>) => {
+  const create = async (
+    resolveTarget: () => Promise<PlaylistTarget | null>,
+  ) => {
     setCreating(true);
     try {
-      const hymnIds = await resolveIds();
-      if (!hymnIds || hymnIds.length === 0) return;
-      await createPlaylistAndWait(hymnIds, (st) =>
+      const target = await resolveTarget();
+      if (!target) return;
+      if ("hymnIds" in target && target.hymnIds.length === 0) return;
+      await createPlaylistAndWait(target, (st) =>
         setProgress(`${st.added}/${st.total}`),
       );
       const proceed = await confirm(

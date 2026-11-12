@@ -8,7 +8,7 @@
 // 位置はアイコン要素(PopoverAnchor + virtualRef)に合わせる。トリガーは非同期で調を取得してから
 // 開く必要があるため、DropdownMenu(トリガーが開閉を握る)ではなく Popover を使っている。
 // 見た目は呼び出し側の className で上書きできる(管理画面=白、ホーム=ガラス風)。
-import { useRef, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { Button } from "@/components/ui/button";
 import {
@@ -65,7 +65,10 @@ export default function ScoreKeyPopover({
   const [open, setOpen] = useState(false);
   const [keys, setKeys] = useState<ScoreKey[]>([]);
   const [loading, setLoading] = useState(false);
-  const anchorEl = useRef<HTMLElement | null>(null);
+  // アイコン要素(呼び出し側の ref で受け取る)。描画中に ref.current を書き換えないよう、
+  // ref ではなく state で持ち、Radix に渡す virtualRef はそこから作る
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const virtualRef = useMemo(() => ({ current: anchorEl }), [anchorEl]);
 
   const onClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -91,16 +94,12 @@ export default function ScoreKeyPopover({
         onClick,
         loading,
         open,
-        anchorRef: (el) => {
-          anchorEl.current = el;
-        },
+        anchorRef: setAnchorEl,
       })}
       {/* アイコン要素そのものを位置の基準にする(ref を呼び出し側から受け取る) */}
       <PopoverAnchor
         virtualRef={
-          anchorEl as unknown as React.ComponentProps<
-            typeof PopoverAnchor
-          >["virtualRef"]
+          virtualRef as React.ComponentProps<typeof PopoverAnchor>["virtualRef"]
         }
       />
       <PopoverContent

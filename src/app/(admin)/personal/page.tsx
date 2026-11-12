@@ -15,6 +15,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -80,6 +81,12 @@ const emptyForm: StudentForm = {
   email: EMPTY_STRING,
 };
 
+/** GET /students/{id} の応答(password は常に固定のマスク値) */
+type StudentDetail = Omit<StudentForm, "id">;
+
+const studentKey = (id: string | null) => ["students", id ?? ""] as const;
+const YOUTUBE_STATUS_KEY = ["youtube", "status"] as const;
+
 const toDateInputValue = (src: string) => {
   if (!src) return EMPTY_STRING;
   if (/^\d{4}-\d{2}-\d{2}$/.test(src)) return src;
@@ -96,7 +103,49 @@ function StudentEditionInner() {
   // 編集対象は常にログイン中のユーザー本人。URLの userId は信用しない
   // (URLを書き換えて他人の情報を開けてしまわないように、画面では使わない)。
   const userId = useAuthStore((s) => s.userId) || null;
-  const [form, setForm] = useState<StudentForm>({ ...emptyForm, id: userId });
+  const queryClient = useQueryClient();
+
+  // ===== ユーザー情報 =====
+  // 他の人(別端末)の更新を拾えるよう開くたびに取り直すが、編集中には取り直さない
+  const studentQuery = useQuery({
+    queryKey: studentKey(userId),
+    queryFn: async (): Promise<StudentForm> => {
+      const { data } = await api.get<StudentDetail>(`/students/${userId}`);
+      return {
+        id: userId,
+        loginAccount: data.loginAccount,
+        username: data.username,
+        password: data.password,
+        dateOfBirth: toDateInputValue(data.dateOfBirth),
+        email: data.email,
+      };
+    },
+    enabled: !!userId,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+  useEffect(() => {
+    if (studentQuery.error) {
+      toast(extractErrorMessage(studentQuery.error, "データの取得に失敗しました"));
+    }
+  }, [studentQuery.error, toast]);
+
+  // ユーザーが入力した分だけを持ち、画面に出す値は「読み込んだ内容 + 入力」で作る
+  const [edits, setEdits] = useState<Partial<StudentForm>>({});
+  const form: StudentForm = {
+    ...(studentQuery.data ?? { ...emptyForm, id: userId }),
+    ...edits,
+  };
+  const setForm = (update: (f: StudentForm) => StudentForm) => {
+    const next = update(form);
+    const changed: Partial<StudentForm> = {};
+    for (const k of Object.keys(next) as (keyof StudentForm)[]) {
+      if (next[k] !== form[k]) Object.assign(changed, { [k]: next[k] });
+    }
+    setEdits((prev) => ({ ...prev, ...changed }));
+  };
+
   const [errors, setErrors] = useState({
     loginAccount: EMPTY_STRING,
     username: EMPTY_STRING,
@@ -104,47 +153,44 @@ function StudentEditionInner() {
     dateOfBirth: EMPTY_STRING,
     email: EMPTY_STRING,
   });
-  const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // ===== YouTube連携 =====
   // トグル＝連携ボタンの活性/非活性スイッチ。ONで初めてボタンが押せるようになり、
   // OFFに戻すとその場で連携解除する。連携済みかどうかは、ボタンのアイコン色と
   // ラベル（「連携済み」）で表す。
-  const [youtubeToggleOn, setYoutubeToggleOn] = useState(false);
-  const [youtubeLinked, setYoutubeLinked] = useState(false);
-  const [youtubeBusy, setYoutubeBusy] = useState(false);
+  const youtubeQuery = useQuery({
+    queryKey: YOUTUBE_STATUS_KEY,
+    queryFn: async () =>
+      !!(await api.get<{ linked: boolean }>("/youtube/status")).data.linked,
+    enabled: !!userId,
+    // 未ログイン等はAdminLayoutの認証チェックに任せ、ここでは静かに無視する
+    retry: false,
+  });
+  const youtubeLinked = youtubeQuery.data ?? false;
+  // トグルは、ユーザーが触るまでは連携状態に合わせる
+  const [toggleOverride, setToggleOverride] = useState<boolean | null>(null);
+  const youtubeToggleOn = toggleOverride ?? youtubeLinked;
 
-  const fetchYoutubeStatus = async () => {
-    try {
-      const { data } = await api.get<{ linked: boolean }>("/youtube/status");
-      setYoutubeLinked(!!data.linked);
-      setYoutubeToggleOn(!!data.linked);
-    } catch {
-      // 未ログイン等はAdminLayoutの認証チェックに任せ、ここでは静かに無視する
-    }
-  };
-
-  const onYoutubeToggle = async (checked: boolean) => {
-    setYoutubeToggleOn(checked);
-    if (checked) {
-      // ONにしただけではまだ何もしない。連携ボタンが活性化するだけ。
-      return;
-    }
-    // OFFにした時点で、連携済みなら即座に解除する。
-    if (!youtubeLinked) return;
-    setYoutubeBusy(true);
-    try {
-      await api.post("/youtube/unlink");
-      setYoutubeLinked(false);
+  const unlinkMutation = useMutation({
+    mutationFn: () => api.post("/youtube/unlink"),
+    onSuccess: () => {
+      queryClient.setQueryData(YOUTUBE_STATUS_KEY, false);
       toast("YouTube連携を解除しました");
-    } catch (e: unknown) {
+    },
+    onError: (e) => {
       toast(extractErrorMessage(e, "連携解除に失敗しました"));
       // 解除に失敗したので、実態に合わせてトグルもONへ戻す
-      setYoutubeToggleOn(true);
-    } finally {
-      setYoutubeBusy(false);
-    }
+      setToggleOverride(true);
+    },
+  });
+  const youtubeBusy = unlinkMutation.isPending;
+
+  const onYoutubeToggle = (checked: boolean) => {
+    setToggleOverride(checked);
+    // ONにしただけではまだ何もしない。連携ボタンが活性化するだけ。
+    // OFFにした時点で、連携済みなら即座に解除する。
+    if (!checked && youtubeLinked) unlinkMutation.mutate();
   };
 
   // 連携ボタンのツールチップ。押せない時は「なぜ押せないか」を伝える
@@ -161,40 +207,19 @@ function StudentEditionInner() {
     window.location.href = "/api/youtube/authorize-url";
   };
 
-  const fetchInitial = async (id: string) => {
-    try {
-      const { data } = await api.get(`/students/${id}`);
-      setForm((f) => ({
-        ...f,
-        loginAccount: data.loginAccount,
-        username: data.username,
-        password: data.password,
-        dateOfBirth: toDateInputValue(data.dateOfBirth),
-        email: data.email,
-      }));
-    } catch (e: unknown) {
-      toast(extractErrorMessage(e, "データの取得に失敗しました"));
-    }
-  };
-
+  // Google の同意画面から ?youtube=... 付きで戻ってきたときの結果表示(1回だけ)
   useEffect(() => {
-    if (form.id) fetchInitial(form.id);
-    if (!form.id) return;
-    fetchYoutubeStatus();
     const youtubeStatus = searchParams.get("youtube");
-    if (youtubeStatus) {
-      const messages: Record<string, string> = {
-        connected: "YouTubeと連携しました",
-        error: "YouTube連携に失敗しました",
-        invalid_state: "不正なリクエストです。もう一度お試しください。",
-        unauthorized: "ログインが必要です",
-      };
-      toast(
-        messages[youtubeStatus] ?? "YouTube連携の処理が完了しました",
-      );
-      // ?youtube=... だけを消してURLをきれいにする（再読み込みで再表示させない）
-      router.replace("/personal");
-    }
+    if (!youtubeStatus) return;
+    const messages: Record<string, string> = {
+      connected: "YouTubeと連携しました",
+      error: "YouTube連携に失敗しました",
+      invalid_state: "不正なリクエストです。もう一度お試しください。",
+      unauthorized: "ログインが必要です",
+    };
+    toast(messages[youtubeStatus] ?? "YouTube連携の処理が完了しました");
+    // ?youtube=... だけを消してURLをきれいにする（再読み込みで再表示させない）
+    router.replace("/personal");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -230,26 +255,33 @@ function StudentEditionInner() {
       toast("入力情報不正");
       return;
     }
-    setSaving(true);
-    try {
-      const { data } = await api.put(`/students/${form.id}`, {
-        id: form.id,
-        loginAccount: form.loginAccount.trim(),
-        username: form.username.trim(),
-        password: form.password,
-        email: form.email,
-        dateOfBirth: form.dateOfBirth,
-      });
-      toast(typeof data === "string" ? data : "更新しました");
-      router.push("/mainmenu");
-    } catch (e: unknown) {
-      toast(extractErrorMessage(e, "更新に失敗しました"));
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate(form);
   };
 
-  const onRestore = async () => {
+  const updateMutation = useMutation({
+    mutationFn: async (f: StudentForm) =>
+      (
+        await api.put(`/students/${f.id}`, {
+          id: f.id,
+          loginAccount: f.loginAccount.trim(),
+          username: f.username.trim(),
+          password: f.password,
+          email: f.email,
+          dateOfBirth: f.dateOfBirth,
+        })
+      ).data,
+    onSuccess: (data) => {
+      // 次に開いたとき、更新後の内容を読み込み直す
+      void queryClient.invalidateQueries({ queryKey: studentKey(userId) });
+      toast(typeof data === "string" ? data : "更新しました");
+      router.push("/mainmenu");
+    },
+    onError: (e) => toast(extractErrorMessage(e, "更新に失敗しました")),
+  });
+  const saving = updateMutation.isPending;
+
+  // 入力を捨てて、サーバーの最新の内容を読み込み直す
+  const onRestore = () => {
     setErrors({
       loginAccount: EMPTY_STRING,
       username: EMPTY_STRING,
@@ -257,11 +289,8 @@ function StudentEditionInner() {
       dateOfBirth: EMPTY_STRING,
       email: EMPTY_STRING,
     });
-    if (!form.id) {
-      setForm({ ...emptyForm });
-      return;
-    }
-    await fetchInitial(form.id);
+    setEdits({});
+    if (userId) void studentQuery.refetch();
   };
 
   return (

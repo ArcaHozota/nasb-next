@@ -29,7 +29,10 @@ export default function LoginView() {
   const [error, setError] = useState(EMPTY_STRING);
   const [loading, setLoading] = useState(false);
 
-  const onLogin = async () => {
+  // <form> の送信にすることで、Enter での送信(日本語変換中の Enter は除く)や
+  // パスワードマネージャーの保存・自動入力をブラウザに任せる
+  const onLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (loading) return; // Enter の連打などによる二重送信を防ぐ
     setError(EMPTY_STRING);
     setLoading(true);
@@ -49,16 +52,13 @@ export default function LoginView() {
     }
   };
 
-  const onEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.nativeEvent.isComposing) onLogin();
-  };
-
   return (
     <div className="relative flex min-h-screen items-center justify-center">
       <PageBackground src="/assets/login-bg.webp" />
 
       <Card className="w-90 gap-0 rounded-[18px] border-white/45 bg-white/25 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl backdrop-saturate-150">
         <CardContent className="p-4">
+          <form onSubmit={onLogin} aria-label="ログイン">
           <h1 className="mb-6 text-center text-2xl font-bold tracking-wide text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.4)]">
             NASB1995
           </h1>
@@ -77,7 +77,6 @@ export default function LoginView() {
               onChange={(e) => setUsername(e.target.value)}
               type="text"
               className={LOGIN_INPUT}
-              onKeyDown={onEnter}
             />
           </Field>
 
@@ -95,7 +94,6 @@ export default function LoginView() {
               onChange={(e) => setPassword(e.target.value)}
               type="password"
               className={LOGIN_INPUT}
-              onKeyDown={onEnter}
             />
           </Field>
 
@@ -113,12 +111,12 @@ export default function LoginView() {
 
           <Button
             className="w-full font-bold"
-            type="button"
+            type="submit"
             disabled={loading}
-            onClick={onLogin}
           >
             {loading ? <Spinner /> : <span>ログイン</span>}
           </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
