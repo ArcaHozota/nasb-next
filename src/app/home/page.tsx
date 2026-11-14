@@ -41,6 +41,7 @@ import { EMPTY_STRING } from "@/lib/constants";
 import { fetchScoreKeysOrToast } from "@/lib/scoreKeys";
 import { downloadScoreOrToast } from "@/lib/download";
 import PageBackground from "@/components/PageBackground";
+import JerusalemCross from "@/components/JerusalemCross";
 import { cn } from "@/lib/utils";
 import { consumeRedirectMessage } from "@/lib/session";
 import { MOBILE_QUERY } from "@/hooks/use-mobile";
@@ -605,13 +606,8 @@ export default function HomeView() {
           className="h-auto gap-2 p-0! font-normal hover:bg-transparent"
           onClick={reload}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/jerusalem-cross2.svg"
-            alt="NASB1995"
-            width={66}
-            height={66}
-          />
+          {/* ロゴ(エルサレム十字)。色は burgundy(text-primary) */}
+          <JerusalemCross className="size-16.5 text-primary" />
           <span className="effect-shine text-[2.2rem]">NASB1995</span>
         </Button>
       </header>
