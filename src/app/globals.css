@@ -7,10 +7,9 @@
 
 /*
  * 配色は shadcn/ui の役割(primary / secondary / muted / accent / destructive …)に従う。
- * primary は従来どおり burgundy(#800020)。旧 theme.ts(MUI)の secondary だった青(#003399)は、
- * shadcn/ui の secondary(控えめな塗り)とは役割が違うため、楽譜用の独自色 score に移した。
- * 旧 theme.ts の success / warning / info(状態を表す色)は使わない(shadcn/ui の分類に合わせ、
- * 主な操作は primary、危険な操作は destructive で表す)。
+ * primary は従来どおり burgundy(#800020)。旧 theme.ts(MUI)の secondary だった青(#003399)や
+ * success / warning / info(状態を表す色)のような、このアプリ独自の色は持たない
+ * (shadcn/ui の分類に合わせ、主な操作は primary、危険な操作は destructive で表す)。
  */
 /* ブラウザの既定スタイルでは<button>はcursor:defaultのまま
    (<a>と違い自動でpointerにはならない)。旧MUIのButtonは内部でこれを
@@ -26,7 +25,6 @@ button:not(:disabled) {
  *   muted       : 目立たない背景・補足の文字
  *   accent      : ghost / outline のボタンやメニュー項目の、ホバー・選択中の背景(burgundy のごく薄い色)
  *   destructive : 削除など危険な操作(primary の burgundy と見分けられる、はっきりした赤)
- * このアプリ独自の色: score(楽譜アップロードの青)
  * ベーススタイル(body背景・全要素のborder色)は既存画面の見た目を変えないよう
  * 意図的に追加していない。
  */
@@ -51,9 +49,6 @@ button:not(:disabled) {
   --input: #d1d5db;
   /* 従来の入力欄(border-gray-300)と同じ濃さ */
   --ring: #800020;
-  /* 楽譜アップロードのモーダル(旧 secondary の青) */
-  --score: #003399;
-  --score-foreground: #ffffff;
   /* 管理画面のサイドバー(shadcn/ui Sidebar)。従来の bg-gray-900 / 白文字を踏襲 */
   --sidebar: #111827;
   --sidebar-foreground: #ffffff;
@@ -92,8 +87,6 @@ button:not(:disabled) {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-score: var(--score);
-  --color-score-foreground: var(--score-foreground);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

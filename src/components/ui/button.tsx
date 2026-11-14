@@ -22,9 +22,6 @@ const buttonVariants = cva(
         // このアプリで追加(従来の配色)
         neutral:
           "bg-gray-500 text-white hover:-translate-y-px hover:bg-gray-500/90 hover:shadow-md",
-        // 楽譜アップロードのモーダル用の青(旧 secondary)
-        score:
-          "bg-score text-score-foreground hover:-translate-y-px hover:bg-score/90 hover:shadow-md",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
