@@ -55,16 +55,18 @@ test.describe("ランダム選択", () => {
 
     await expect(page).toHaveURL(/\/hymns\/random-five\?keyword=/);
     await expect(page.getByText("賛美歌1", { exact: true })).toBeVisible();
-    await expect(
-      page.getByRole("search").getByLabel("キーワード"),
-    ).toHaveValue("恵み");
+    await expect(page.getByRole("search").getByLabel("キーワード")).toHaveValue(
+      "恵み",
+    );
     expect(
       api.calls.filter((c) => c.path === "/common/search").map((c) => c.query),
     ).toEqual([{ keyword: "恵み" }]);
   });
 });
 
-test("編集モーダル: 読み込んだ内容を表示し、廃棄で元に戻す", async ({ page }) => {
+test("編集モーダル: 読み込んだ内容を表示し、「元に戻す」で戻す", async ({
+  page,
+}) => {
   await mockApi(page, { loggedIn: true, hymns: makeHymns(2) });
   await page.goto("/hymns");
 
@@ -73,10 +75,10 @@ test("編集モーダル: 読み込んだ内容を表示し、廃棄で元に戻
   const nameJp = dialog.getByLabel("日本語名称");
   await expect(nameJp).toHaveValue("賛美歌1");
   await expect(dialog.getByLabel("韓国語名称")).toHaveValue("찬송가1");
-  await expect(dialog.getByText("最終更新者：テストユーザー")).toBeVisible();
+  await expect(dialog.getByText(/最終更新：テストユーザー/)).toBeVisible();
 
   await nameJp.fill("書き換えた名前");
-  await dialog.getByRole("button", { name: "廃棄" }).click();
+  await dialog.getByRole("button", { name: "元に戻す" }).click();
   await expect(nameJp).toHaveValue("賛美歌1");
 });
 
