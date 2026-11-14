@@ -206,14 +206,17 @@ export default function HymnScoreModal({
             ))}
           </ToggleGroup>
           <div className="flex items-end justify-center gap-5">
+            {/* 大きめのボタン(標準の約1.33倍: 高さ36→48px、文字14→18px、アイコン16→20px)。
+                scale で拡大すると見た目だけが大きくなり、周りのレイアウトには反映されないため、
+                高さ・余白・文字・アイコンの大きさを直接指定する */}
             <Button
               variant="outline"
-              className="mx-2 scale-[1.33] border-primary bg-transparent text-primary hover:bg-primary/5 hover:text-primary"
+              className="h-12 gap-2.5 px-5 text-lg has-[>svg]:px-4 border-primary bg-transparent text-primary hover:bg-primary/5 hover:text-primary"
               type="button"
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
             >
-              <CloudUpload className="h-4 w-4" /> ファイルを選択
+              <CloudUpload className="size-5" /> ファイルを選択
             </Button>
             <div className="mx-3 flex flex-col items-center gap-3">
               <Label htmlFor="score-original" className="text-xs text-primary">
