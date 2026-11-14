@@ -262,7 +262,6 @@ export default function HymnList() {
                 (下の操作列のアイコンボタンと同じjustify-center) */}
             <div className="flex items-center justify-center gap-2">
               <Button
-                variant="success"
                 className="font-bold"
                 type="button"
                 onClick={goAdd}

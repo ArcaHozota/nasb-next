@@ -262,11 +262,10 @@ export default function HymnFormModal({
     });
   };
 
-  // フォーカス時の枠・リング色(更新=burgundy / 追加=green)。
+  // フォーカス時の枠・リング色(追加・更新とも burgundy)。
   // エラー時(aria-invalid)はフォーカス中でも赤枠のままにするため not-aria-invalid を付ける。
-  const focusClass = isEdit
-    ? "not-aria-invalid:focus-visible:border-primary not-aria-invalid:focus-visible:ring-primary/20"
-    : "not-aria-invalid:focus-visible:border-success not-aria-invalid:focus-visible:ring-success/20";
+  const focusClass =
+    "not-aria-invalid:focus-visible:border-primary not-aria-invalid:focus-visible:ring-primary/20";
 
   // 背景画像の上でも読みやすいよう、入力欄は白ベタにする。
   const inputClass = `bg-white ${focusClass}`;
@@ -317,7 +316,7 @@ export default function HymnFormModal({
             モーダルでは暗い下地の上に載るので、半透明ではなく白ベタにする。 */}
         <Card className="form-card glass-panel relative gap-0 overflow-hidden rounded-[18px] bg-white! py-0">
           <CardHeader
-            className={`flex items-center gap-0 px-4 py-3 text-white ${isEdit ? "bg-primary" : "bg-success"}`}
+            className={`flex items-center gap-0 px-4 py-3 text-white bg-primary`}
           >
             <LayoutGrid className="mr-2 h-5 w-5" />
             <DialogTitle asChild>
@@ -445,11 +444,6 @@ export default function HymnFormModal({
                       onCheckedChange={(checked) =>
                         setForm((f) => ({ ...f, classic: checked }))
                       }
-                      className={
-                        isEdit
-                          ? "data-[state=checked]:bg-primary"
-                          : "data-[state=checked]:bg-success"
-                      }
                     />
                   </div>
                 </FieldGroup>
@@ -497,12 +491,7 @@ export default function HymnFormModal({
                 最終更新者：{form.updatedUser}＠{form.updatedTime}日本標準時間
               </p>
             )}
-            <Button
-              variant={isEdit ? "default" : "success"}
-              type="button"
-              disabled={saving}
-              onClick={onSubmit}
-            >
+            <Button type="button" disabled={saving} onClick={onSubmit}>
               {saving ? (
                 <Spinner />
               ) : (
@@ -541,10 +530,10 @@ export default function HymnFormModal({
           }}
         >
           <DialogContent
-            className={`noto-sans max-w-sm gap-4 rounded-[18px] border-0 bg-white sm:max-w-sm ${isEdit ? "**:data-[slot=dialog-close]:text-primary" : "**:data-[slot=dialog-close]:text-success"}`}
+            className={`noto-sans max-w-sm gap-4 rounded-[18px] border-0 bg-white sm:max-w-sm **:data-[slot=dialog-close]:text-primary`}
           >
             <DialogHeader>
-              <DialogTitle className={isEdit ? "text-primary" : "text-success"}>
+              <DialogTitle className="text-primary">
                 編集内容があります
               </DialogTitle>
               <DialogDescription>
@@ -562,7 +551,6 @@ export default function HymnFormModal({
                 編集を続ける
               </Button>
               <Button
-                variant={isEdit ? "default" : "success"}
                 type="button"
                 onClick={() => {
                   setDiscardOpen(false);

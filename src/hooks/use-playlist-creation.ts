@@ -44,7 +44,7 @@ export function usePlaylistCreation() {
       const proceed = await confirm(
         "プレイリストを作成しました。今はYouTubeへ移動してよろしいでしょうか。",
         "お知らせ",
-        { variant: "success", cancelLabel: "いいえ", confirmLabel: "はい" },
+        { cancelLabel: "いいえ", confirmLabel: "はい" },
       );
       if (proceed) {
         window.open(YOUTUBE_PLAYLISTS_URL, "_blank", "noopener,noreferrer");

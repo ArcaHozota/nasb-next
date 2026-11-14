@@ -3,20 +3,16 @@ import { create } from "zustand";
 import { toast as sonnerToast } from "sonner";
 import { EMPTY_STRING } from "@/lib/constants";
 
-type DialogVariant = "primary" | "success";
-
 type DialogState = {
   show: boolean;
   title: string;
   text: string;
-  variant: DialogVariant;
   cancelLabel: string;
   confirmLabel: string;
   resolve: ((ok: boolean) => void) | null;
 };
 
 type ConfirmOptions = {
-  variant?: DialogVariant;
   cancelLabel?: string;
   confirmLabel?: string;
 };
@@ -28,7 +24,6 @@ type FeedbackState = {
   // 3秒後に自動で閉じる。呼び出し側の API(toast("..."))は従来通り。
   toast: (text: string) => void;
   // 旧 Swal.fire の confirm 相当。await confirm('...') で true/false が返る。
-  // variant: "primary"(既定、burgundy red) | "success"(green)。
   confirm: (
     text: string,
     title?: string,
@@ -41,7 +36,6 @@ const DEFAULT_DIALOG: DialogState = {
   show: false,
   title: "確認",
   text: EMPTY_STRING,
-  variant: "primary",
   cancelLabel: "キャンセル",
   confirmLabel: "OK",
   resolve: null,
@@ -63,7 +57,6 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
           show: true,
           title,
           text,
-          variant: options.variant ?? "primary",
           cancelLabel: options.cancelLabel ?? "キャンセル",
           confirmLabel: options.confirmLabel ?? "OK",
           resolve,

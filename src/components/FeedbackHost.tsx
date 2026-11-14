@@ -16,13 +16,10 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { useFeedbackStore } from "@/stores/feedback";
-import { cn } from "@/lib/utils";
 
 export default function FeedbackHost() {
   const dialog = useFeedbackStore((s) => s.dialog);
   const answer = useFeedbackStore((s) => s.answer);
-
-  const isSuccess = dialog.variant === "success";
 
   return (
     <>
@@ -48,18 +45,12 @@ export default function FeedbackHost() {
         <AlertDialogContent className="noto-sans max-w-sm gap-0 overflow-hidden rounded-lg border-0 p-0 shadow-xl data-[size=default]:sm:max-w-sm">
           <AlertDialogHeader className="place-items-stretch! gap-0 pt-3">
             <AlertDialogTitle
-              className={cn(
-                "text-center text-lg font-semibold",
-                isSuccess ? "text-success" : "text-primary",
-              )}
+              className="text-center text-lg font-semibold text-primary"
             >
               {dialog.title}
             </AlertDialogTitle>
             <div
-              className={cn(
-                "mx-1.5 mt-2 h-0.75 rounded-full",
-                isSuccess ? "bg-success" : "bg-primary",
-              )}
+              className="mx-1.5 mt-2 h-0.75 rounded-full bg-primary"
             ></div>
           </AlertDialogHeader>
           <div className="p-6">
@@ -81,7 +72,6 @@ export default function FeedbackHost() {
               </AlertDialogPrimitive.Cancel>
               <AlertDialogPrimitive.Action asChild>
                 <Button
-                  variant={isSuccess ? "success" : "default"}
                   size="sm"
                   onClick={() => answer(true)}
                 >

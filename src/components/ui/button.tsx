@@ -20,12 +20,11 @@ const buttonVariants = cva(
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline active:scale-100",
         // このアプリで追加(従来の配色)
-        success:
-          "bg-success text-white hover:-translate-y-px hover:bg-success/90 hover:shadow-md",
-        warning:
-          "bg-warning text-gray-900 hover:-translate-y-px hover:bg-warning/90 hover:shadow-md",
         neutral:
           "bg-gray-500 text-white hover:-translate-y-px hover:bg-gray-500/90 hover:shadow-md",
+        // 楽譜アップロードのモーダル用の青(旧 secondary)
+        score:
+          "bg-score text-score-foreground hover:-translate-y-px hover:bg-score/90 hover:shadow-md",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

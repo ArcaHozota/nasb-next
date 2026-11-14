@@ -167,13 +167,13 @@ export default function HymnScoreModal({
         <div className="bg-white pt-3">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center">
             <div aria-hidden="true"></div>
-            <DialogTitle className="text-center text-base font-semibold text-secondary">
+            <DialogTitle className="text-center text-base font-semibold text-score">
               {title}
             </DialogTitle>
             <Button
               variant="ghost"
               size="icon-sm"
-              className="mr-2 justify-self-end text-secondary hover:bg-secondary/10 hover:text-secondary"
+              className="mr-2 justify-self-end text-score hover:bg-score/10 hover:text-score"
               type="button"
               disabled={uploading}
               aria-label="閉じる"
@@ -182,7 +182,7 @@ export default function HymnScoreModal({
               <X className="size-5" />
             </Button>
           </div>
-          <div className="mx-1.5 mt-2 h-0.75 rounded-full bg-secondary"></div>
+          <div className="mx-1.5 mt-2 h-0.75 rounded-full bg-score"></div>
           <DialogDescription className="sr-only">
             楽譜ファイル(PDF・画像)を選択してアップロードします。
           </DialogDescription>
@@ -214,7 +214,7 @@ export default function HymnScoreModal({
                 key={k.value}
                 value={k.value}
                 aria-label={k.label}
-                className="h-10 rounded-md! border border-secondary px-0 text-base text-secondary hover:bg-secondary/10 hover:text-secondary data-[state=on]:bg-secondary data-[state=on]:text-white"
+                className="h-10 rounded-md! border border-score px-0 text-base text-score hover:bg-score/10 hover:text-score data-[state=on]:bg-score data-[state=on]:text-white"
               >
                 {k.label}
               </ToggleGroupItem>
@@ -223,7 +223,7 @@ export default function HymnScoreModal({
           <div className="flex items-end justify-center gap-5">
             <Button
               variant="outline"
-              className="mx-2 scale-[1.33] border-secondary bg-transparent text-secondary hover:bg-secondary/5 hover:text-secondary"
+              className="mx-2 scale-[1.33] border-score bg-transparent text-score hover:bg-score/5 hover:text-score"
               type="button"
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
@@ -231,10 +231,7 @@ export default function HymnScoreModal({
               <CloudUpload className="h-4 w-4" /> ファイルを選択
             </Button>
             <div className="mx-3 flex flex-col items-center gap-3">
-              <Label
-                htmlFor="score-original"
-                className="text-xs text-secondary"
-              >
+              <Label htmlFor="score-original" className="text-xs text-score">
                 オリジナル
               </Label>
               <Switch
@@ -243,7 +240,7 @@ export default function HymnScoreModal({
                 onCheckedChange={setIsOriginal}
                 disabled={uploading}
                 size="lg"
-                className="scale-[1.41] data-[state=checked]:bg-secondary"
+                className="scale-[1.41] data-[state=checked]:bg-score"
               />
             </div>
           </div>
@@ -257,7 +254,7 @@ export default function HymnScoreModal({
 
         <div className="flex justify-end px-6 pb-4">
           <Button
-            variant="secondary"
+            variant="score"
             type="button"
             disabled={uploading}
             onClick={onUpload}
@@ -277,9 +274,9 @@ export default function HymnScoreModal({
             if (!open && !uploading) setConfirmOpen(false);
           }}
         >
-          <DialogContent className="noto-sans max-w-sm gap-4 rounded-[18px] border-0 bg-white sm:max-w-sm **:data-[slot=dialog-close]:text-secondary">
+          <DialogContent className="noto-sans max-w-sm gap-4 rounded-[18px] border-0 bg-white sm:max-w-sm **:data-[slot=dialog-close]:text-score">
             <DialogHeader>
-              <DialogTitle className="text-secondary">
+              <DialogTitle className="text-score">
                 {chordLabel}の楽譜は登録済みです
               </DialogTitle>
               <DialogDescription>上書きしますか?</DialogDescription>
@@ -289,12 +286,12 @@ export default function HymnScoreModal({
                 variant="outline"
                 type="button"
                 disabled={downloading}
-                className="border-secondary text-secondary hover:bg-secondary/5 hover:text-secondary"
+                className="border-score text-score hover:bg-score/5 hover:text-score"
                 onClick={onDownloadExisting}
               >
                 {downloading ? <Spinner /> : "既存をダウンロード"}
               </Button>
-              <Button variant="secondary" type="button" onClick={onOverwrite}>
+              <Button variant="score" type="button" onClick={onOverwrite}>
                 上書きする
               </Button>
             </DialogFooter>

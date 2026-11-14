@@ -56,12 +56,9 @@ import { Spinner } from "@/components/ui/spinner";
 import Hint from "@/components/Hint";
 import PageBackground from "@/components/PageBackground";
 
-// フォーカス時の枠・リング色(オレンジ)。エラー時(aria-invalid)は赤枠のままにする。
-const FOCUS_WARNING =
-  "not-aria-invalid:focus-visible:border-warning not-aria-invalid:focus-visible:ring-warning/30";
-
 // 背景画像の上でも読みやすいよう、入力欄は白ベタにする。
-const INPUT_CLASS = `bg-white ${FOCUS_WARNING}`;
+// フォーカス時の枠・リングは Input 標準の色(ring = burgundy)。
+const INPUT_CLASS = "bg-white";
 
 type StudentForm = {
   id: string | null;
@@ -569,7 +566,6 @@ function StudentEditionInner() {
                           onCheckedChange={onYoutubeToggle}
                           disabled={youtubeBusy}
                           className={cn(
-                            "data-[state=checked]:bg-warning",
                             youtubeBusy &&
                               "disabled:opacity-100 **:data-[slot=switch-thumb]:opacity-0",
                           )}

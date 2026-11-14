@@ -19,7 +19,7 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
-import { LogIn, ScrollText, Search, SearchX } from "lucide-react";
+import { ScrollText, Search, SearchX } from "lucide-react";
 import {
   fetchHymnPage,
   hymnKeys,
@@ -613,14 +613,6 @@ export default function HomeView() {
             height={66}
           />
           <span className="effect-shine text-[2.2rem]">NASB1995</span>
-        </Button>
-        <Button
-          variant="warning"
-          size="lg"
-          className="hidden gap-1 px-4 font-extrabold md:inline-flex"
-          onClick={goLogin}
-        >
-          <LogIn className="h-4 w-4" /> ログイン
         </Button>
       </header>
 
