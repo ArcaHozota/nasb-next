@@ -67,8 +67,7 @@ export default function FeedbackHost() {
               {dialog.text}
             </AlertDialogDescription>
             <AlertDialogFooter className="mt-6 flex-row justify-end gap-2">
-              {/* ui/alert-dialog の AlertDialogCancel/Action は波紋の無いボタンになるため、
-                  Radix の素の部品に波紋付きの Button を渡す。
+              {/* Radix の Cancel/Action に asChild で Button を渡す
                   (Cancel に初期フォーカスが当たる等の挙動はそのまま) */}
               <AlertDialogPrimitive.Cancel asChild>
                 <Button

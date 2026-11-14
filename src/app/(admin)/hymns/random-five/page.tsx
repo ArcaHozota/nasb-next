@@ -186,28 +186,27 @@ function RandomFiveInner() {
           <div className="mb-6 grid grid-cols-[1fr_minmax(0,30rem)_1fr] items-center gap-4">
             <div className="col-start-2 flex justify-center">
               <form role="search" className="contents" onSubmit={onSubmit}>
-              <InputGroup className="max-w-120 bg-white/60 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
-                <InputGroupInput
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  type="text"
-                  placeholder="キーワードを入力してください"
-                  aria-label="キーワード"
-                />
-                <InputGroupAddon align="inline-end">
-                  {/* InputGroupButton は shadcn/ui の Button なので波紋も付く */}
-                  <Hint label="ランダム選択">
-                    <InputGroupButton
-                      type="submit"
-                      size="icon-xs"
-                      aria-label="ランダム選択"
-                      disabled={loading}
-                    >
-                      {loading ? <Spinner /> : <Search />}
-                    </InputGroupButton>
-                  </Hint>
-                </InputGroupAddon>
-              </InputGroup>
+                <InputGroup className="max-w-120 bg-white/60 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
+                  <InputGroupInput
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    type="text"
+                    placeholder="キーワードを入力してください"
+                    aria-label="キーワード"
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <Hint label="ランダム選択">
+                      <InputGroupButton
+                        type="submit"
+                        size="icon-xs"
+                        aria-label="ランダム選択"
+                        disabled={loading}
+                      >
+                        {loading ? <Spinner /> : <Search />}
+                      </InputGroupButton>
+                    </Hint>
+                  </InputGroupAddon>
+                </InputGroup>
               </form>
             </div>
 
