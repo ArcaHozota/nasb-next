@@ -185,7 +185,7 @@ export default function HymnList() {
     }
     const ok = await confirm(
       `この「${item.nameJp}」という歌の情報を削除してもよろしいですか？`,
-      "メッセージ",
+      "警告",
     );
     if (!ok) return;
     try {

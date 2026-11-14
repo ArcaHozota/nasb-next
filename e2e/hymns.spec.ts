@@ -21,9 +21,9 @@ test.describe("賛美歌一覧", () => {
     await expect(page.getByText("賛美歌11", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "削除" }).click();
-    const dialog = page.getByRole("alertdialog");
+    const dialog = page.getByRole("alertdialog", { name: "警告" });
     await expect(dialog).toContainText("賛美歌11");
-    await dialog.getByRole("button", { name: "OK" }).click();
+    await dialog.getByRole("button", { name: "はい" }).click();
 
     // 空の2ページ目に取り残されず、1ページ目(残り10件)を表示する
     await expect(page.getByText("全10件 / 1 / 1ページ")).toBeVisible();
@@ -32,14 +32,14 @@ test.describe("賛美歌一覧", () => {
     expect(api.hymns).toHaveLength(10);
   });
 
-  test("削除の確認でキャンセルすると削除しない", async ({ page }) => {
+  test("削除の確認で「いいえ」を押すと削除しない", async ({ page }) => {
     const api = await mockApi(page, { loggedIn: true, hymns: makeHymns(3) });
     await page.goto("/hymns");
 
     await page.getByRole("button", { name: "削除" }).first().click();
     await page
       .getByRole("alertdialog")
-      .getByRole("button", { name: "キャンセル" })
+      .getByRole("button", { name: "いいえ" })
       .click();
 
     await expect(page.getByRole("alertdialog")).toHaveCount(0);

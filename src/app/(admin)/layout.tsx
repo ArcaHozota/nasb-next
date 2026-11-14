@@ -207,10 +207,7 @@ export default function AdminLayout({
   const confirmLeave = async (toPath?: string) => {
     if (!useUnsavedGuard.getState().dirty) return true;
     if (toPath !== undefined && toPath.split("?")[0] === pathname) return true;
-    return confirm("編集中の内容があります。破棄して移動しますか？", "確認", {
-      cancelLabel: "編集を続ける",
-      confirmLabel: "破棄して移動",
-    });
+    return confirm("編集中の内容があります。破棄して移動しますか？", "お知らせ");
   };
 
   const go = async (url: string) => {

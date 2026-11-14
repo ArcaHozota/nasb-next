@@ -7,14 +7,7 @@ type DialogState = {
   show: boolean;
   title: string;
   text: string;
-  cancelLabel: string;
-  confirmLabel: string;
   resolve: ((ok: boolean) => void) | null;
-};
-
-type ConfirmOptions = {
-  cancelLabel?: string;
-  confirmLabel?: string;
 };
 
 type FeedbackState = {
@@ -24,20 +17,16 @@ type FeedbackState = {
   // 3秒後に自動で閉じる。呼び出し側の API(toast("..."))は従来通り。
   toast: (text: string) => void;
   // 旧 Swal.fire の confirm 相当。await confirm('...') で true/false が返る。
-  confirm: (
-    text: string,
-    title?: string,
-    options?: ConfirmOptions,
-  ) => Promise<boolean>;
+  // 見た目は共通の ConfirmDialog(ボタンは常に「いいえ」「はい」)。タイトルの使い分けは
+  // ConfirmDialog のコメントを参照(上書きの確認 / 警告 / お知らせ)。タイトルの既定は「お知らせ」。
+  confirm: (text: string, title?: string) => Promise<boolean>;
   answer: (ok: boolean) => void;
 };
 
 const DEFAULT_DIALOG: DialogState = {
   show: false,
-  title: "確認",
+  title: "お知らせ",
   text: EMPTY_STRING,
-  cancelLabel: "キャンセル",
-  confirmLabel: "OK",
   resolve: null,
 };
 
@@ -48,7 +37,7 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
     sonnerToast(text, { duration: 3000 });
   },
 
-  confirm: (text, title = "確認", options = {}) =>
+  confirm: (text, title = "お知らせ") =>
     new Promise<boolean>((resolve) => {
       // 前のダイアログが未回答のまま次の confirm が来た場合は、前の方を false で閉じる
       get().dialog.resolve?.(false);
@@ -57,8 +46,6 @@ export const useFeedbackStore = create<FeedbackState>((set, get) => ({
           show: true,
           title,
           text,
-          cancelLabel: options.cancelLabel ?? "キャンセル",
-          confirmLabel: options.confirmLabel ?? "OK",
           resolve,
         },
       });

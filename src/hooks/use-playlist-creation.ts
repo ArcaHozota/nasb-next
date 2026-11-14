@@ -44,7 +44,6 @@ export function usePlaylistCreation() {
       const proceed = await confirm(
         "プレイリストを作成しました。今はYouTubeへ移動してよろしいでしょうか。",
         "お知らせ",
-        { cancelLabel: "いいえ", confirmLabel: "はい" },
       );
       if (proceed) {
         window.open(YOUTUBE_PLAYLISTS_URL, "_blank", "noopener,noreferrer");
@@ -59,10 +58,7 @@ export function usePlaylistCreation() {
         // 連携トークン失効・取り消し(再認証が必要)の場合は、専用文言で「はい／いいえ」を確認する
         const reauthText = getYoutubeReauthConfirmText(e);
         const ok = reauthText
-          ? await confirm(reauthText, "確認", {
-              cancelLabel: "いいえ",
-              confirmLabel: "はい",
-            })
+          ? await confirm(reauthText, "お知らせ")
           : await confirm(
               "YouTube連携がまだ完了していません。連携ページへ移動しますか？",
             );

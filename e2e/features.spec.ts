@@ -79,3 +79,42 @@ test("編集モーダル: 読み込んだ内容を表示し、廃棄で元に戻
   await dialog.getByRole("button", { name: "廃棄" }).click();
   await expect(nameJp).toHaveValue("賛美歌1");
 });
+
+test.describe("確認ダイアログ(タイトルと「いいえ」「はい」の統一)", () => {
+  test("追加モーダル: 入力したまま閉じると「お知らせ」で確認し、はいで閉じる", async ({
+    page,
+  }) => {
+    await mockApi(page, { loggedIn: true, hymns: makeHymns(1) });
+    await page.goto("/hymns");
+
+    await page.getByRole("button", { name: "賛美歌情報追加" }).click();
+    const form = page.getByRole("dialog", { name: "賛美歌情報追加" });
+    await form.getByLabel("日本語名称").fill("新しい歌");
+    await page.keyboard.press("Escape");
+
+    const confirm = page.getByRole("alertdialog", { name: "お知らせ" });
+    await expect(confirm).toBeVisible();
+    // いいえ: 確認だけ閉じて、入力は残る
+    await confirm.getByRole("button", { name: "いいえ" }).click();
+    await expect(form.getByLabel("日本語名称")).toHaveValue("新しい歌");
+
+    await page.keyboard.press("Escape");
+    await page
+      .getByRole("alertdialog", { name: "お知らせ" })
+      .getByRole("button", { name: "はい" })
+      .click();
+    await expect(form).toHaveCount(0);
+  });
+
+  test("ログアウトは「警告」で確認する", async ({ page }) => {
+    await mockApi(page, { loggedIn: true });
+    await page.goto("/mainmenu");
+
+    await page.getByRole("button", { name: "ログアウト" }).click();
+    const confirm = page.getByRole("alertdialog", { name: "警告" });
+    await expect(confirm).toContainText("ログアウトしますか？");
+    await confirm.getByRole("button", { name: "いいえ" }).click();
+    await expect(confirm).toHaveCount(0);
+    await expect(page).toHaveURL(/\/mainmenu$/);
+  });
+});

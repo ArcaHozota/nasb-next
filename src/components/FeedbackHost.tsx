@@ -2,19 +2,10 @@
 
 // src/components/FeedbackHost.tsx
 // 旧 components/FeedbackHost.vue を移植。App(Providers)直下にグローバルマウントする。
-// shadcn/ui 版: スナックバー → Sonner(<Toaster />)、確認ダイアログ → AlertDialog。
+// shadcn/ui 版: スナックバー → Sonner(<Toaster />)、確認ダイアログ → ConfirmDialog(AlertDialog)。
 // フォーカストラップ・Escキー・背面スクロールのロック・ARIA属性は Radix 側が担当する。
-import { AlertDialog as AlertDialogPrimitive } from "radix-ui";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Toaster } from "@/components/ui/sonner";
-import { Button } from "@/components/ui/button";
 import { useFeedbackStore } from "@/stores/feedback";
 
 export default function FeedbackHost() {
@@ -34,54 +25,19 @@ export default function FeedbackHost() {
         }}
       />
 
-      {/* 確認ダイアログ(旧 MUI Dialog 相当) */}
-      <AlertDialog
+      {/* 確認ダイアログ(旧 MUI Dialog 相当)。見た目は共通の ConfirmDialog */}
+      <ConfirmDialog
         open={dialog.show}
         onOpenChange={(open) => {
-          // Escキーで閉じた場合はキャンセル扱い
+          // Escキーで閉じた場合は「いいえ」扱い。
+          // 「はい」「いいえ」を押したあとにも呼ばれるが、回答済みなので answer 側で無視される
           if (!open) answer(false);
         }}
-      >
-        <AlertDialogContent className="noto-sans max-w-sm gap-0 overflow-hidden rounded-lg border-0 p-0 shadow-xl data-[size=default]:sm:max-w-sm">
-          <AlertDialogHeader className="place-items-stretch! gap-0 pt-3">
-            <AlertDialogTitle
-              className="text-center text-lg font-semibold text-primary"
-            >
-              {dialog.title}
-            </AlertDialogTitle>
-            <div
-              className="mx-1.5 mt-2 h-0.75 rounded-full bg-primary"
-            ></div>
-          </AlertDialogHeader>
-          <div className="p-6">
-            <AlertDialogDescription className="text-sm text-gray-600">
-              {dialog.text}
-            </AlertDialogDescription>
-            <AlertDialogFooter className="mt-6 flex-row justify-end gap-2">
-              {/* Radix の Cancel/Action に asChild で Button を渡す
-                  (Cancel に初期フォーカスが当たる等の挙動はそのまま) */}
-              <AlertDialogPrimitive.Cancel asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="font-normal text-gray-600"
-                  onClick={() => answer(false)}
-                >
-                  {dialog.cancelLabel}
-                </Button>
-              </AlertDialogPrimitive.Cancel>
-              <AlertDialogPrimitive.Action asChild>
-                <Button
-                  size="sm"
-                  onClick={() => answer(true)}
-                >
-                  {dialog.confirmLabel}
-                </Button>
-              </AlertDialogPrimitive.Action>
-            </AlertDialogFooter>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
+        title={dialog.title}
+        description={dialog.text}
+        onConfirm={() => answer(true)}
+        onCancel={() => answer(false)}
+      />
     </>
   );
 }

@@ -27,16 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import BookCombobox from "@/components/BookCombobox";
 
 type BookOrChapter = { id: number; name: string };
@@ -482,24 +473,17 @@ export default function BookAddition() {
       </Card>
 
       {/* 上書き確認 */}
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent className="noto-serif">
-          <AlertDialogHeader>
-            <AlertDialogTitle>上書きの確認</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isUpdate
-                ? `${verseLabel} は既に登録されています。入力した内容で上書きして更新しますか?`
-                : "既存の節かどうか確認できませんでした。既に登録されている場合は上書きされます。保存しますか?"}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>キャンセル</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void doSave()}>
-              {isUpdate ? "更新する" : "保存する"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="上書きの確認"
+        description={
+          isUpdate
+            ? `${verseLabel} は既に登録されています。入力した内容で上書きして更新しますか?`
+            : "既存の節かどうか確認できませんでした。既に登録されている場合は上書きされます。保存しますか?"
+        }
+        onConfirm={() => void doSave()}
+      />
     </div>
   );
 }

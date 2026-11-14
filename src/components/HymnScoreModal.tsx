@@ -9,12 +9,11 @@ import { CloudUpload, X } from "lucide-react";
 import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -22,7 +21,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
-import { downloadScore } from "@/lib/download";
 
 /** バックエンドの上限(現行 struts.multipart.maxSize と同じ 30MB) */
 const MAX_FILE_BYTES = 30 * 1024 * 1024;
@@ -69,7 +67,6 @@ export default function HymnScoreModal({
   const [uploading, setUploading] = useState(false);
   // 同じ調の楽譜が既にある場合の上書き確認ダイアログ
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [downloading, setDownloading] = useState(false);
 
   const title = `楽譜-${hymnNameKr}`;
 
@@ -93,7 +90,7 @@ export default function HymnScoreModal({
   };
 
   // overwrite=false: 同じ調に違う内容の楽譜があればサーバーが 409 を返す(上書きしない)
-  // overwrite=true : 確認ダイアログで「上書きする」を選んだあとの再送
+  // overwrite=true : 上書きの確認で「はい」を選んだあとの再送
   const doUpload = async (overwrite: boolean) => {
     if (!file) return;
     const formData = new FormData();
@@ -136,18 +133,6 @@ export default function HymnScoreModal({
   const onOverwrite = async () => {
     setConfirmOpen(false);
     await doUpload(true);
-  };
-
-  // 登録済みの楽譜をダウンロードして中身を確認する(確認ダイアログは開いたまま)
-  const onDownloadExisting = async () => {
-    setDownloading(true);
-    try {
-      await downloadScore(hymnId, chord);
-    } catch (e: unknown) {
-      toast(e instanceof Error ? e.message : "楽譜の取得に失敗しました");
-    } finally {
-      setDownloading(false);
-    }
   };
 
   const chordLabel = MAJOR_KEYS.find((k) => k.value === chord)?.label ?? chord;
@@ -263,35 +248,15 @@ export default function HymnScoreModal({
         </div>
 
         {/* 上書き確認: 外側の Dialog の子として描画し、Radix に入れ子のレイヤーとして扱わせる */}
-        <Dialog
+        <ConfirmDialog
           open={confirmOpen}
           onOpenChange={(open) => {
             if (!open && !uploading) setConfirmOpen(false);
           }}
-        >
-          <DialogContent className="noto-sans max-w-sm gap-4 rounded-[18px] border-0 bg-white sm:max-w-sm **:data-[slot=dialog-close]:text-primary">
-            <DialogHeader>
-              <DialogTitle className="text-primary">
-                {chordLabel}の楽譜は登録済みです
-              </DialogTitle>
-              <DialogDescription>上書きしますか?</DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2">
-              <Button
-                variant="outline"
-                type="button"
-                disabled={downloading}
-                className="border-primary text-primary hover:bg-primary/5 hover:text-primary"
-                onClick={onDownloadExisting}
-              >
-                {downloading ? <Spinner /> : "既存をダウンロード"}
-              </Button>
-              <Button type="button" onClick={onOverwrite}>
-                上書きする
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          title="上書きの確認"
+          description={`${chordLabel}の楽譜は既に登録されています。上書きしますか?`}
+          onConfirm={() => void onOverwrite()}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -43,12 +43,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -521,47 +520,18 @@ export default function HymnFormModal({
           </CardFooter>
         </Card>
 
-        {/* 編集内容の破棄確認: 外側の Dialog の子として描画し、Radix に入れ子のレイヤーとして扱わせる
-            (楽譜アップロードの上書き確認と同じ作り) */}
-        <Dialog
+        {/* 編集内容の破棄確認: 外側の Dialog の子として描画し、Radix に入れ子のレイヤーとして扱わせる */}
+        <ConfirmDialog
           open={discardOpen}
-          onOpenChange={(open) => {
-            if (!open) setDiscardOpen(false);
-          }}
-        >
-          <DialogContent
-            className={`noto-sans max-w-sm gap-4 rounded-[18px] border-0 bg-white sm:max-w-sm **:data-[slot=dialog-close]:text-primary`}
-          >
-            <DialogHeader>
-              <DialogTitle className="text-primary">
-                編集内容があります
-              </DialogTitle>
-              <DialogDescription>
-                {isEdit
-                  ? "変更を破棄して閉じますか?"
-                  : "入力した内容を破棄して閉じますか?"}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => setDiscardOpen(false)}
-              >
-                編集を続ける
-              </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  setDiscardOpen(false);
-                  onClose();
-                }}
-              >
-                破棄して閉じる
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          onOpenChange={setDiscardOpen}
+          title="お知らせ"
+          description={
+            isEdit
+              ? "変更を破棄して閉じますか?"
+              : "入力した内容を破棄して閉じますか?"
+          }
+          onConfirm={onClose}
+        />
       </DialogContent>
     </Dialog>
   );
