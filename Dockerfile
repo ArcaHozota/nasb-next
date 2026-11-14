@@ -2,11 +2,19 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm ci
+# pnpm のストア(パッケージの実体の置き場)。下の --mount=type=cache でビルドをまたいで再利用する
+ENV PNPM_CONFIG_STORE_DIR=/pnpm/store
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# pnpm は package.json の packageManager(pnpm@x.y.z)と同じ版を入れる(開発機・CI と同じ版になる)。
+# Corepack は Node 25 以降に同梱されなくなったので使わず、どの環境でも同じ npm で入れる
+# (npm なら pnpm 12 の OS ごとのネイティブバイナリ(optionalDependencies)も一緒に入る)
+RUN npm install -g "$(node -p "require('./package.json').packageManager")"
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+  pnpm install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 # --- runtime stage ---
 # output: "standalone" が生成する最小限のNode.jsサーバー一式だけをコピーする。

@@ -25,27 +25,41 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - run: npm ci
+      # package.json の packageManager(pnpm@x.y.z)と同じ版を入れる。
+      # Dockerfile と同じく npm で入れる(Corepack は Node 25 以降に同梱されないため使わない)
+      - name: pnpm を用意
+        run: npm install -g "$(node -p "require('./package.json').packageManager")"
+
+      # pnpm のストア(パッケージの実体の置き場)をロックファイル単位でキャッシュする
+      - name: pnpm のストアの場所
+        id: pnpm-store
+        run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: npm run lint
+        run: pnpm lint
 
       - name: 型チェック
-        run: npm run typecheck
+        run: pnpm typecheck
 
       - name: ユニットテスト
-        run: npm test
+        run: pnpm test
 
       - name: ビルド
-        run: npm run build
+        run: pnpm build
 
       - name: Playwright のブラウザを用意
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E テスト
-        run: npm run e2e
+        run: pnpm e2e
         env:
           CI: "true"
 

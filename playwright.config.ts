@@ -23,8 +23,8 @@ export default defineConfig({
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    // CI では build 済みのものを起動するだけにする(ワークフローで先に npm run build する)
-    command: process.env.CI ? START : `npm run build && ${START}`,
+    // CI では build 済みのものを起動するだけにする(ワークフローで先に pnpm build する)
+    command: process.env.CI ? START : `pnpm build && ${START}`,
     url: `http://localhost:${PORT}/home`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

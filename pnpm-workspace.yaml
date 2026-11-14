@@ -1,0 +1,10 @@
+# pnpm の設定(pnpm 10 以降は package.json ではなくこのファイルに書く)
+
+# eslint-config-next が使う ESLint プラグインのうち 3 つは、peerDependencies の範囲が
+# まだ ESLint 9 までで ESLint 10 を含まない(実際には ESLint 10 で動く)。
+# npm では overrides で ESLint 10 を使わせていた。pnpm ではその警告を出さないようにする。
+peerDependencyRules:
+  allowedVersions:
+    eslint-plugin-import>eslint: "10"
+    eslint-plugin-jsx-a11y>eslint: "10"
+    eslint-plugin-react>eslint: "10"

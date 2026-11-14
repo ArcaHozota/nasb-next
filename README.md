@@ -32,16 +32,30 @@ Next.js 16(App Router)/ React 19 / Tailwind CSS v4 / shadcn/ui で作られて�
 - `output: "standalone"` で、Next.js 自身の Node.js サーバーが配信する Docker 構成です(ポート 3000)。
 - `/api` は、開発時だけ `next dev` が `http://localhost:8277` へ転送します。本番は前段(nginx・CloudFront など)がバックエンドへ直接転送する前提です。
 
+## セットアップ
+
+パッケージ管理には **pnpm** を使います(版は `package.json` の `packageManager` に固定)。
+npm の `package-lock.json` はありません。`npm install` ではなく pnpm を使ってください。
+
+```bash
+brew install pnpm        # macOS(ほかの環境は https://pnpm.io/installation)
+pnpm install             # 依存パッケージを入れる
+pnpm dev                 # 開発サーバー(http://localhost:3000)
+```
+
+- pnpm の設定は `pnpm-workspace.yaml` にあります。
+- `pnpm install` が「ロックファイルと合わない」と言う場合は、`package.json` を変えたあとに `pnpm install` でロックファイルを更新してコミットしてください(CI と Docker は `--frozen-lockfile` で、ロックファイルどおりにしか入れません)。
+
 ## テスト
 
-| コマンド | 内容 |
-|---|---|
-| `npm test` | ユニットテスト(Vitest)。`src/**/*.test.ts` |
-| `npm run test:watch` | ユニットテストを変更のたびに実行 |
-| `npm run e2e` | 画面を通したテスト(Playwright)。`e2e/` |
-| `npm run typecheck` | 型チェック(`tsc --noEmit`) |
+| コマンド          | 内容                                       |
+| ----------------- | ------------------------------------------ |
+| `pnpm test`       | ユニットテスト(Vitest)。`src/**/*.test.ts` |
+| `pnpm test:watch` | ユニットテストを変更のたびに実行           |
+| `pnpm e2e`        | 画面を通したテスト(Playwright)。`e2e/`     |
+| `pnpm typecheck`  | 型チェック(`tsc --noEmit`)                 |
 
 - E2E はバックエンドを起動しません。ブラウザから出る `/api/**` を `e2e/mock-api.ts` が受けて応答します。
-- `npm run e2e` は本番ビルド(`npm run build`)をしてから、Dockerfile と同じ standalone のサーバーをポート 3100 で起動します。
-- 初めて E2E を動かすときは、先に `npx playwright install chromium` でブラウザを用意してください。
+- `pnpm e2e` は本番ビルド(`pnpm build`)をしてから、Dockerfile と同じ standalone のサーバーをポート 3100 で起動します。
+- 初めて E2E を動かすときは、先に `pnpm exec playwright install chromium` でブラウザを用意してください。
 - GitHub Actions(`.github/workflows/ci.yml`)が、`main` への push とプルリクエストのたびに Lint・型チェック・ユニットテスト・ビルド・E2E を実行します。
