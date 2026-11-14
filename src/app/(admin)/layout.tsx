@@ -293,7 +293,7 @@ export default function AdminLayout({
       />
 
       <SidebarInset className="min-w-0 overflow-hidden bg-transparent">
-        {/* ===== 上部バー(旧 AppBar)。サイドバーと同じ濃い burgundy の地に生成り色(--sidebar-*) ===== */}
+        {/* ===== 上部バー(旧 AppBar)。サイドバーと同じアイボリーの地(--sidebar-*) ===== */}
         <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-sidebar px-2 text-sidebar-foreground sm:px-4">
           <SidebarTrigger
             aria-label="サイドバーの開閉"
@@ -311,7 +311,7 @@ export default function AdminLayout({
                 type="text"
                 placeholder="検索"
                 aria-label="検索"
-                className="h-8 w-44 rounded border-0 bg-sidebar-primary pl-8 text-gray-900 shadow-none focus-visible:ring-sidebar-ring sm:w-60"
+                className="h-8 w-44 rounded border-sidebar-border bg-white pl-8 text-foreground shadow-none focus-visible:border-sidebar-ring focus-visible:ring-sidebar-ring/20 sm:w-60"
                 enterKeyHint="search"
               />
               <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
@@ -321,7 +321,6 @@ export default function AdminLayout({
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  // 赤い文字は burgundy の地では読みにくいので、ほかのアイコンと同じ生成り色にする
                   className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   type="button"
                   aria-label="ログアウト"
@@ -389,9 +388,10 @@ function AdminSidebar({
   };
 
   return (
-    // 濃い burgundy の地(色は globals.css の --sidebar-*)。項目は「聖書」「賛美歌」「その他」の見出しでまとめ、
-    // 選択中の項目だけを生成り色で塗る。折りたたみ時(アイコンだけ)は見出しと「準備中」を隠す。
-    <Sidebar collapsible="icon" className="border-r-0">
+    // アイボリーの地(色は globals.css の --sidebar-*)。項目は「聖書」「賛美歌」「その他」の見出しでまとめ、
+    // 選択中の項目だけを burgundy で塗る。折りたたみ時(アイコンだけ)は見出しと「準備中」を隠す。
+    // 右端は細い線で本文と区切る。
+    <Sidebar collapsible="icon" className="border-sidebar-border">
       {/* ===== ブランド ===== */}
       <SidebarHeader className="border-b border-sidebar-border p-2">
         <SidebarMenu>
@@ -405,9 +405,9 @@ function AdminSidebar({
                 closeOnMobile();
               }}
             >
-              <JerusalemCross className="size-10! shrink-0 text-sidebar-foreground group-data-[collapsible=icon]:size-7!" />
-              {/* .effect-shine(globals.css)の burgundy の文字色は、生成り色で上書きする */}
-              <span className="effect-shine text-sidebar-foreground! whitespace-nowrap text-[1.7rem] leading-none">
+              <JerusalemCross className="size-10! shrink-0 text-sidebar-primary group-data-[collapsible=icon]:size-7!" />
+              {/* ロゴの文字は .effect-shine(globals.css)の burgundy のまま */}
+              <span className="effect-shine whitespace-nowrap text-[1.7rem] leading-none">
                 NASB1995
               </span>
             </SidebarMenuButton>
@@ -442,7 +442,7 @@ function AdminSidebar({
                           className={cn(
                             "h-9 gap-3 text-[0.95rem] [&>svg]:size-5 group-data-[collapsible=icon]:[&>svg]:size-4",
                             "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                            // 選択中: 生成り色の塗りに burgundy の文字
+                            // 選択中: burgundy の塗りに白い文字
                             "data-[active=true]:bg-sidebar-primary data-[active=true]:font-medium data-[active=true]:text-sidebar-primary-foreground",
                             "data-[active=true]:hover:bg-sidebar-primary data-[active=true]:hover:text-sidebar-primary-foreground",
                             // 準備中: 文字を薄くし、右の「準備中」の分だけ余白を空ける
@@ -481,8 +481,8 @@ function AdminSidebar({
                   className="group/user hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="size-8">
-                    {/* 頭文字が読めるよう、生成り色の円に burgundy の文字 */}
-                    <AvatarFallback className="bg-sidebar-primary text-xs font-medium text-sidebar-primary-foreground">
+                    {/* 頭文字が読めるよう、薄い burgundy の円に burgundy の文字 */}
+                    <AvatarFallback className="bg-secondary text-xs font-medium text-primary">
                       {username.slice(0, 1)}
                     </AvatarFallback>
                   </Avatar>

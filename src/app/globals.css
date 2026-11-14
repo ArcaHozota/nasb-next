@@ -49,16 +49,16 @@ button:not(:disabled) {
   --input: #d1d5db;
   /* 従来の入力欄(border-gray-300)と同じ濃さ */
   --ring: #800020;
-  /* 管理画面のサイドバー(shadcn/ui Sidebar)。濃い burgundy の地に、ホームの讃美歌集と同じ生成り色の文字。
-     選択中の項目は生成り色の塗り(sidebar-primary)に burgundy の文字 */
-  --sidebar: #4a0a1a;
-  --sidebar-foreground: #f3e3c3;
-  --sidebar-primary: #fdfbf3;
-  --sidebar-primary-foreground: #800020;
-  --sidebar-accent: rgba(243, 227, 195, 0.12);
-  --sidebar-accent-foreground: #fdfbf3;
-  --sidebar-border: rgba(243, 227, 195, 0.15);
-  --sidebar-ring: rgba(243, 227, 195, 0.5);
+  /* 管理画面のサイドバー(shadcn/ui Sidebar)。本のページのような明るいアイボリーの地に burgundy の文字。
+     選択中の項目は burgundy の塗り(sidebar-primary)に白い文字、ホバーは少し濃いアイボリー(文字は burgundy のまま) */
+  --sidebar: #fdfbf3;
+  --sidebar-foreground: #800020;
+  --sidebar-primary: #800020;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3ecdc;
+  --sidebar-accent-foreground: #800020;
+  --sidebar-border: #e7e0cc;
+  --sidebar-ring: #800020;
   /* フォント(src/app/fonts.ts で Fontsource から読み込み)。フォント名だけを入れる */
   --font-noto-serif-jp: "Noto Serif JP";
   --font-noto-serif-kr: "Noto Serif KR";
