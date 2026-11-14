@@ -15,6 +15,7 @@ import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import PageBackground from "@/components/PageBackground";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import { REQUIRED_MESSAGE } from "@/lib/form";
 import RedLetterEditor, {
   type RedLetterEditorHandle,
 } from "@/components/RedLetterEditor";
@@ -286,7 +287,7 @@ export default function BookAddition() {
                 error={errors.textEn && !isFilled(textEn)}
                 helperText={
                   errors.textEn && !isFilled(textEn)
-                    ? "上記の入力ボックスを空になってはいけません。"
+                    ? REQUIRED_MESSAGE
                     : undefined
                 }
               />
@@ -321,7 +322,7 @@ export default function BookAddition() {
                 error={errors.textJp && !isFilled(textJp)}
                 helperText={
                   errors.textJp && !isFilled(textJp)
-                    ? "上記の入力ボックスを空になってはいけません。"
+                    ? REQUIRED_MESSAGE
                     : undefined
                 }
               />
@@ -431,7 +432,7 @@ export default function BookAddition() {
               />
               {errors.verseId && (
                 <FieldError id="verse-input-error" className="text-xs">
-                  上記の入力ボックスを空になってはいけません。
+                  {REQUIRED_MESSAGE}
                 </FieldError>
               )}
             </Field>

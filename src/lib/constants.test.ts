@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { base64ToUtf8, extractErrorMessage, utf8ToBase64 } from "./constants";
-import { required } from "./form";
+import { REQUIRED_MESSAGE, required } from "./form";
 
 describe("utf8ToBase64 / base64ToUtf8", () => {
   it("ASCII は標準の Base64 になる", () => {
@@ -16,9 +16,9 @@ describe("utf8ToBase64 / base64ToUtf8", () => {
 
 describe("extractErrorMessage", () => {
   it("応答本文が文字列ならそれを返す", () => {
-    expect(extractErrorMessage({ response: { data: "重複しています" } }, "fb")).toBe(
-      "重複しています",
-    );
+    expect(
+      extractErrorMessage({ response: { data: "重複しています" } }, "fb"),
+    ).toBe("重複しています");
   });
 
   it("応答本文の message を返す", () => {
@@ -30,16 +30,17 @@ describe("extractErrorMessage", () => {
   it("読めなければ fallback", () => {
     expect(extractErrorMessage(new Error("x"), "fb")).toBe("fb");
     expect(extractErrorMessage(null, "fb")).toBe("fb");
-    expect(extractErrorMessage({ response: { data: { other: 1 } } }, "fb")).toBe(
-      "fb",
-    );
+    expect(
+      extractErrorMessage({ response: { data: { other: 1 } } }, "fb"),
+    ).toBe("fb");
   });
 });
 
 describe("required", () => {
-  it("空・空白だけならエラー文言", () => {
-    expect(required("")).not.toBe("");
-    expect(required("  ")).not.toBe("");
+  it("空・空白だけなら「入力してください。」", () => {
+    expect(required("")).toBe(REQUIRED_MESSAGE);
+    expect(required("  ")).toBe(REQUIRED_MESSAGE);
+    expect(REQUIRED_MESSAGE).toBe("入力してください。");
   });
 
   it("入力があれば空文字", () => {
