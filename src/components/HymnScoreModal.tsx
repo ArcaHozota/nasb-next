@@ -44,21 +44,22 @@ type Props = {
 
 /**
  * 12長調。value は DB(HYMNS_WORK.CHORD)に保存する値(ASCII)、label は画面表示。
- * バックエンド(HymnsHandler)の許可リストと同じ並び・同じ値にすること。
+ * 値はバックエンド(HymnService.MajorKeys)の許可リストと同じにすること(並び順は画面だけのもの)。
+ * 6列で並べ、上の段が A, B♭, B, C, D♭, D、下の段が E♭, E, F, G♭, G, A♭ になる(半音ずつ上がる順)。
  */
 const MAJOR_KEYS = [
   { value: "A", label: "A" },
-  { value: "Ab", label: "A♭" },
-  { value: "B", label: "B" },
   { value: "Bb", label: "B♭" },
+  { value: "B", label: "B" },
   { value: "C", label: "C" },
-  { value: "D", label: "D" },
   { value: "Db", label: "D♭" },
-  { value: "E", label: "E" },
+  { value: "D", label: "D" },
   { value: "Eb", label: "E♭" },
+  { value: "E", label: "E" },
   { value: "F", label: "F" },
-  { value: "G", label: "G" },
   { value: "Gb", label: "G♭" },
+  { value: "G", label: "G" },
+  { value: "Ab", label: "A♭" },
 ] as const;
 
 export default function HymnScoreModal({

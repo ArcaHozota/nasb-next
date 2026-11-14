@@ -48,8 +48,9 @@ const PAGER_BTN =
   "h-auto p-0 text-[13px] font-normal text-[#800020] hover:bg-transparent hover:text-[#800020] disabled:text-[#b8a888] disabled:opacity-100";
 
 /** 目次の1行(shadcn/ui の Item)。点線の下罫線・押せる行のホバーと選択中の背景は、本のデザインに合わせて上書きする */
+// 1行の高さは約 58.5px(上下の余白 7.5px × 2 + 曲名2行 42.48px + 点線 1px)
 const BOOK_ROW =
-  "w-full flex-nowrap! items-baseline! text-base! leading-normal! gap-3! rounded-none! border-0 border-b border-dotted border-[#c9b48d]! px-2! py-[8.7px]! text-left";
+  "w-full flex-nowrap! items-baseline! text-base! leading-normal! gap-3! rounded-none! border-0 border-b border-dotted border-[#c9b48d]! px-2! py-[7.5px]! text-left";
 const BOOK_ROW_BTN =
   "hover:bg-[#f3e8cf] data-[active=true]:bg-[#efe2c4] focus-visible:ring-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#800020]";
 /** 目次の番号 */
@@ -334,29 +335,29 @@ export default function OpenHymnalHome({
             onSearch();
           }}
         >
-        <InputGroup className="h-auto w-[min(420px,40vw)] rounded-none border-0 border-b border-[#f3e3c3]/60 bg-transparent px-0.5 py-1.5 text-[#f3e3c3] shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-[#f3e3c3] has-[[data-slot=input-group-control]:focus-visible]:ring-0 dark:bg-transparent">
-          <InputGroupAddon className="p-0 text-[13px] font-normal text-[#f3e3c3]/85">
-            索引
-          </InputGroupAddon>
-          <InputGroupInput
-            value={keyword}
-            onChange={(e) => onKeywordChange(e.target.value)}
-            type="text"
-            placeholder="曲名・歌詞のキーワードで検索してください"
-            aria-label="キーワード"
-            className="noto-serif-kr h-auto px-2 py-0 text-base text-white placeholder:font-sans placeholder:text-[13px] placeholder:text-[#f3e3c3]/55 md:text-base dark:bg-transparent"
-          />
-          <InputGroupAddon align="inline-end" className="p-0">
-            <InputGroupButton
-              type="submit"
-              size="icon-xs"
-              aria-label="検索"
-              className="text-[#f3e3c3] hover:bg-[#f3e3c3]/12 hover:text-[#f3e3c3]"
-            >
-              {isFetching ? <Spinner /> : <Search />}
-            </InputGroupButton>
-          </InputGroupAddon>
-        </InputGroup>
+          <InputGroup className="h-auto w-[min(420px,40vw)] rounded-none border-0 border-b border-[#f3e3c3]/60 bg-transparent px-0.5 py-1.5 text-[#f3e3c3] shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-[#f3e3c3] has-[[data-slot=input-group-control]:focus-visible]:ring-0 dark:bg-transparent">
+            <InputGroupAddon className="p-0 text-[13px] font-normal text-[#f3e3c3]/85">
+              索引
+            </InputGroupAddon>
+            <InputGroupInput
+              value={keyword}
+              onChange={(e) => onKeywordChange(e.target.value)}
+              type="text"
+              placeholder="曲名・歌詞のキーワードで検索してください"
+              aria-label="キーワード"
+              className="noto-serif-kr h-auto px-2 py-0 text-base text-white placeholder:font-sans placeholder:text-[13px] placeholder:text-[#f3e3c3]/55 md:text-base dark:bg-transparent"
+            />
+            <InputGroupAddon align="inline-end" className="p-0">
+              <InputGroupButton
+                type="submit"
+                size="icon-xs"
+                aria-label="検索"
+                className="text-[#f3e3c3] hover:bg-[#f3e3c3]/12 hover:text-[#f3e3c3]"
+              >
+                {isFetching ? <Spinner /> : <Search />}
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
         </form>
         <Button
           type="button"
