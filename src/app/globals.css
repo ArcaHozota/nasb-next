@@ -49,16 +49,18 @@ button:not(:disabled) {
   --input: #d1d5db;
   /* 従来の入力欄(border-gray-300)と同じ濃さ */
   --ring: #800020;
-  /* 管理画面のサイドバー(shadcn/ui Sidebar)。本のページのような明るいアイボリーの地に burgundy の文字。
-     選択中の項目は burgundy の塗り(sidebar-primary)に白い文字、ホバーは少し濃いアイボリー(文字は burgundy のまま) */
-  --sidebar: #fdfbf3;
-  --sidebar-foreground: #800020;
-  --sidebar-primary: #800020;
+  /* 管理画面のサイドバー(shadcn/ui Sidebar)と上部バー。濃紺の地に明るい灰色の文字で、控えめにする。
+     選択中の項目は薄い白の塗り(sidebar-accent)に白い文字と、左端の線(sidebar-primary)。
+     sidebar-primary は濃紺の上でも見えるよう、primary(#800020)より明るい burgundy にしている。
+     ホバーは sidebar-accent を半分の濃さで使う(hover:bg-sidebar-accent/50) */
+  --sidebar: #111827;
+  --sidebar-foreground: #e5e7eb;
+  --sidebar-primary: #c0405f;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3ecdc;
-  --sidebar-accent-foreground: #800020;
-  --sidebar-border: #e7e0cc;
-  --sidebar-ring: #800020;
+  --sidebar-accent: rgba(255, 255, 255, 0.1);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: rgba(255, 255, 255, 0.4);
   /* フォント(src/app/fonts.ts で Fontsource から読み込み)。フォント名だけを入れる */
   --font-noto-serif-jp: "Noto Serif JP";
   --font-noto-serif-kr: "Noto Serif KR";

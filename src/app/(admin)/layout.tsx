@@ -16,7 +16,7 @@ import {
   UserCog,
   MessageSquare,
   LogOut,
-  ChevronUp,
+  ChevronsUpDown,
   Search,
 } from "lucide-react";
 import axios from "axios";
@@ -293,11 +293,11 @@ export default function AdminLayout({
       />
 
       <SidebarInset className="min-w-0 overflow-hidden bg-transparent">
-        {/* ===== 上部バー(旧 AppBar)。サイドバーと同じアイボリーの地(--sidebar-*) ===== */}
+        {/* ===== 上部バー(旧 AppBar)。サイドバーと同じ濃紺の地(--sidebar-*) ===== */}
         <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-sidebar px-2 text-sidebar-foreground sm:px-4">
           <SidebarTrigger
             aria-label="サイドバーの開閉"
-            className="size-8 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            className="size-8 text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
           />
           <div className="flex min-w-0 items-center gap-2">
             <form
@@ -321,7 +321,7 @@ export default function AdminLayout({
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  className="text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                   type="button"
                   aria-label="ログアウト"
                   onClick={onLogout}
@@ -388,8 +388,8 @@ function AdminSidebar({
   };
 
   return (
-    // アイボリーの地(色は globals.css の --sidebar-*)。項目は「聖書」「賛美歌」「その他」の見出しでまとめ、
-    // 選択中の項目だけを burgundy で塗る。折りたたみ時(アイコンだけ)は見出しと「準備中」を隠す。
+    // 濃紺の地(色は globals.css の --sidebar-*)。項目は「聖書」「賛美歌」「その他」の見出しでまとめ、
+    // 選択中の項目は薄い白の塗りと左端の burgundy の線で示す。折りたたみ時(アイコンだけ)は見出しと「準備中」を隠す。
     // 右端は細い線で本文と区切る。
     <Sidebar collapsible="icon" className="border-sidebar-border">
       {/* ===== ブランド ===== */}
@@ -399,15 +399,18 @@ function AdminSidebar({
             <SidebarMenuButton
               size="lg"
               aria-label="メインメニューへ"
-              className="h-auto gap-2.5 py-3 hover:bg-sidebar-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
+              className="h-auto gap-2.5 py-3 hover:bg-sidebar-accent/50 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
               onClick={() => {
                 onBrand();
                 closeOnMobile();
               }}
             >
-              <JerusalemCross className="size-10! shrink-0 text-sidebar-primary group-data-[collapsible=icon]:size-7!" />
-              {/* ロゴの文字は .effect-shine(globals.css)の burgundy のまま */}
-              <span className="effect-shine whitespace-nowrap text-[1.7rem] leading-none">
+              {/* エルサレム十字は、アイボリーの小さな角丸の四角の中に burgundy で置く(濃紺の中でもロゴの色を保つ) */}
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#fffff0] group-data-[collapsible=icon]:size-8">
+                <JerusalemCross className="size-7! text-primary group-data-[collapsible=icon]:size-5!" />
+              </span>
+              {/* ロゴの文字はアイボリー。.effect-shine(globals.css)はレイヤー外の指定で burgundy を持つので ! で上書きする */}
+              <span className="effect-shine whitespace-nowrap text-[1.6rem] leading-none text-[#fffff0]!">
                 NASB1995
               </span>
             </SidebarMenuButton>
@@ -441,19 +444,19 @@ function AdminSidebar({
                           }}
                           className={cn(
                             "h-9 gap-3 text-[0.95rem] [&>svg]:size-5 group-data-[collapsible=icon]:[&>svg]:size-4",
-                            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                            // 選択中: burgundy の塗りに白い文字
-                            "data-[active=true]:bg-sidebar-primary data-[active=true]:font-medium data-[active=true]:text-sidebar-primary-foreground",
-                            "data-[active=true]:hover:bg-sidebar-primary data-[active=true]:hover:text-sidebar-primary-foreground",
+                            "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+                            // 選択中: 薄い白の塗りに白い文字と、左端の burgundy の線(inset の影で描く)
+                            "data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[active=true]:shadow-[inset_3px_0_0_var(--sidebar-primary)]",
+                            "data-[active=true]:hover:bg-sidebar-accent",
                             // 準備中: 文字を薄くし、右の「準備中」の分だけ余白を空ける
-                            item.pending && "pr-16 text-sidebar-foreground/60",
+                            item.pending && "pr-16 text-sidebar-foreground/50",
                           )}
                         >
                           <Icon />
                           <span>{item.title}</span>
                         </SidebarMenuButton>
                         {item.pending && (
-                          <SidebarMenuBadge className="top-1/2! -translate-y-1/2 border border-sidebar-border font-normal text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
+                          <SidebarMenuBadge className="top-1/2! -translate-y-1/2 border border-white/15 font-normal text-sidebar-foreground/50 group-data-[collapsible=icon]:hidden">
                             準備中
                           </SidebarMenuBadge>
                         )}
@@ -478,16 +481,16 @@ function AdminSidebar({
                     DropdownMenuTrigger(asChild)が実際のボタンに届かず、メニューが開かなくなる */}
                 <SidebarMenuButton
                   size="lg"
-                  className="group/user hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="size-8">
-                    {/* 頭文字が読めるよう、薄い burgundy の円に burgundy の文字 */}
-                    <AvatarFallback className="bg-secondary text-xs font-medium text-primary">
+                    {/* 頭文字が読めるよう、burgundy の円に白い文字 */}
+                    <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
                       {username.slice(0, 1)}
                     </AvatarFallback>
                   </Avatar>
                   <span className="flex-1 truncate text-[0.9rem]">{username}</span>
-                  <ChevronUp className="ml-auto transition-transform group-data-[state=open]/user:rotate-180" />
+                  <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/60" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
