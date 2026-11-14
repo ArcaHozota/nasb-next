@@ -152,7 +152,7 @@ export default function HymnScoreModal({
         <div className="bg-white pt-3">
           <div className="grid grid-cols-[1fr_auto_1fr] items-center">
             <div aria-hidden="true"></div>
-            <DialogTitle className="text-center text-base font-semibold text-primary">
+            <DialogTitle className="text-center text-base font-semibold text-foreground">
               {title}
             </DialogTitle>
             <Button
@@ -167,7 +167,7 @@ export default function HymnScoreModal({
               <X className="size-5" />
             </Button>
           </div>
-          <div className="mx-1.5 mt-2 h-0.75 rounded-full bg-primary"></div>
+          <div className="mx-1.5 mt-2 h-0.75 rounded-full bg-foreground"></div>
           <DialogDescription className="sr-only">
             楽譜ファイル(PDF・画像)を選択してアップロードします。
           </DialogDescription>
@@ -205,20 +205,20 @@ export default function HymnScoreModal({
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
+          {/* ボタンもトグルも shadcn/ui の lg サイズ(scale で拡大すると見た目だけが大きくなり、
+              周りのレイアウトには反映されないため使わない) */}
           <div className="flex items-end justify-center gap-5">
-            {/* 大きめのボタン(標準の約1.33倍: 高さ36→48px、文字14→18px、アイコン16→20px)。
-                scale で拡大すると見た目だけが大きくなり、周りのレイアウトには反映されないため、
-                高さ・余白・文字・アイコンの大きさを直接指定する */}
             <Button
               variant="outline"
-              className="h-12 gap-2.5 px-5 text-lg has-[>svg]:px-4 border-primary bg-transparent text-primary hover:bg-primary/5 hover:text-primary"
+              size="lg"
+              className="border-primary bg-transparent text-primary hover:bg-primary/5 hover:text-primary"
               type="button"
               disabled={uploading}
               onClick={() => fileInputRef.current?.click()}
             >
-              <CloudUpload className="size-5" /> ファイルを選択
+              <CloudUpload /> ファイルを選択
             </Button>
-            <div className="mx-3 flex flex-col items-center gap-3">
+            <div className="flex flex-col items-center gap-2">
               <Label htmlFor="score-original" className="text-xs text-primary">
                 オリジナル
               </Label>
@@ -228,7 +228,6 @@ export default function HymnScoreModal({
                 onCheckedChange={setIsOriginal}
                 disabled={uploading}
                 size="lg"
-                className="scale-[1.41] data-[state=checked]:bg-primary"
               />
             </div>
           </div>
