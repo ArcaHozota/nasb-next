@@ -3,9 +3,10 @@
 // src/components/HymnScoreModal.tsx
 // 旧 components/HymnScoreModal.vue を移植。HymnList から表示するモーダル(ルーティングは行わない)。
 // shadcn/ui 版: createPortal・Escキー処理・背景クリック判定は Dialog(Radix)に任せる。
+// 構成: 見出し(楽譜アップロード + 曲名) / 調 / ファイル / オリジナルキー / 閉じる・アップロード
 import { useRef, useState } from "react";
 import axios from "axios";
-import { CloudUpload, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -14,11 +15,20 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 
@@ -63,12 +73,12 @@ export default function HymnScoreModal({
   const [file, setFile] = useState<File | null>(null);
   const [chord, setChord] = useState(EMPTY_STRING);
   const [isOriginal, setIsOriginal] = useState(false);
-  const [error, setError] = useState(EMPTY_STRING);
+  // エラーは関係する項目のすぐ下に出すので、項目ごとに持つ
+  const [chordError, setChordError] = useState(EMPTY_STRING);
+  const [fileError, setFileError] = useState(EMPTY_STRING);
   const [uploading, setUploading] = useState(false);
   // 同じ調の楽譜が既にある場合の上書き確認ダイアログ
   const [confirmOpen, setConfirmOpen] = useState(false);
-
-  const title = `楽譜-${hymnNameKr}`;
 
   const close = () => {
     if (uploading) return; // アップロード中は誤って閉じられないようにする
@@ -82,11 +92,11 @@ export default function HymnScoreModal({
     if (picked && picked.size > MAX_FILE_BYTES) {
       // 上限を超えるファイルは、送信を待たずにここで知らせる
       setFile(null);
-      setError("ファイルが大きすぎます(30MBまで)。");
+      setFileError("ファイルが大きすぎます(30MBまで)。");
       return;
     }
     setFile(picked);
-    setError(EMPTY_STRING);
+    setFileError(EMPTY_STRING);
   };
 
   // overwrite=false: 同じ調に違う内容の楽譜があればサーバーが 409 を返す(上書きしない)
@@ -119,14 +129,10 @@ export default function HymnScoreModal({
   };
 
   const onUpload = async () => {
-    if (!chord) {
-      setError("調を選択してください。");
-      return;
-    }
-    if (!file) {
-      setError("ファイルを選択してください。");
-      return;
-    }
+    // 両方とも未入力なら、両方のエラーを一度に出す
+    setChordError(chord ? EMPTY_STRING : "調を選択してください。");
+    setFileError(file ? EMPTY_STRING : "ファイルを選択してください。");
+    if (!chord || !file) return;
     await doUpload(false);
   };
 
@@ -145,35 +151,66 @@ export default function HymnScoreModal({
         if (!open) close();
       }}
     >
+      {/* 見た目は shadcn/ui の標準のダイアログ(左寄せの見出し・項目ごとの名前・右下のボタン)。
+          ×ボタンは、アップロード中に押せないよう自前のものを置く */}
       <DialogContent
         showCloseButton={false}
-        className="score-modal noto-sans flex min-h-[33vh] max-w-md flex-col justify-between gap-0 overflow-hidden rounded-[18px] border-0 bg-white p-0 sm:max-w-md"
+        className="score-modal noto-sans max-w-md gap-5 sm:max-w-md"
       >
-        <div className="bg-white pt-3">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center">
-            <div aria-hidden="true"></div>
-            <DialogTitle className="text-center text-base font-semibold text-foreground">
-              {title}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="mr-2 justify-self-end text-primary hover:bg-primary/10 hover:text-primary"
-              type="button"
-              disabled={uploading}
-              aria-label="閉じる"
-              onClick={close}
-            >
-              <X className="size-5" />
-            </Button>
+        <DialogHeader className="flex-row items-start justify-between gap-4 space-y-0">
+          <div className="flex flex-col gap-1">
+            <DialogTitle>楽譜アップロード</DialogTitle>
+            <DialogDescription>{hymnNameKr}</DialogDescription>
           </div>
-          <div className="mx-1.5 mt-2 h-0.75 rounded-full bg-foreground"></div>
-          <DialogDescription className="sr-only">
-            楽譜ファイル(PDF・画像)を選択してアップロードします。
-          </DialogDescription>
-        </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="-mt-1 -mr-2 text-muted-foreground"
+            type="button"
+            disabled={uploading}
+            aria-label="閉じる"
+            onClick={close}
+          >
+            <X />
+          </Button>
+        </DialogHeader>
 
-        <div className="flex flex-col items-center gap-2 p-6">
+        {/* ===== 調 ===== */}
+        <FieldSet className="gap-2">
+          <FieldLegend variant="label">調</FieldLegend>
+          {/* 選んでいない調は灰色の枠、選んだ調だけ burgundy で塗る */}
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            value={chord}
+            onValueChange={(v) => {
+              // 選択済みを再クリックすると v が空になるので、選択を維持する
+              if (!v) return;
+              setChord(v);
+              setChordError(EMPTY_STRING);
+            }}
+            disabled={uploading}
+            aria-label="調(長調)"
+            aria-invalid={!!chordError}
+            className="grid w-full grid-cols-6 gap-1.5"
+          >
+            {MAJOR_KEYS.map((k) => (
+              <ToggleGroupItem
+                key={k.value}
+                value={k.value}
+                aria-label={k.label}
+                className="h-9 rounded-md! border-l! px-0 text-sm data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+              >
+                {k.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <FieldError className="text-xs">{chordError}</FieldError>
+        </FieldSet>
+
+        {/* ===== ファイル ===== */}
+        <Field className="gap-2">
+          <FieldLabel htmlFor="score-file">ファイル</FieldLabel>
           <input
             ref={fileInputRef}
             type="file"
@@ -181,73 +218,61 @@ export default function HymnScoreModal({
             className="hidden"
             onChange={onFilePick}
           />
-          <ToggleGroup
-            type="single"
-            value={chord}
-            onValueChange={(v) => {
-              // 選択済みを再クリックすると v が空になるので、選択を維持する
-              if (!v) return;
-              setChord(v);
-              setError(EMPTY_STRING);
-            }}
-            disabled={uploading}
-            aria-label="調(長調)"
-            className="mb-5 grid w-full grid-cols-6 gap-1.5"
-          >
-            {MAJOR_KEYS.map((k) => (
-              <ToggleGroupItem
-                key={k.value}
-                value={k.value}
-                aria-label={k.label}
-                className="h-10 rounded-md! border border-primary px-0 text-base text-primary hover:bg-primary/10 hover:text-primary data-[state=on]:bg-primary data-[state=on]:text-white"
-              >
-                {k.label}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-          {/* ボタンもトグルも shadcn/ui の lg サイズ(scale で拡大すると見た目だけが大きくなり、
-              周りのレイアウトには反映されないため使わない) */}
-          <div className="flex items-end justify-center gap-5">
+          {/* 選んだファイルはボタンの横に出す(選んだかどうかがすぐ分かるように) */}
+          <div className="flex min-w-0 items-center gap-3 rounded-lg border border-dashed p-3">
             <Button
+              id="score-file"
               variant="outline"
-              size="lg"
-              className="border-primary bg-transparent text-primary hover:bg-primary/5 hover:text-primary"
+              size="sm"
               type="button"
               disabled={uploading}
+              aria-invalid={!!fileError}
               onClick={() => fileInputRef.current?.click()}
             >
-              <CloudUpload /> ファイルを選択
+              <Upload /> ファイルを選択
             </Button>
-            <div className="flex flex-col items-center gap-2">
-              <Label htmlFor="score-original" className="text-xs text-primary">
-                オリジナル
-              </Label>
-              <Switch
-                id="score-original"
-                checked={isOriginal}
-                onCheckedChange={setIsOriginal}
-                disabled={uploading}
-                size="lg"
-              />
-            </div>
+            <span className="min-w-0 truncate text-sm text-muted-foreground">
+              {file
+                ? `${file.name}(${Math.round(file.size / 1024)} KB)`
+                : "選択されていません"}
+            </span>
           </div>
-          {file && (
-            <p className="mt-2 text-sm text-gray-600">
-              {file.name}({Math.round(file.size / 1024)} KB)
-            </p>
-          )}
-          {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+          <FieldDescription className="text-xs">
+            PDF・画像(JPG / PNG / GIF)、30MBまで
+          </FieldDescription>
+          <FieldError className="text-xs">{fileError}</FieldError>
+        </Field>
+
+        {/* ===== オリジナルキー(個人設定の外部連携の行と同じ見た目) ===== */}
+        <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
+          <div className="flex flex-col gap-0.5">
+            <FieldLabel htmlFor="score-original">オリジナルキー</FieldLabel>
+            <FieldDescription className="text-xs">
+              この曲の元の調として登録します
+            </FieldDescription>
+          </div>
+          <Switch
+            id="score-original"
+            checked={isOriginal}
+            onCheckedChange={setIsOriginal}
+            disabled={uploading}
+          />
         </div>
 
-        <div className="flex justify-end px-6 pb-4">
-          <Button type="button" disabled={uploading} onClick={onUpload}>
-            {uploading ? (
-              <Spinner />
-            ) : (
-              <span className="flex items-center gap-1">アップロード</span>
-            )}
+        <DialogFooter>
+          <Button
+            variant="outline"
+            type="button"
+            disabled={uploading}
+            onClick={close}
+          >
+            閉じる
           </Button>
-        </div>
+          <Button type="button" disabled={uploading} onClick={onUpload}>
+            {uploading ? <Spinner /> : <Upload />}
+            アップロード
+          </Button>
+        </DialogFooter>
 
         {/* 上書き確認: 外側の Dialog の子として描画し、Radix に入れ子のレイヤーとして扱わせる */}
         <ConfirmDialog
