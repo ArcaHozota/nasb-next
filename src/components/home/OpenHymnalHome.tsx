@@ -10,6 +10,7 @@ import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, LogIn, Search, SquarePlay } from "lucide-react";
 import Highlighted from "@/components/Highlighted";
+import JerusalemCross from "@/components/JerusalemCross";
 import KeyStaff from "@/components/home/KeyStaff";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -58,25 +59,6 @@ const BOOK_ROW_NO =
 /** 目次の番号(全体での通し番号) */
 const hymnNo = (page: number, pageSize: number, i: number) =>
   String((page - 1) * pageSize + i + 1).padStart(2, "0");
-
-function JerusalemCross({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 66 66" className={className} aria-hidden="true">
-      <g fill="currentColor">
-        <rect x="27" y="4" width="12" height="58" />
-        <rect x="4" y="27" width="58" height="12" />
-        <rect x="15" y="9" width="3" height="13" />
-        <rect x="10" y="14" width="13" height="3" />
-        <rect x="48" y="9" width="3" height="13" />
-        <rect x="43" y="14" width="13" height="3" />
-        <rect x="15" y="44" width="3" height="13" />
-        <rect x="10" y="49" width="13" height="3" />
-        <rect x="48" y="44" width="3" height="13" />
-        <rect x="43" y="49" width="13" height="3" />
-      </g>
-    </svg>
-  );
-}
 
 // ===== 右ページ: 選んだ曲 =====
 // key={id} で曲ごとに作り直すので、選んだ調などの状態は曲を変えると初期化される

@@ -49,15 +49,16 @@ button:not(:disabled) {
   --input: #d1d5db;
   /* 従来の入力欄(border-gray-300)と同じ濃さ */
   --ring: #800020;
-  /* 管理画面のサイドバー(shadcn/ui Sidebar)。従来の bg-gray-900 / 白文字を踏襲 */
-  --sidebar: #111827;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #800020;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 255, 255, 0.1);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: rgba(255, 255, 255, 0.4);
+  /* 管理画面のサイドバー(shadcn/ui Sidebar)。濃い burgundy の地に、ホームの讃美歌集と同じ生成り色の文字。
+     選択中の項目は生成り色の塗り(sidebar-primary)に burgundy の文字 */
+  --sidebar: #4a0a1a;
+  --sidebar-foreground: #f3e3c3;
+  --sidebar-primary: #fdfbf3;
+  --sidebar-primary-foreground: #800020;
+  --sidebar-accent: rgba(243, 227, 195, 0.12);
+  --sidebar-accent-foreground: #fdfbf3;
+  --sidebar-border: rgba(243, 227, 195, 0.15);
+  --sidebar-ring: rgba(243, 227, 195, 0.5);
   /* フォント(src/app/fonts.ts で Fontsource から読み込み)。フォント名だけを入れる */
   --font-noto-serif-jp: "Noto Serif JP";
   --font-noto-serif-kr: "Noto Serif KR";

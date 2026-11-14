@@ -221,7 +221,7 @@ export default function HymnList() {
       <PageBackground src="/assets/mainmenu-bg5.webp" />
 
       <Card className="hymnlist-card glass-panel relative overflow-hidden rounded-[18px] gap-0 py-0">
-        <CardHeader className="gap-0 noto-serif flex items-center bg-gray-800 px-4 py-3 text-white">
+        <CardHeader className="gap-0 noto-serif flex items-center bg-sidebar px-4 py-3 text-sidebar-foreground">
           <LayoutGrid className="mr-2 h-5 w-5" />
           <CardTitle
             role="heading"

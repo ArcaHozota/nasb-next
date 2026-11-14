@@ -315,7 +315,7 @@ export default function HymnFormModal({
             モーダルでは暗い下地の上に載るので、半透明ではなく白ベタにする。 */}
         <Card className="form-card glass-panel relative gap-0 overflow-hidden rounded-[18px] bg-white! py-0">
           <CardHeader
-            className={`flex items-center gap-0 px-4 py-3 text-white bg-primary`}
+            className="flex items-center gap-0 bg-sidebar px-4 py-3 text-sidebar-foreground"
           >
             <LayoutGrid className="mr-2 h-5 w-5" />
             <DialogTitle asChild>
@@ -326,7 +326,7 @@ export default function HymnFormModal({
             <Button
               variant="ghost"
               size="icon-sm"
-              className="ml-auto text-white hover:bg-white/20 hover:text-white"
+              className="ml-auto text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               type="button"
               disabled={saving}
               aria-label="閉じる"
