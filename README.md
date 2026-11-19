@@ -3,6 +3,11 @@
 教会の賛美歌と聖書を管理・検索する Web アプリのフロントエンドです。
 Next.js 16(App Router)/ React 19 / Tailwind CSS v4 / shadcn/ui で作られています。
 
+## 設計書
+
+- [総合設計書](docs/DesignDocument.md): 要件、画面・データ・API、認証・検索・管理機能、テスト、配信構成と既知の課題。
+- [画面デザインの決まり](docs/UIGuidelines.md): 配色、文字、共通部品、ホーム・管理・ログイン画面の表示仕様。
+
 ## 特徴
 
 ### 公開ホーム(ログイン不要)
