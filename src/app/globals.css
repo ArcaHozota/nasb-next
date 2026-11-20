@@ -24,7 +24,7 @@ button:not(:disabled) {
  *   secondary   : 控えめな塗りのボタン(burgundy をごく薄く混ぜた灰色)
  *   muted       : 目立たない背景・補足の文字
  *   accent      : ghost / outline のボタンやメニュー項目の、ホバー・選択中の背景(burgundy のごく薄い色)
- *   destructive : 削除など危険な操作(primary の burgundy と見分けられる、はっきりした赤)
+ *   destructive : 削除など危険な操作・エラー。白背景で操作時の文字コントラストを確保する赤。
  * ベーススタイル(body背景・全要素のborder色)は既存画面の見た目を変えないよう
  * 意図的に追加していない。
  */
@@ -44,7 +44,7 @@ button:not(:disabled) {
   --muted-foreground: #4b5563;
   --accent: #f9f0f2;
   --accent-foreground: #800020;
-  --destructive: #dc2626;
+  --destructive: #c81e1e;
   --border: #e5e7eb;
   --input: #d1d5db;
   /* 従来の入力欄(border-gray-300)と同じ濃さ */

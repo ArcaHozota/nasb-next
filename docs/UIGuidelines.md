@@ -30,11 +30,19 @@
 | `secondary` / `secondary-foreground` | `#f5eef0` / `#4a0a1a` | 控えめな塗りの操作                           |
 | `muted` / `muted-foreground`         | `#f3f4f6` / `#4b5563` | 補足の背景・文字                             |
 | `accent` / `accent-foreground`       | `#f9f0f2` / `#800020` | ホバー・選択の背景と文字                     |
-| `destructive`                        | `#dc2626`             | 削除などの危険な操作、入力エラー             |
+| `destructive`                        | `#c81e1e`             | 削除などの危険な操作、入力エラー             |
 | `border` / `input`                   | `#e5e7eb` / `#d1d5db` | 枠線・入力欄の枠                             |
 | `ring`                               | `#800020`             | フォーカスリング                             |
 
 角丸の基準 `--radius` は0.625rem（10px）とする。shadcn/ui 用の既定の枠線色は `[data-slot]` とその子に限って適用し、既存画面全体の枠線を一律に変更しない。
+
+`destructive` は、白背景における操作時の文字の読みやすさを優先して選ぶ。通常サイズの文字は [WCAG 2.2 AA の基準](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html) に従い、以下の組み合わせで4.5:1以上を確保する。半透明色は白に重ねた場合の概算とする。
+
+| 状態 | 文字 / 背景 | コントラスト比 |
+| --- | --- | ---: |
+| 危険操作ボタンの通常時 | 白 / `destructive` | 約5.74:1 |
+| 危険操作ボタンのホバー時 | 白 / `destructive` 90%を白に重ねた色 | 約5.05:1 |
+| 危険操作メニュー項目のフォーカス時 | `destructive` / `destructive` 10%を白に重ねた色 | 約4.87:1 |
 
 ### 3.2 PC ホームの色
 
