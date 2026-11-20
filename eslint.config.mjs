@@ -7,12 +7,21 @@ export default defineConfig([
   ...nextTs,
   {
     // eslint-plugin-react-hooks v7 で追加された React Compiler 向けのルール。
-    // 既存コードの違反はすべて直したので、新しく入り込まないようエラーにする。
+    // アプリ側のコードではこれらのルールをエラーにする。
     rules: {
       "react-hooks/set-state-in-effect": "error",
       "react-hooks/refs": "error",
       "react-hooks/purity": "error",
     },
+  },
+  {
+    // shadcn/ui の生成コードは、該当ルールだけを除外して公式版のまま管理する。
+    files: ["src/hooks/use-mobile.ts", "src/components/ui/carousel.tsx"],
+    rules: { "react-hooks/set-state-in-effect": "off" },
+  },
+  {
+    files: ["src/components/ui/sidebar.tsx"],
+    rules: { "react-hooks/purity": "off" },
   },
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ]);

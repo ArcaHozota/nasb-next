@@ -36,7 +36,7 @@ import PageBackground from "@/components/PageBackground";
 import JerusalemCross from "@/components/JerusalemCross";
 import { cn } from "@/lib/utils";
 import { consumeRedirectMessage } from "@/lib/session";
-import { useMobileViewport } from "@/hooks/use-mobile";
+import { useMobileViewport } from "@/hooks/use-mobile-viewport";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";

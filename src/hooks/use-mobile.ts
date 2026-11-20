@@ -1,23 +1,19 @@
-import { useSyncExternalStore } from "react";
+import * as React from "react"
 
-// Tailwind の md と同じ境目。ホームとサイドバーで共有する。
-const MOBILE_QUERY = "(width < 768px)";
-
-function subscribe(onChange: () => void) {
-  const media = window.matchMedia(MOBILE_QUERY);
-  media.addEventListener("change", onChange);
-  return () => media.removeEventListener("change", onChange);
-}
-
-function getSnapshot() {
-  return window.matchMedia(MOBILE_QUERY).matches;
-}
-
-// ホームは幅が判明してから、PC・モバイルのどちらの一覧を取得するか決める。
-export function useMobileViewport() {
-  return useSyncExternalStore<boolean | null>(subscribe, getSnapshot, () => null);
-}
+const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile() {
-  return useMobileViewport() ?? false;
+  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+
+  React.useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const onChange = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    }
+    mql.addEventListener("change", onChange)
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    return () => mql.removeEventListener("change", onChange)
+  }, [])
+
+  return !!isMobile
 }
