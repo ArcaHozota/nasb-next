@@ -6,11 +6,15 @@
 //   右ページ: 左で選んだ曲。調を選ぶと五線譜の調号が変わり、五線譜を押すとその調の楽譜をダウンロード。
 //            歌詞は検索した語を下線で強調して表示する(歌詞の照合)。
 // モバイル版(カルーセル)は page.tsx 側のまま。データ取得・検索・ページ送りの状態も page.tsx が持つ。
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, LogIn, Search, SquarePlay } from "lucide-react";
 import Highlighted from "@/components/Highlighted";
 import JerusalemCross from "@/components/JerusalemCross";
+import BookPageTurn, {
+  captureBookTurn,
+  type BookTurn,
+} from "@/components/home/BookPageTurn";
 import KeyStaff from "@/components/home/KeyStaff";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -30,6 +34,7 @@ import { keyLabel } from "@/lib/keySignature";
 import { countHits, lyricQueryOptions } from "@/lib/lyrics";
 import { scoreKeysQueryOptions } from "@/lib/scoreKeys";
 import { cn } from "@/lib/utils";
+import { useFeedbackStore } from "@/stores/feedback";
 import type { HymnSummary } from "@/api/hymns";
 
 type BookHymn = HymnSummary;
@@ -45,17 +50,17 @@ const matchOf = (line: string) => MATCH[line] ?? RELATED;
 
 /** ページ送りのボタン(ホームの本のデザインに合わせて、余白・背景なしの文字だけにしている) */
 const PAGER_BTN =
-  "h-auto p-0 text-[13px] font-normal text-[#800020] hover:bg-transparent hover:text-[#800020] disabled:text-[#b8a888] disabled:opacity-100";
+  "h-auto p-0 text-[13px] font-normal text-(--book-blue) hover:bg-transparent hover:text-(--book-blue) aria-disabled:opacity-50";
 
 /** 目次の1行(shadcn/ui の Item)。点線の下罫線・押せる行のホバーと選択中の背景は、本のデザインに合わせて上書きする */
 // 1行の高さは約 58.5px(上下の余白 7.5px × 2 + 曲名2行 42.48px + 点線 1px)
 const BOOK_ROW =
-  "w-full flex-nowrap! items-baseline! text-base! leading-normal! gap-3! rounded-none! border-0 border-b border-dotted border-[#c9b48d]! px-2! py-[7.5px]! text-left";
+  "w-full flex-nowrap! items-baseline! text-base! leading-normal! gap-3! rounded-none! border-0 border-b border-dotted border-(--book-rule)! px-2! py-[7.5px]! text-left";
 const BOOK_ROW_BTN =
-  "hover:bg-[#f3e8cf] data-[active=true]:bg-[#efe2c4] focus-visible:ring-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#800020]";
+  "hover:bg-(--book-hover) data-[active=true]:bg-(--book-selected) focus-visible:ring-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--book-blue)";
 /** 目次の番号 */
 const BOOK_ROW_NO =
-  "w-7.5 justify-start text-lg leading-[27px] font-bold text-[#800020]";
+  "w-7.5 justify-start text-lg leading-[27px] font-bold text-(--book-blue)";
 
 /** 目次の番号(全体での通し番号) */
 const hymnNo = (page: number, pageSize: number, i: number) =>
@@ -114,15 +119,15 @@ function HymnPage({
       className="book-page book-page--right"
       aria-label={`${hymn.nameJp}の詳細`}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="book-song-heading flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           {match && (
             <span className={cn("text-xs tracking-wider", match.tone)}>
               {match.mark} {match.label}
             </span>
           )}
-          <h1 className="mt-1 text-[30px] leading-tight font-bold">
-            <span className="text-[#800020]">{no}</span>　{hymn.nameJp}
+          <h1 className="mt-1 text-[30px] leading-tight font-bold text-(--book-blue) wrap-anywhere">
+            {no}　{hymn.nameJp}
           </h1>
           <p className="noto-serif-kr mt-0.5 text-[17px] text-[#5a4630]">
             {hymn.nameKr}
@@ -131,7 +136,7 @@ function HymnPage({
         <Button
           asChild
           variant="outline"
-          className="book-sans h-9 shrink-0 gap-1.5 rounded-lg border-[#800020] bg-transparent! px-3.5 has-[>svg]:px-3.5 text-[13px] font-normal text-[#800020] shadow-none hover:bg-[#800020]! hover:text-white"
+          className="book-sans h-9 shrink-0 gap-1.5 rounded-lg border-(--book-blue) bg-transparent! px-3.5 has-[>svg]:px-3.5 text-[13px] font-normal text-(--book-blue) shadow-none hover:bg-(--book-blue)! hover:text-white"
         >
           <a href={hymn.link} target="_blank" rel="noopener noreferrer">
             <SquarePlay className="size-4" aria-hidden="true" />
@@ -169,7 +174,7 @@ function HymnPage({
               <ToggleGroupItem
                 key={k.chord}
                 value={k.chord}
-                className="h-7.5 min-w-11 rounded-lg! border border-[#c9b48d] bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-[#f3e8cf] hover:text-[#2b1d14] data-[state=on]:border-[#800020] data-[state=on]:bg-[#800020] data-[state=on]:text-white"
+                className="h-7.5 min-w-11 rounded-lg! border border-(--book-rule) bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-(--book-hover) hover:text-[#2b1d14] data-[state=on]:border-(--book-blue) data-[state=on]:bg-(--book-blue) data-[state=on]:text-white"
               >
                 {keyLabel(k.chord)}
                 {k.isOriginal ? "＊" : ""}
@@ -187,7 +192,7 @@ function HymnPage({
         )}
       </div>
 
-      <div className="mt-1 flex min-h-0 flex-1 flex-col border-t border-[#e3d5b8] pt-2.5">
+      <div className="mt-1 flex min-h-0 flex-1 flex-col border-t border-(--book-rule) pt-2.5">
         {terms.length > 0 && lyricQuery.isSuccess && (
           <p
             className="book-sans mb-1 text-xs text-[#6b5338]"
@@ -216,11 +221,19 @@ function HymnPage({
             )}
             {lyricQuery.isSuccess &&
               (lyric ? (
-                <Highlighted
-                  text={lyric}
-                  terms={terms}
-                  markClassName="book-mark"
-                />
+                <div
+                  className={
+                    terms.length === 0 && /^\p{L}/u.test(lyric)
+                      ? "book-illuminated"
+                      : undefined
+                  }
+                >
+                  <Highlighted
+                    text={lyric}
+                    terms={terms}
+                    markClassName="book-mark"
+                  />
+                </div>
               ) : (
                 <p className="book-sans py-6 text-sm text-[#6b5338]">
                   歌詞が登録されていません。
@@ -249,6 +262,7 @@ export default function OpenHymnalHome({
   onSearch,
   onReload,
   onLogin,
+  onPreparePage,
   onPageChange,
   onDownload,
 }: {
@@ -269,9 +283,71 @@ export default function OpenHymnalHome({
   onSearch: () => void;
   onReload: () => void;
   onLogin: () => void;
+  onPreparePage: (p: number) => Promise<void>;
   onPageChange: (p: number) => void;
   onDownload: (id: string, chord?: string) => Promise<void>;
 }) {
+  const toast = useFeedbackStore((s) => s.toast);
+  const bookRef = useRef<HTMLDivElement>(null);
+  const turnRequest = useRef<symbol | null>(null);
+  const [preparingPage, setPreparingPage] = useState(false);
+  const [bookTurn, setBookTurn] = useState<BookTurn | null>(null);
+  const finishTurn = useCallback(() => {
+    turnRequest.current = null;
+    setPreparingPage(false);
+    setBookTurn(null);
+  }, []);
+
+  useEffect(
+    () => () => {
+      // 画面幅の切り替えや画面離脱後に、待機していた応答でページを変更しない。
+      turnRequest.current = null;
+    },
+    [],
+  );
+
+  const turnPage = async (targetPage: number) => {
+    if (turnRequest.current || targetPage < 1 || targetPage > totalPages)
+      return;
+    const request = Symbol();
+    turnRequest.current = request;
+    setPreparingPage(true);
+
+    try {
+      await onPreparePage(targetPage);
+    } catch (error) {
+      if (turnRequest.current === request) {
+        finishTurn();
+        toast(
+          extractErrorMessage(
+            error,
+            "ページを取得できませんでした。もう一度お試しください。",
+          ),
+        );
+      }
+      return;
+    }
+    if (turnRequest.current !== request) return;
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const turn = reduceMotion
+      ? null
+      : captureBookTurn(
+          bookRef.current,
+          targetPage > page ? "next" : "previous",
+        );
+    if (turn) {
+      setPreparingPage(false);
+      setBookTurn(turn);
+    } else {
+      finishTurn();
+    }
+    onPageChange(targetPage);
+  };
+
+  const paging = preparingPage || bookTurn !== null;
   // 選んだ曲。ページや検索が変わってその曲が一覧に無くなったら、先頭の曲を表示する
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // ページや検索が変わったら目次の先頭へ。Effect ではなく描画中に state を調整する
@@ -320,7 +396,10 @@ export default function OpenHymnalHome({
           variant="ghost"
           className="h-auto gap-2.5 p-0! font-normal text-[#f3e3c3] hover:bg-transparent hover:text-[#f3e3c3]"
           aria-label="ホーム(検索をリセット)"
-          onClick={onReload}
+          onClick={() => {
+            finishTurn();
+            onReload();
+          }}
         >
           <JerusalemCross className="size-9" />
           <span className="open-hymnal-logo">NASB1995</span>
@@ -332,6 +411,7 @@ export default function OpenHymnalHome({
           className="contents"
           onSubmit={(e) => {
             e.preventDefault();
+            finishTurn();
             onSearch();
           }}
         >
@@ -370,7 +450,7 @@ export default function OpenHymnalHome({
       </header>
 
       <main className="open-hymnal-main">
-        <div className="book">
+        <div className="book" ref={bookRef}>
           {/* ===== 左ページ: 目次 ===== */}
           <section className="book-page book-page--left" aria-label="目次">
             <p className="book-caption">{caption}</p>
@@ -435,7 +515,7 @@ export default function OpenHymnalHome({
                               {r.nameJp}
                             </span>
                             <span
-                              className="min-w-3 flex-1 -translate-y-1 border-b-2 border-dotted border-[#c9b48d]"
+                              className="min-w-3 flex-1 -translate-y-1 border-b-2 border-dotted border-(--book-rule)"
                               aria-hidden="true"
                             />
                             {match && (
@@ -465,20 +545,29 @@ export default function OpenHymnalHome({
                 type="button"
                 variant="ghost"
                 className={PAGER_BTN}
-                disabled={page <= 1}
-                onClick={() => onPageChange(page - 1)}
+                aria-disabled={page <= 1 || paging}
+                onClick={() => void turnPage(page - 1)}
               >
                 ← 前
               </Button>
               <span aria-live="polite">
                 {page} / {totalPages}
               </span>
+              {preparingPage && (
+                <span
+                  className="book-pager-progress"
+                  role="status"
+                  aria-label="ページを読み込み中"
+                >
+                  <Spinner className="size-3.5" />
+                </span>
+              )}
               <Button
                 type="button"
                 variant="ghost"
                 className={PAGER_BTN}
-                disabled={page >= totalPages}
-                onClick={() => onPageChange(page + 1)}
+                aria-disabled={page >= totalPages || paging}
+                onClick={() => void turnPage(page + 1)}
               >
                 次 →
               </Button>
@@ -505,6 +594,7 @@ export default function OpenHymnalHome({
               )}
             </article>
           )}
+          {bookTurn && <BookPageTurn turn={bookTurn} onFinish={finishTurn} />}
         </div>
       </main>
     </div>

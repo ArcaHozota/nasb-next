@@ -434,6 +434,15 @@ export default function HomeView() {
   // 画面検索では、索引を取得し終えるまでが「読み込み中」
   const desktopBusy = isLocal ? indexQuery.isPending : isFetching;
 
+  const prepareDesktopPage = async (pageNum: number) => {
+    if (isLocal) return;
+    const params = { ...pageParams, pageNum };
+    await queryClient.fetchQuery({
+      queryKey: hymnKeys.page(params),
+      queryFn: () => fetchHymnPage(params),
+    });
+  };
+
   const mobileRecords: HymnRecord[] = isLocal
     ? localAll.slice(0, currentSlide + MOBILE_BATCH_SIZE)
     : (mobileData?.pages.flatMap((p) => p.records) ?? []);
@@ -589,6 +598,7 @@ export default function HomeView() {
         onSearch={onSearch}
         onReload={reload}
         onLogin={goLogin}
+        onPreparePage={prepareDesktopPage}
         onPageChange={setPage}
         onDownload={downloadScoreOrToast}
       />

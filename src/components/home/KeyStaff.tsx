@@ -59,7 +59,7 @@ function Flat({ cx, cy }: { cx: number; cy: number }) {
 
 /** 五線譜ボタンの下の小さな案内(ダウンロード・読み込み中) */
 const STAFF_HINT =
-  "book-sans inline-flex items-center gap-1 text-xs leading-normal text-[#800020]";
+  "book-sans inline-flex items-center gap-1 text-xs leading-normal text-(--book-blue)";
 
 export default function KeyStaff({
   chord,
@@ -92,7 +92,7 @@ export default function KeyStaff({
       variant="ghost"
       className={cn(
         // 五線譜そのものがボタン。Button 既定の高さ・余白・太字を打ち消し、薄い罫線の面にする
-        "h-auto items-center justify-start gap-4.5 self-start rounded-md border border-transparent py-1.5 pr-3.5 pl-1.5 text-base! leading-normal! font-normal whitespace-normal text-[#4a3426] has-[>svg]:pr-3.5 has-[>svg]:pl-1.5 hover:border-[#c9b48d] hover:bg-[#f3e8cf] hover:text-[#4a3426] focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#800020] disabled:text-[#b8a888] disabled:opacity-100 [&>svg]:h-18! [&>svg]:w-75!",
+        "book-staff h-auto max-w-full items-center justify-start gap-4.5 self-start rounded-md border border-transparent py-1.5 pr-3.5 pl-1.5 text-base! leading-normal! font-normal whitespace-normal text-[#4a3426] has-[>svg]:pr-3.5 has-[>svg]:pl-1.5 hover:border-(--book-rule) hover:bg-(--book-hover) hover:text-[#4a3426] focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--book-blue) disabled:text-[#b8a888] disabled:opacity-100",
       )}
       disabled={disabled}
       aria-label={

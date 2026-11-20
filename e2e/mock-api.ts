@@ -118,6 +118,17 @@ export async function mockApi(page: Page, opts: Options = {}): Promise<MockApi> 
       });
     }
 
+    const hymnContent = path.match(/^\/hymns\/(\d+)\/(lyric|score)$/);
+    if (hymnContent && method === "GET") {
+      const hymn = state.hymns.find((item) => item.id === hymnContent[1]);
+      if (hymn && hymnContent[2] === "lyric") {
+        return json(route, 200, { id: hymn.id, lyric: `${hymn.nameJp}の歌詞` });
+      }
+      if (hymn && url.searchParams.get("keysOnly") === "true") {
+        return json(route, 200, [{ chord: "G", isOriginal: true }]);
+      }
+    }
+
     const detail = path.match(/^\/hymns\/(\d+)$/);
     if (detail && method === "GET") {
       const h = state.hymns.find((x) => x.id === detail[1]);
