@@ -124,7 +124,9 @@ function StudentEditionInner() {
   });
   useEffect(() => {
     if (studentQuery.error) {
-      toast(extractErrorMessage(studentQuery.error, "データの取得に失敗しました"));
+      toast(
+        extractErrorMessage(studentQuery.error, "データの取得に失敗しました"),
+      );
     }
   }, [studentQuery.error, toast]);
 
@@ -558,11 +560,11 @@ function StudentEditionInner() {
                       <span className="inline-flex">
                         <Switch
                           id="personal-youtube"
-                          size="lg"
                           checked={youtubeToggleOn}
                           onCheckedChange={onYoutubeToggle}
                           disabled={youtubeBusy}
                           className={cn(
+                            "personal-youtube-switch",
                             youtubeBusy &&
                               "disabled:opacity-100 **:data-[slot=switch-thumb]:opacity-0",
                           )}
@@ -608,7 +610,12 @@ function StudentEditionInner() {
               </span>
             )}
           </Button>
-          <Button variant="neutral" type="button" onClick={onRestore}>
+          <Button
+            variant="secondary"
+            className="bg-gray-500 text-white hover:bg-gray-500/90"
+            type="button"
+            onClick={onRestore}
+          >
             <Trash2 className="h-4 w-4" /> 廃棄
           </Button>
         </CardFooter>

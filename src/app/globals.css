@@ -219,7 +219,26 @@ button:not(:disabled) {
   border-color: rgba(255, 255, 255, 0.8);
 }
 
-/* HymnForm / StudentEdition のトグルスイッチは shadcn/ui の Switch(size="lg")に置き換え済み */
+/* 個人設定の連携スイッチは、公式の Switch に画面固有の寸法を適用する。 */
+.personal-youtube-switch {
+  width: 3.75rem;
+  height: 2.125rem;
+  padding-inline: 0.1875rem;
+}
+
+.personal-youtube-switch[data-state="unchecked"] {
+  background-color: var(--color-gray-300);
+}
+
+.personal-youtube-switch>[data-slot="switch-thumb"] {
+  width: 1.625rem;
+  height: 1.625rem;
+  box-shadow: 0 1px 3px #0005;
+}
+
+.personal-youtube-switch>[data-slot="switch-thumb"][data-state="checked"] {
+  translate: 1.625rem 0;
+}
 
 /* ===== RandomFive ===== */
 /* 見出し帯(ミント) */
