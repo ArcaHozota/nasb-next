@@ -94,6 +94,15 @@
   --tw-ring-color: rgb(192 64 95 / 70%);
 }
 
+/* ユーザ名・パスワードの誤り(401)のとき(aria-invalid): shadcn/ui 標準の赤い枠と 3px のリング。
+   標準の destructive/20 のリングはガラスの上では見えないため、明るめの赤にする。
+   フォーカス中も burgundy ではなく赤のままにする */
+.input[aria-invalid="true"],
+.input[aria-invalid="true"]:focus-visible {
+  border-color: var(--destructive);
+  --tw-ring-color: rgb(248 113 113 / 60%);
+}
+
 /* ブラウザの自動入力: Chrome / Safari は保存済みのユーザ名・パスワードを入れた欄の地を
    水色(#e8f0fe)にし、background-color では上書きできない。内側への塗りつぶしの影で白に戻し、
    文字色もそろえる。フォーカス中のリング(--tw-ring-shadow)は影の後ろに重ねて残す */

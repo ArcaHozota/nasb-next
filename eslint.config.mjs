@@ -23,5 +23,14 @@ export default defineConfig([
     files: ["src/components/ui/sidebar.tsx"],
     rules: { "react-hooks/purity": "off" },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  // Playwright の出力(E2E を動かすと作られる HTML レポートなど)はソースではないので対象外
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "playwright-report/**",
+    "test-results/**",
+    "blob-report/**",
+  ]),
 ]);

@@ -185,6 +185,63 @@ test("入力欄: キーボードで選ぶと明るい burgundy のリングが�
   expect(autofill).toContain("inset 0 0 0 1000px var(--background)");
 });
 
+test("入力欄: 401 のときは両方を赤枠にし、打ち直すと外す", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await mockApi(page, { login: { status: 401 } });
+  await page.goto("/login");
+  const username = page.getByLabel("ユーザ名");
+  const password = page.getByLabel("パスワード");
+  await username.fill("tester");
+  await password.fill("wrong");
+  await password.press("Enter");
+  await page.clock.runFor(3300);
+
+  const form = page.getByRole("form", { name: "ログイン" });
+  await expect(form.getByRole("alert")).toContainText("正しくありません");
+  // 赤枠の色はテーマの --destructive(色そのものはテーマ側で変わりうるので、ここで読む)
+  const destructive = await page.evaluate(() => {
+    const probe = document.createElement("div");
+    probe.style.color = "var(--destructive)";
+    document.body.append(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  });
+  for (const input of [username, password]) {
+    await expect(input).toHaveAttribute("aria-invalid", "true");
+    await expect(input).toHaveAttribute("aria-describedby", "login-error");
+    await expect(input).toHaveCSS("border-top-color", destructive);
+    await expect(input).toHaveCSS("box-shadow", /rgba\(248, 113, 113, 0\.6\) 0px 0px 0px 3px/);
+  }
+
+  // どちらかを打ち直したら、両方とも外す
+  await password.fill("wrong2");
+  await password.blur(); // フォーカス中は burgundy の枠になるので、外してから確かめる
+  for (const input of [username, password]) {
+    await expect(input).toHaveAttribute("aria-invalid", "false");
+    await expect(input).toHaveCSS("border-top-color", "rgb(209, 213, 219)");
+  }
+});
+
+test("入力欄: サーバーエラー(500)では赤枠にしない", async ({ page }) => {
+  await page.clock.install();
+  await mockApi(page, { login: { status: 500 } });
+  await page.goto("/login");
+  await page.getByLabel("ユーザ名").fill("tester");
+  await page.getByLabel("パスワード").fill("secret");
+  await page.getByLabel("パスワード").press("Enter");
+  await page.clock.runFor(3300);
+
+  await expect(
+    page.getByRole("form", { name: "ログイン" }).getByRole("alert"),
+  ).toContainText("ログインできませんでした");
+  for (const label of ["ユーザ名", "パスワード"]) {
+    await expect(page.getByLabel(label)).toHaveAttribute("aria-invalid", "false");
+  }
+});
+
 test("未ログインで管理画面を開くとホームへ戻る", async ({ page }) => {
   await mockApi(page, { loggedIn: false });
   await page.goto("/hymns");

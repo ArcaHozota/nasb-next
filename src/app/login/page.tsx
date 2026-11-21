@@ -37,6 +37,9 @@ function LoginForm() {
   const [username, setUsername] = useState(EMPTY_STRING);
   const [password, setPassword] = useState(EMPTY_STRING);
   const [error, setError] = useState(EMPTY_STRING);
+  // ユーザ名・パスワードの誤り(401)のときだけ、両方の入力欄を赤枠にする(aria-invalid)。
+  // 通信エラー・500 などは入力のせいではないので付けない。どちらかを打ち直したら外す
+  const [invalid, setInvalid] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // <form> の送信にすることで、Enter での送信(日本語変換中の Enter は除く)や
@@ -45,6 +48,7 @@ function LoginForm() {
     e.preventDefault();
     if (loading) return; // Enter の連打などによる二重送信を防ぐ
     setError(EMPTY_STRING);
+    setInvalid(false);
     setLoading(true);
     try {
       const [result] = await Promise.allSettled([
@@ -58,8 +62,10 @@ function LoginForm() {
     } catch (e: unknown) {
       // 認証失敗はサーバーが 401 を返す。それ以外(通信エラー・500 など)は
       // パスワードの誤りと区別して伝える
+      const unauthorized = axios.isAxiosError(e) && e.response?.status === 401;
+      setInvalid(unauthorized);
       setError(
-        axios.isAxiosError(e) && e.response?.status === 401
+        unauthorized
           ? "ユーザ名またはパスワードが正しくありません。"
           : "ログインできませんでした。時間をおいて再度お試しください。",
       );
@@ -92,8 +98,13 @@ function LoginForm() {
                   id="login-username"
                   autoComplete="username"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    setInvalid(false);
+                  }}
                   type="text"
+                  aria-invalid={invalid}
+                  aria-describedby={invalid ? "login-error" : undefined}
                   className={styles.input}
                 />
               </Field>
@@ -106,14 +117,23 @@ function LoginForm() {
                   id="login-password"
                   autoComplete="current-password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setInvalid(false);
+                  }}
                   type="password"
+                  aria-invalid={invalid}
+                  aria-describedby={invalid ? "login-error" : undefined}
                   className={styles.input}
                 />
               </Field>
 
               {error && (
-                <Alert variant="destructive" className={styles.error}>
+                <Alert
+                  id="login-error"
+                  variant="destructive"
+                  className={styles.error}
+                >
                   <CircleAlert aria-hidden="true" />
                   <AlertDescription className={styles.errorText}>
                     {error}
