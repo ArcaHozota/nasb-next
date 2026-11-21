@@ -303,11 +303,10 @@ function AuthenticatedLayout({
       />
 
       <SidebarInset className="min-w-0 overflow-hidden bg-transparent">
-        {/* ===== 上部バー(旧 AppBar)。サイドバーと同じ濃紺の地(--sidebar-*) ===== */}
-        <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-sidebar px-2 text-sidebar-foreground sm:px-4">
+        <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2 text-card-foreground sm:px-4">
           <SidebarTrigger
             aria-label="サイドバーの開閉"
-            className="size-8 text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+            className="size-8 hover:bg-accent hover:text-accent-foreground"
           />
           <div className="flex min-w-0 items-center gap-2">
             <form
@@ -321,16 +320,16 @@ function AuthenticatedLayout({
                 type="text"
                 placeholder="検索"
                 aria-label="検索"
-                className="h-8 w-44 rounded border-sidebar-border bg-white pl-8 text-foreground shadow-none focus-visible:border-sidebar-ring focus-visible:ring-sidebar-ring/20 sm:w-60"
+                className="h-8 w-44 rounded bg-background pl-8 text-foreground shadow-none sm:w-60"
                 enterKeyHint="search"
               />
-              <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </form>
             <Hint label="ログアウト" side="bottom">
               <Button
                 variant="ghost"
                 size="icon-sm"
-                className="text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                className="hover:bg-accent hover:text-accent-foreground"
                 type="button"
                 aria-label="ログアウト"
                 onClick={onLogout}
@@ -394,9 +393,6 @@ function AdminSidebar({
   };
 
   return (
-    // 濃紺の地(色は globals.css の --sidebar-*)。項目は「聖書」「賛美歌」「その他」の見出しでまとめ、
-    // 選択中の項目は薄い白の塗りと左端の burgundy の線で示す。折りたたみ時(アイコンだけ)は見出しと「準備中」を隠す。
-    // 右端は細い線で本文と区切る。
     <Sidebar collapsible="icon" className="border-sidebar-border">
       {/* ===== ブランド ===== */}
       <SidebarHeader className="border-b border-sidebar-border p-2">
@@ -405,18 +401,16 @@ function AdminSidebar({
             <SidebarMenuButton
               size="lg"
               aria-label="メインメニューへ"
-              className="h-auto gap-2.5 py-3 hover:bg-sidebar-accent/50 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
+              className="h-auto gap-2.5 py-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
               onClick={() => {
                 onBrand();
                 closeOnMobile();
               }}
             >
-              {/* エルサレム十字は、アイボリーの小さな角丸の四角の中に burgundy で置く(濃紺の中でもロゴの色を保つ) */}
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#fffff0] group-data-[collapsible=icon]:size-8">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary group-data-[collapsible=icon]:size-8">
                 <JerusalemCross className="size-7! text-primary group-data-[collapsible=icon]:size-5!" />
               </span>
-              {/* ロゴの文字はアイボリー。.effect-shine(globals.css)はレイヤー外の指定で burgundy を持つので ! で上書きする */}
-              <span className="effect-shine whitespace-nowrap text-[1.6rem] leading-none text-[#fffff0]!">
+              <span className="font-[family-name:var(--font-niconne),cursive] text-[1.6rem] leading-none whitespace-nowrap text-primary">
                 NASB1995
               </span>
             </SidebarMenuButton>
@@ -428,7 +422,7 @@ function AdminSidebar({
       <SidebarContent className="gap-0 py-1">
         {NAV_GROUPS.map((group) => (
           <SidebarGroup key={group} className="py-1">
-            <SidebarGroupLabel className="text-sidebar-foreground/60">
+            <SidebarGroupLabel className="font-semibold text-muted-foreground">
               {group}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -450,19 +444,16 @@ function AdminSidebar({
                           }}
                           className={cn(
                             "h-9 gap-3 text-[0.95rem] [&>svg]:size-5 group-data-[collapsible=icon]:[&>svg]:size-4",
-                            "hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-                            // 選択中: 薄い白の塗りに白い文字と、左端の burgundy の線(inset の影で描く)
-                            "data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[active=true]:shadow-[inset_3px_0_0_var(--sidebar-primary)]",
-                            "data-[active=true]:hover:bg-sidebar-accent",
-                            // 準備中: 文字を薄くし、右の「準備中」の分だけ余白を空ける
-                            item.pending && "pr-16 text-sidebar-foreground/50",
+                            "hover:bg-muted hover:text-foreground",
+                            "data-active:font-semibold data-active:shadow-[inset_3px_0_0_var(--primary)] data-active:hover:bg-accent data-active:hover:text-accent-foreground",
+                            item.pending && "pr-16 text-muted-foreground",
                           )}
                         >
                           <Icon />
                           <span>{item.title}</span>
                         </SidebarMenuButton>
                         {item.pending && (
-                          <SidebarMenuBadge className="top-1/2! -translate-y-1/2 border border-white/15 font-normal text-sidebar-foreground/50 group-data-[collapsible=icon]:hidden">
+                          <SidebarMenuBadge className="top-1/2! -translate-y-1/2 border border-border bg-muted font-normal text-muted-foreground group-data-[collapsible=icon]:hidden">
                             準備中
                           </SidebarMenuBadge>
                         )}
@@ -485,7 +476,7 @@ function AdminSidebar({
                 render={
                   <SidebarMenuButton
                     size="lg"
-                    className="hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground aria-expanded:bg-sidebar-accent aria-expanded:text-sidebar-accent-foreground"
+                    className="aria-expanded:bg-accent aria-expanded:text-accent-foreground"
                   />
                 }
               >
@@ -497,12 +488,12 @@ function AdminSidebar({
                 <span className="flex-1 truncate text-[0.9rem]">
                   {username}
                 </span>
-                <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/60" />
+                <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 side="top"
                 align="start"
-                className="w-56 text-gray-800"
+                className="w-56"
               >
                 <DropdownMenuItem
                   onClick={() => {

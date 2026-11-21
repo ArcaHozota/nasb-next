@@ -16,6 +16,7 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -48,13 +49,16 @@ export default function ConfirmDialog({
       <AlertDialogContent className="noto-serif">
         <AlertDialogHeader>
           <AlertDialogTitle className="font-bold">{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+          <AlertDialogDescription className="font-semibold">
+            {description}
+          </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <AlertDialogCancel onClick={onCancel}>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="font-bold" onClick={onCancel}>
             {CANCEL_LABEL}
           </AlertDialogCancel>
           <AlertDialogAction
+            className="font-bold"
             onClick={() => {
               onConfirm();
               onOpenChange(false);
@@ -62,7 +66,7 @@ export default function ConfirmDialog({
           >
             {CONFIRM_LABEL}
           </AlertDialogAction>
-        </div>
+        </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );

@@ -125,12 +125,18 @@ test.describe("確認ダイアログ(タイトルと「いいえ」「はい」�
     const title = confirm.getByRole("heading", { name: "警告", exact: true });
     await expect(title).toHaveCSS("font-family", /^"Noto Serif JP"/);
     await expect(title).toHaveCSS("font-weight", "700");
-    await expect(confirm).toContainText("ログアウトしますか？");
-    await expect(
-      confirm.locator('[data-slot="alert-dialog-footer"]'),
-    ).toHaveCount(0);
-    await expect(confirm.getByRole("button", { name: "はい" })).toBeVisible();
-    await confirm.getByRole("button", { name: "いいえ" }).click();
+    await expect(confirm.getByText("ログアウトしますか？")).toHaveCSS(
+      "font-weight",
+      "600",
+    );
+    const footer = confirm.locator('[data-slot="alert-dialog-footer"]');
+    const cancel = footer.getByRole("button", { name: "いいえ" });
+    await expect(footer.getByRole("button", { name: "はい" })).toHaveCSS(
+      "font-weight",
+      "700",
+    );
+    await expect(cancel).toHaveCSS("font-weight", "700");
+    await cancel.click();
     await expect(confirm).toHaveCount(0);
     await expect(page).toHaveURL(/\/mainmenu$/);
   });

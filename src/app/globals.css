@@ -30,7 +30,7 @@ button:not(:disabled) {
  * 意図的に追加していない。
  */
 :root {
-  --radius: 0.625rem;
+  --radius: 0.618rem;
   --background: #ffffff;
   --foreground: #1f2937;
   --card: #ffffff;
@@ -50,18 +50,6 @@ button:not(:disabled) {
   --input: #d1d5db;
   /* 従来の入力欄(border-gray-300)と同じ濃さ */
   --ring: #800020;
-  /* 管理画面のサイドバー(shadcn/ui Sidebar)と上部バー。濃紺の地に明るい灰色の文字で、控えめにする。
-     選択中の項目は薄い白の塗り(sidebar-accent)に白い文字と、左端の線(sidebar-primary)。
-     sidebar-primary は濃紺の上でも見えるよう、primary(#800020)より明るい burgundy にしている。
-     ホバーは sidebar-accent を半分の濃さで使う(hover:bg-sidebar-accent/50) */
-  --sidebar: #111827;
-  --sidebar-foreground: #e5e7eb;
-  --sidebar-primary: #c0405f;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 255, 255, 0.1);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: rgba(255, 255, 255, 0.4);
   /* フォント(src/app/fonts.ts で Fontsource から読み込み)。フォント名だけを入れる */
   --font-noto-serif-jp: "Noto Serif JP";
   --font-noto-serif-kr: "Noto Serif KR";
@@ -91,14 +79,15 @@ button:not(:disabled) {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  /* 公式 Sidebar の配色を共通のデザイントークンに対応させる。 */
+  --color-sidebar: var(--card);
+  --color-sidebar-foreground: var(--card-foreground);
+  --color-sidebar-primary: var(--primary);
+  --color-sidebar-primary-foreground: var(--primary-foreground);
+  --color-sidebar-accent: var(--accent);
+  --color-sidebar-accent-foreground: var(--accent-foreground);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: var(--ring);
 }
 
 /* shadcn/ui 標準の「* { border-color: var(--border) }」は既存画面の枠線色まで変えてしまうため、
@@ -657,15 +646,4 @@ a.glass-item:hover {
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
   text-shadow: none;
-}
-
-.dark {
-  --sidebar: hsl(240 5.9% 10%);
-  --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
-  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
