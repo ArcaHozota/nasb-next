@@ -39,8 +39,8 @@ export default function MainMenu() {
     {
       key: "random",
       title: "ランダム選択",
-      color: "#006400",
-      img: "/assets/newaragon.svg",
+      color: "#6a2c7a",
+      img: "/assets/orleans.svg",
       action: () => void go("/hymns/random-five"),
     },
   ];
