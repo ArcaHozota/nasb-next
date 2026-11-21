@@ -50,17 +50,17 @@ const matchOf = (line: string) => MATCH[line] ?? RELATED;
 
 /** ページ送りのボタン(ホームの本のデザインに合わせて、余白・背景なしの文字だけにしている) */
 const PAGER_BTN =
-  "h-auto p-0 text-[13px] font-normal text-(--book-blue) hover:bg-transparent hover:text-(--book-blue) aria-disabled:opacity-50";
+  "h-auto p-0 text-[13px] font-normal text-(--book-accent) hover:bg-transparent hover:text-(--book-accent) aria-disabled:opacity-50";
 
 /** 目次の1行(shadcn/ui の Item)。点線の下罫線・押せる行のホバーと選択中の背景は、本のデザインに合わせて上書きする */
 // 1行の高さは約 58.5px(上下の余白 7.5px × 2 + 曲名2行 42.48px + 点線 1px)
 const BOOK_ROW =
   "w-full flex-nowrap! items-baseline! text-base! leading-normal! gap-3! rounded-none! border-0 border-b border-dotted border-(--book-rule)! px-2! py-[7.5px]! text-left";
 const BOOK_ROW_BTN =
-  "hover:bg-(--book-hover) data-[active=true]:bg-(--book-selected) focus-visible:ring-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--book-blue)";
+  "hover:bg-(--book-hover) data-[active=true]:bg-(--book-selected) focus-visible:ring-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--book-accent)";
 /** 目次の番号 */
 const BOOK_ROW_NO =
-  "w-7.5 justify-start text-lg leading-[27px] font-bold text-(--book-blue)";
+  "w-7.5 justify-start text-lg leading-[27px] font-bold text-(--book-accent)";
 
 /** 目次の番号(全体での通し番号) */
 const hymnNo = (page: number, pageSize: number, i: number) =>
@@ -99,7 +99,7 @@ function HymnPage({
               {match.mark} {match.label}
             </span>
           )}
-          <h1 className="mt-1 text-[30px] leading-tight font-bold text-(--book-blue) wrap-anywhere">
+          <h1 className="mt-1 text-[30px] leading-tight font-bold text-(--book-accent) wrap-anywhere">
             {no}　{hymn.nameJp}
           </h1>
           <p className="noto-serif-kr mt-0.5 text-[17px] text-[#5a4630]">
@@ -112,7 +112,7 @@ function HymnPage({
           rel="noopener noreferrer"
           className={cn(
             buttonVariants({ variant: "outline" }),
-            "book-sans h-9 shrink-0 gap-1.5 rounded-lg border-(--book-blue) bg-transparent! px-3.5 text-[13px] font-normal text-(--book-blue) shadow-none hover:bg-(--book-blue)! hover:text-white",
+            "book-sans h-9 shrink-0 gap-1.5 rounded-lg border-(--book-accent) bg-transparent! px-3.5 text-[13px] font-normal text-(--book-accent) shadow-none hover:bg-(--book-accent)! hover:text-white",
           )}
         >
           <SquarePlay className="size-4" aria-hidden="true" />
@@ -148,7 +148,7 @@ function HymnPage({
               <ToggleGroupItem
                 key={k.chord}
                 value={k.chord}
-                className="h-7.5 min-w-11 rounded-lg! border border-(--book-rule) bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-(--book-hover) hover:text-[#2b1d14] data-pressed:border-(--book-blue) data-pressed:bg-(--book-blue) data-pressed:text-white"
+                className="h-7.5 min-w-11 rounded-lg! border border-(--book-rule) bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-(--book-hover) hover:text-[#2b1d14] data-pressed:border-(--book-accent) data-pressed:bg-(--book-accent) data-pressed:text-white"
               >
                 {keyLabel(k.chord)}
                 {k.isOriginal ? "＊" : ""}

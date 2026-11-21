@@ -80,13 +80,13 @@ button:not(:disabled) {
   --color-input: var(--input);
   --color-ring: var(--ring);
   /* 公式 Sidebar の配色を共通のデザイントークンに対応させる。 */
-  --color-sidebar: var(--card);
+  --color-sidebar: var(--border);
   --color-sidebar-foreground: var(--card-foreground);
   --color-sidebar-primary: var(--primary);
   --color-sidebar-primary-foreground: var(--primary-foreground);
   --color-sidebar-accent: var(--accent);
   --color-sidebar-accent-foreground: var(--accent-foreground);
-  --color-sidebar-border: var(--border);
+  --color-sidebar-border: var(--input);
   --color-sidebar-ring: var(--ring);
 }
 
@@ -297,7 +297,8 @@ a.glass-item:hover {
 
 /* ===== PC版ホーム「開いた讃美歌集」(components/home/OpenHymnalHome.tsx) ===== */
 .open-hymnal {
-  --book-blue: #284b71;
+  /* 保留中の青: --book-blue: #284b71; */
+  --book-accent: var(--primary);
   --book-gold: #ab8237;
   --book-rule: #bd9c54;
   --book-left: #f7edcf;
@@ -421,7 +422,7 @@ a.glass-item:hover {
   margin: 0 0 6px;
   padding-bottom: 10px;
   border-bottom: 3px double var(--book-gold);
-  color: var(--book-blue);
+  color: var(--book-accent);
   font-size: 12px;
   letter-spacing: 0.2em;
   text-align: center;
@@ -446,7 +447,7 @@ a.glass-item:hover {
 .book-pager-progress {
   position: absolute;
   right: 0;
-  color: var(--book-blue);
+  color: var(--book-accent);
 }
 
 .book-staff>svg {
@@ -469,7 +470,7 @@ a.glass-item:hover {
   margin: 4px 10px 2px 0;
   padding: 4px 7px 6px;
   border: 3px double #dfba66;
-  background: var(--book-blue);
+  background: var(--book-accent);
   color: #ffdf92;
   font-size: 2rem;
   line-height: 1.1;
