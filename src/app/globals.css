@@ -497,12 +497,13 @@ a.glass-item:hover {
   line-height: 1.1;
 }
 
-/* 本を手でめくる演出(components/home/BookPageTurn.tsx)。
-   めくる紙は短冊(.book-turn-strip)の入れ子で、形は JS が進み具合に合わせて決める。
+/* 「前」「次」で紙をめくる演出(components/home/BookPageTurn.tsx)。軽く動くよう 2 段階で回す。
+   前半: 表(めくる前のページ)が綴じ目を軸に起き上がって真横を向く。
+   後半: 裏(新しいページ)が真横から反対側へ倒れて着地する。動かすのは transform と影の濃さだけ。
    実際のページは、この下で先に新しいページへ差し替わっている。 */
 .book-turn {
-  --turn-shade: 0;
-  --turn-gutter: 0;
+  --turn-duration: 760ms;
+  --turn-half: calc(var(--turn-duration) / 2);
   position: absolute;
   z-index: 2;
   inset: 0;
@@ -512,61 +513,57 @@ a.glass-item:hover {
 }
 
 .book-turn-underneath,
-.book-turn-shadow,
-.book-turn-sheet {
+.book-turn-front,
+.book-turn-back {
   position: absolute;
+  overflow: hidden;
 }
 
-.book-turn-sheet {
-  transform-style: preserve-3d;
-}
-
-.book-turn-strip {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  transform-style: preserve-3d;
+.book-turn-front,
+.book-turn-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   will-change: transform;
 }
 
-.book-turn-face {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.book-turn-face--back {
-  transform: rotateY(180deg);
-}
-
-/* 持ち上がった紙の陰り */
-.book-turn-face::after {
+/* 持ち上がった紙の陰り(真横に近いほど濃い) */
+.book-turn-front::after,
+.book-turn-back::after {
   position: absolute;
   inset: 0;
   background: #3c2814;
-  opacity: var(--turn-shade);
   pointer-events: none;
   content: "";
 }
 
-.book-turn-face-page {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  transform-origin: 0 0;
+/* 「次」: 右ページが左の綴じ目を軸に起き上がり、新しい左ページが右の綴じ目を軸に倒れる */
+.book-turn[data-direction="next"] .book-turn-front {
+  transform-origin: left center;
+  animation: book-turn-rise-next var(--turn-half) cubic-bezier(0.45, 0, 0.9, 0.6) both;
 }
 
-/* めくれて見えてくるページの、のど寄りの影 */
-.book-turn-shadow {
-  background: linear-gradient(to right, #39291d80, transparent 45%);
-  opacity: var(--turn-gutter);
+.book-turn[data-direction="next"] .book-turn-back {
+  transform-origin: right center;
+  animation: book-turn-land-next var(--turn-half) cubic-bezier(0.1, 0.4, 0.55, 1) var(--turn-half) both;
 }
 
-.book-turn[data-direction="previous"] .book-turn-shadow {
-  background: linear-gradient(to left, #39291d80, transparent 45%);
+/* 「前」: 左ページが右の綴じ目を軸に起き上がり、新しい右ページが左の綴じ目を軸に倒れる */
+.book-turn[data-direction="previous"] .book-turn-front {
+  transform-origin: right center;
+  animation: book-turn-rise-previous var(--turn-half) cubic-bezier(0.45, 0, 0.9, 0.6) both;
+}
+
+.book-turn[data-direction="previous"] .book-turn-back {
+  transform-origin: left center;
+  animation: book-turn-land-previous var(--turn-half) cubic-bezier(0.1, 0.4, 0.55, 1) var(--turn-half) both;
+}
+
+.book-turn-front::after {
+  animation: book-turn-shade-rise var(--turn-half) ease-in both;
+}
+
+.book-turn-back::after {
+  animation: book-turn-shade-land var(--turn-half) ease-out var(--turn-half) both;
 }
 
 .book-turn-copy {
@@ -574,67 +571,64 @@ a.glass-item:hover {
   height: 100%;
 }
 
-/* ページの下の角(つかんでめくる所)。マウスを乗せると角が少し持ち上がって、めくれることを示す。
-   持ち上がった三角は、左上が紙の裏(陰った色)、右下がその下から見える次の紙。 */
-.book-corner {
-  position: absolute;
-  z-index: 3;
-  bottom: 0;
-  width: 64px;
-  height: 64px;
-  cursor: grab;
-  touch-action: none;
+@keyframes book-turn-rise-next {
+  from {
+    transform: rotateY(0);
+  }
+
+  to {
+    transform: rotateY(-90deg);
+  }
 }
 
-.book-corner[data-side="next"] {
-  right: 0;
+@keyframes book-turn-land-next {
+  from {
+    transform: rotateY(90deg);
+  }
+
+  to {
+    transform: rotateY(0);
+  }
 }
 
-.book-corner[data-side="previous"] {
-  left: 0;
+@keyframes book-turn-rise-previous {
+  from {
+    transform: rotateY(0);
+  }
+
+  to {
+    transform: rotateY(90deg);
+  }
 }
 
-.book-corner[data-hidden="true"] {
-  display: none;
+@keyframes book-turn-land-previous {
+  from {
+    transform: rotateY(-90deg);
+  }
+
+  to {
+    transform: rotateY(0);
+  }
 }
 
-.book-corner::before {
-  position: absolute;
-  bottom: 0;
-  width: 0;
-  height: 0;
-  filter: drop-shadow(-2px -2px 3px #3c281459);
-  transition:
-    width 0.2s ease-out,
-    height 0.2s ease-out;
-  content: "";
+@keyframes book-turn-shade-rise {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 0.35;
+  }
 }
 
-.book-corner[data-side="next"]::before {
-  right: 0;
-  background: linear-gradient(315deg, #f3e7cb 0 50%, #d6c091 50% 100%);
-}
+@keyframes book-turn-shade-land {
+  from {
+    opacity: 0.35;
+  }
 
-.book-corner[data-side="previous"]::before {
-  left: 0;
-  background: linear-gradient(45deg, #f3e7cb 0 50%, #d6c091 50% 100%);
-  filter: drop-shadow(2px -2px 3px #3c281459);
-}
-
-.book-corner:hover::before {
-  width: 36px;
-  height: 36px;
-}
-
-/* めくっている間は角を見せない(つかんだ指の動きは受け続ける) */
-.book-corner[data-paging="true"]::before {
-  width: 0;
-  height: 0;
-  transition: none;
-}
-
-.book-corner[data-paging="true"] {
-  cursor: grabbing;
+  to {
+    opacity: 0;
+  }
 }
 
 @media (width < 960px) {

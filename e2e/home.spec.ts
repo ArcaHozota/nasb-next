@@ -91,11 +91,16 @@ test("取得済みの見開きを保ったまま待ち、前後に紙をめく�
   const forward = page.locator('.book-turn[data-direction="next"]');
   await expect(forward).toBeAttached();
   await expect(forward).toHaveAttribute("inert", "");
-  // 紙は短冊をつないで曲げる。裏面には、めくった先の新しい目次が見えている
-  await expect(forward.locator(".book-turn-strip")).toHaveCount(16);
-  await expect(
-    forward.locator(".book-turn-face--back").first(),
-  ).toContainText("賛美歌11");
+  // 表(めくる前の右ページ)が起き上がり、裏(めくった先の新しい目次)が左へ倒れる
+  await expect(forward.locator(".book-turn-front")).toHaveCSS(
+    "animation-name",
+    "book-turn-rise-next",
+  );
+  await expect(forward.locator(".book-turn-back")).toHaveCSS(
+    "animation-name",
+    "book-turn-land-next",
+  );
+  await expect(forward.locator(".book-turn-back")).toContainText("賛美歌11");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
     780,
   );
@@ -177,90 +182,4 @@ test("ページの取得に失敗しても現在の目次を保ち、再試行�
   await expect(
     page.getByRole("heading", { name: /^11.*賛美歌11$/ }),
   ).toBeVisible();
-});
-
-test.describe("手でめくる(ページの下の角)", () => {
-  const setup = async (page: import("@playwright/test").Page) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await mockApi(page, { hymns: makeHymns(25) });
-    await page.goto("/home");
-    const pager = page.getByRole("navigation", { name: "ページ送り" });
-    await expect(pager).toContainText("1 / 3");
-    const box = await page.locator(".book").boundingBox();
-    if (!box) throw new Error("本が表示されていません");
-    // 次へめくる角(右下)と、前へめくる角(左下)の中心
-    return {
-      pager,
-      next: { x: box.x + box.width - 24, y: box.y + box.height - 24 },
-      previous: { x: box.x + 24, y: box.y + box.height - 24 },
-      width: box.width,
-    };
-  };
-
-  test("角に乗ると持ち上がり、最初のページでは前へめくる角を出さない", async ({
-    page,
-  }) => {
-    const { next } = await setup(page);
-    const corner = page.locator('.book-corner[data-side="next"]');
-    const lift = () =>
-      corner.evaluate((el) => getComputedStyle(el, "::before").width);
-    expect(await lift()).toBe("0px");
-    await page.mouse.move(next.x, next.y);
-    await expect.poll(lift).toBe("36px");
-    await expect(
-      page.locator('.book-corner[data-side="previous"]'),
-    ).toBeHidden();
-  });
-
-  test("角を押すだけで次のページへめくる", async ({ page }) => {
-    const { pager, next } = await setup(page);
-    await page.mouse.click(next.x, next.y);
-    await expect(page.locator(".book-turn")).toBeAttached();
-    await expect(page.locator(".book-turn")).toHaveCount(0);
-    await expect(pager).toContainText("2 / 3");
-    await expect(
-      page.getByRole("heading", { name: /^11.*賛美歌11$/ }),
-    ).toBeVisible();
-  });
-
-  test("角をつかんで大きく動かすとめくり、少しだけなら元に戻して選んでいた曲も保つ", async ({
-    page,
-  }) => {
-    const { pager, next, width } = await setup(page);
-    await page.getByRole("button", { name: /^03/ }).click();
-    const third = page.getByRole("heading", { name: /^03.*賛美歌3$/ });
-    await expect(third).toBeVisible();
-
-    // 少しだけ(本の幅の1割)動かして離す → 元に戻る
-    await page.mouse.move(next.x, next.y);
-    await page.mouse.down();
-    await page.mouse.move(next.x - width * 0.1, next.y, { steps: 5 });
-    await expect(page.locator('.book-turn[data-mode="drag"]')).toBeAttached();
-    await page.mouse.up();
-    await expect(page.locator(".book-turn")).toHaveCount(0);
-    await expect(pager).toContainText("1 / 3");
-    await expect(third).toBeVisible();
-
-    // 大きく(本の幅の半分)動かして離す → めくる
-    await page.mouse.move(next.x, next.y);
-    await page.mouse.down();
-    await page.mouse.move(next.x - width * 0.5, next.y, { steps: 8 });
-    await page.mouse.up();
-    await expect(page.locator(".book-turn")).toHaveCount(0);
-    await expect(pager).toContainText("2 / 3");
-  });
-
-  test("左下の角をつかんで右へ動かすと前のページへめくる", async ({ page }) => {
-    const { pager, next, previous, width } = await setup(page);
-    await page.mouse.click(next.x, next.y);
-    await expect(pager).toContainText("2 / 3");
-    await expect(page.locator(".book-turn")).toHaveCount(0);
-
-    await page.mouse.move(previous.x, previous.y);
-    await page.mouse.down();
-    await page.mouse.move(previous.x + width * 0.5, previous.y, { steps: 8 });
-    await page.mouse.up();
-    await expect(page.locator(".book-turn")).toHaveCount(0);
-    await expect(pager).toContainText("1 / 3");
-  });
 });
