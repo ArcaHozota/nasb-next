@@ -128,17 +128,7 @@ function LoginForm() {
               disabled={loading}
               aria-label={loading ? "ログイン中" : "ログイン"}
             >
-              {loading ? (
-                <span className={styles.progress} aria-hidden="true">
-                  <Spinner
-                    className="size-[18px]"
-                    viewBox="1.875 1.875 20.25 20.25"
-                    strokeWidth={2.25}
-                  />
-                </span>
-              ) : (
-                "ログイン"
-              )}
+              {loading ? <Spinner aria-hidden="true" /> : "ログイン"}
             </Button>
           </form>
         </CardContent>

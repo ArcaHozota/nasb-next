@@ -115,7 +115,7 @@ test.describe("ログイン", () => {
       .toEqual(buttonPosition);
     await expect.poll(() => card.boundingBox()).toEqual(cardPosition);
     await expect(loadingButton).toHaveCSS("opacity", "1");
-    await expect(loadingButton.locator("svg")).toHaveCSS("width", "18px");
+    await expect(loadingButton.locator('[data-slot="spinner"]')).toBeVisible();
     const glass = await card.evaluate((element) => {
       const style = getComputedStyle(element, "::before");
       return [style.backgroundColor, style.opacity, style.backdropFilter];

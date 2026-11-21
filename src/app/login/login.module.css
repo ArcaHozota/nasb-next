@@ -20,9 +20,6 @@
   font:
     400 1rem / 1.5 var(--font-noto-sans-jp),
     sans-serif;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 .card::before {
@@ -80,25 +77,15 @@
 }
 
 .input {
+  --input: rgb(100 116 139 / 38%);
   display: block;
   height: 46px;
   padding: 7px 15px;
-  border: 1px solid rgb(100 116 139 / 38%);
   border-radius: 6px;
   background: rgb(255 255 255 / 97%);
   color: #172033;
   font-size: 1rem;
   line-height: 1.5;
-  letter-spacing: 0.009375em;
-}
-
-.input:hover {
-  border-color: rgb(100 116 139 / 87%);
-}
-
-.input:focus {
-  border-color: var(--primary);
-  box-shadow: inset 0 0 0 1px var(--primary);
 }
 
 .submit {
@@ -109,54 +96,11 @@
   border-radius: 6px;
   background-clip: border-box;
   font-weight: 800;
-  letter-spacing: 0.0071428571em;
-  line-height: normal;
-}
-
-@media (hover: hover) {
-  .submit:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--primary), white 4%);
-  }
 }
 
 .submit:disabled {
   opacity: 1;
   background-color: var(--primary);
-}
-
-.progress {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-}
-
-.progress::before {
-  position: absolute;
-  inset: 0;
-  border: 2px solid rgb(0 0 0 / 12%);
-  border-radius: 50%;
-  content: "";
-}
-
-.progress > svg {
-  animation-duration: 1.4s;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .progress path {
-    animation: progress-arc 1.4s ease-in-out infinite;
-  }
-}
-
-@keyframes progress-arc {
-  0%,
-  100% {
-    stroke-dasharray: 1 60;
-  }
-
-  50% {
-    stroke-dasharray: 45 60;
-  }
 }
 
 .error {
@@ -169,18 +113,13 @@
   border: 0;
   border-radius: 4px;
   background: rgb(254 242 242 / 95%);
-  box-shadow: inset 0 0 0 100vmax rgb(211 47 47 / 12%);
   color: #d32f2f;
   font-size: 1rem;
   line-height: 1.5;
 }
 
 .error > svg {
-  width: 26px;
-  height: 26px;
-  margin: 1px;
-  transform: none;
-  translate: none;
+  justify-self: center;
 }
 
 .error .errorText {
