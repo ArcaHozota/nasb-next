@@ -2,12 +2,50 @@ import { expect, test } from "@playwright/test";
 import { makeHymns, mockApi } from "./mock-api";
 
 test.describe("賛美歌一覧", () => {
-  test("件数とページ数を表示する", async ({ page }) => {
+  test("件数を表示し、ページの表示件数を変更できる", async ({ page }) => {
     await mockApi(page, { loggedIn: true, hymns: makeHymns(11) });
     await page.goto("/hymns");
 
     await expect(page.getByText("全11件 / 1 / 2ページ")).toBeVisible();
     await expect(page.getByRole("button", { name: "削除" })).toHaveCount(10);
+
+    const pageSize = page.getByRole("combobox", { name: "1ページの件数" });
+    await expect(pageSize.getByText("10件/ページ", { exact: true })).toBeVisible();
+    await pageSize.click();
+    await page.getByRole("option", { name: "5件/ページ", exact: true }).click();
+    await expect(pageSize.getByText("5件/ページ", { exact: true })).toBeVisible();
+    await expect(page.getByText("全11件 / 1 / 3ページ")).toBeVisible();
+  });
+
+  test("複数の楽譜から選んだ調でダウンロードする", async ({ page }) => {
+    const hymns = makeHymns(1);
+    const scorePath = `/api/hymns/${hymns[0].id}/score`;
+    await mockApi(page, { loggedIn: true, hymns });
+    await page.route((url) => url.pathname === scorePath, async (route) => {
+      const url = new URL(route.request().url());
+      if (url.searchParams.has("keysOnly")) {
+        await route.fulfill({
+          json: [
+            { chord: "G", isOriginal: true },
+            { chord: "Ab", isOriginal: false },
+          ],
+        });
+      } else {
+        await route.fulfill({ contentType: "application/pdf", body: "%PDF-1.4" });
+      }
+    });
+    await page.goto("/hymns");
+
+    const trigger = page.getByRole("button", { name: "楽譜をダウンロード" });
+    await trigger.click();
+    const popup = page.getByRole("dialog", { name: "楽譜の調を選ぶ" });
+    await expect(popup.getByRole("menuitem", { name: "G*" })).toBeVisible();
+
+    const downloading = page.waitForEvent("download");
+    await popup.getByRole("menuitem", { name: "A♭" }).click();
+    const download = await downloading;
+    expect(download.suggestedFilename()).toBe(`${hymns[0].id}(Ab).pdf`);
+    await expect(popup).toBeHidden();
   });
 
   test("最後のページの最後の1件を削除すると、前のページへ戻る", async ({

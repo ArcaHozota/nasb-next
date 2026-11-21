@@ -8,7 +8,7 @@ import Link from "next/link";
 import { CircleAlert } from "lucide-react";
 import { base64ToUtf8 } from "@/lib/constants";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 function ErrorPageInner() {
   const searchParams = useSearchParams();
@@ -31,9 +31,9 @@ function ErrorPageInner() {
         <AlertDescription>{message}</AlertDescription>
       </Alert>
       <div className="mt-4 flex justify-end">
-        <Button variant="outline" asChild>
-          <Link href="/mainmenu">メインメニューへ戻る</Link>
-        </Button>
+        <Link href="/mainmenu" className={buttonVariants({ variant: "outline" })}>
+          メインメニューへ戻る
+        </Link>
       </div>
     </div>
   );

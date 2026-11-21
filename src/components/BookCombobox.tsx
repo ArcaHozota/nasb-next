@@ -5,7 +5,7 @@
 // 聖書66巻をスクロールせず、「ヨハネ」「創」など名前の一部を打ち込んで絞り込める。
 // cmdk は日本語IMEの変換中(isComposing)のEnterを無視するため、変換確定で誤選択しない。
 import { useState } from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,30 +43,30 @@ export default function BookCombobox({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          disabled={books.length === 0}
-          className={cn(
-            "w-full justify-between bg-transparent px-2 text-left font-normal hover:bg-transparent focus-visible:border-primary focus-visible:ring-primary/20",
-            className,
-          )}
-        >
-          <span
-            className={cn("truncate", !selected && "text-muted-foreground")}
+      <PopoverTrigger
+        render={
+          <Button
+            id={id}
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            disabled={books.length === 0}
+            className={cn(
+              "w-full justify-between bg-transparent px-2 text-left font-normal hover:bg-transparent focus-visible:border-primary focus-visible:ring-primary/20",
+              className,
+            )}
           >
-            {selected?.name ?? "書を選択"}
-          </span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+            <span className={cn("truncate", !selected && "text-muted-foreground")}>
+              {selected?.name ?? "書を選択"}
+            </span>
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        }
+      />
       <PopoverContent
         align="start"
-        className="w-(--radix-popover-trigger-width) min-w-56 p-0"
+        className="w-(--anchor-width) min-w-56 p-0"
       >
         <Command className={className}>
           <CommandInput placeholder="書名で検索…" />
@@ -77,20 +77,13 @@ export default function BookCombobox({
                 key={b.id}
                 // 検索対象は書名。書名は一意なので value に使える。
                 value={b.name}
+                data-checked={String(b.id) === String(value)}
                 onSelect={() => {
                   onChange(b.id);
                   setOpen(false);
                 }}
               >
                 {b.name}
-                <Check
-                  className={cn(
-                    "ml-auto text-primary",
-                    String(b.id) === String(value)
-                      ? "opacity-100"
-                      : "opacity-0",
-                  )}
-                />
               </CommandItem>
             ))}
           </CommandList>

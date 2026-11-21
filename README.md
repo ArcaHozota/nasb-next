@@ -1,7 +1,7 @@
 # NASB1995 フロントエンド
 
 教会の賛美歌と聖書を管理・検索する Web アプリのフロントエンドです。
-Next.js 16(App Router)/ React 19 / Tailwind CSS v4 / shadcn/ui で作られています。
+Next.js 16(App Router) / React 19 / Tailwind CSS v4 / shadcn/ui (Base UI + Nova) で作られています。
 
 ## 設計書
 
@@ -33,7 +33,7 @@ Next.js 16(App Router)/ React 19 / Tailwind CSS v4 / shadcn/ui で作られて�
 
 ### 技術面
 
-- UI は shadcn/ui(Radix)で統一しています。状態は Zustand、サーバーデータは TanStack Query で扱います。
+- 共通 UI は shadcn/ui の Base UI + Nova（`base-nova`）で統一しています。状態は Zustand、サーバーデータは TanStack Query で扱います。
 - `output: "standalone"` で、Next.js 自身の Node.js サーバーが配信する Docker 構成です(ポート 3000)。
 - `/api` は、開発時だけ `next dev` が `http://localhost:8277` へ転送します。本番は前段(nginx・CloudFront など)がバックエンドへ直接転送する前提です。
 

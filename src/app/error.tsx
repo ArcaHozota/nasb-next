@@ -4,7 +4,7 @@
 // 画面の描画中に起きた想定外のエラーを受け止める(ルート全体で共通)。
 import { useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 export default function GlobalRouteError({
   error,
@@ -25,9 +25,9 @@ export default function GlobalRouteError({
       </p>
       <div className="flex gap-2">
         <Button onClick={reset}>再読み込み</Button>
-        <Button variant="outline" asChild>
-          <Link href="/home">ホームへ</Link>
-        </Button>
+        <Link href="/home" className={buttonVariants({ variant: "outline" })}>
+          ホームへ
+        </Link>
       </div>
     </main>
   );

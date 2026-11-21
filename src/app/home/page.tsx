@@ -33,11 +33,12 @@ import { EMPTY_STRING } from "@/lib/constants";
 import { fetchScoreKeysOrToast } from "@/lib/scoreKeys";
 import { downloadScoreOrToast } from "@/lib/download";
 import PageBackground from "@/components/PageBackground";
+import Hint from "@/components/Hint";
 import JerusalemCross from "@/components/JerusalemCross";
 import { cn } from "@/lib/utils";
 import { consumeRedirectMessage } from "@/lib/session";
 import { useMobileViewport } from "@/hooks/use-mobile-viewport";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,11 +56,6 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 type HymnRecord = HymnSummary;
 
@@ -169,47 +165,43 @@ const HymnCard = memo(function HymnCard({
       )}
     >
       <div className="flex flex-col gap-2">
-        <Button
-          asChild
-          variant="link"
-          className="noto-serif relative z-1 h-auto justify-start p-0 text-left text-[1.05rem]! leading-normal font-semibold whitespace-normal text-white underline-offset-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.66)] group-[.is-slide]/card:text-[1.3rem]! hover:text-white hover:underline"
+        <a
+          href={item.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            buttonVariants({ variant: "link" }),
+            "noto-serif relative z-1 h-auto justify-start p-0 text-left text-[1.05rem]! leading-normal font-semibold whitespace-normal text-white underline-offset-2 [text-shadow:0_1px_3px_rgba(0,0,0,0.66)] group-[.is-slide]/card:text-[1.3rem]! hover:text-white hover:underline",
+          )}
         >
-          <a href={item.link} target="_blank" rel="noopener noreferrer">
-            {item.nameJp} / {item.nameKr}
-          </a>
-        </Button>
+          {item.nameJp} / {item.nameKr}
+        </a>
       </div>
       <div className="relative z-1 mt-3 flex items-center justify-end gap-3.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className={cn(SCORE_BTN, LYRIC_BTN)}
-              aria-label="歌詞"
-              onClick={() => onLyric(item)}
-            >
-              <ScrollText aria-hidden="true" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">歌詞</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className={SCORE_BTN}
-              aria-label="楽譜ダウンロード"
-              onClick={() => onScore(item.id)}
-            >
-              𝄞
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">楽譜ダウンロード</TooltipContent>
-        </Tooltip>
+        <Hint label="歌詞" side="bottom">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(SCORE_BTN, LYRIC_BTN)}
+            aria-label="歌詞"
+            onClick={() => onLyric(item)}
+          >
+            <ScrollText aria-hidden="true" />
+          </Button>
+        </Hint>
+        <Hint label="楽譜ダウンロード" side="bottom">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={SCORE_BTN}
+            aria-label="楽譜ダウンロード"
+            onClick={() => onScore(item.id)}
+          >
+            𝄞
+          </Button>
+        </Hint>
       </div>
     </Card>
   );

@@ -198,7 +198,8 @@ export default function HymnList() {
     }
   };
 
-  const onPageSizeChange = (value: string) => {
+  const onPageSizeChange = (value: string | null) => {
+    if (value === null) return;
     setPageSize(Number(value));
     setPage(1);
   };
@@ -491,7 +492,14 @@ export default function HymnList() {
               全{totalRecords}件 / {page} / {totalPages}ページ
             </div>
             <div className="flex items-center gap-3">
-              <Select value={String(pageSize)} onValueChange={onPageSizeChange}>
+              <Select
+                value={String(pageSize)}
+                items={pageSizeOptions.map((opt) => ({
+                  value: String(opt),
+                  label: `${opt}件/ページ`,
+                }))}
+                onValueChange={onPageSizeChange}
+              >
                 <SelectTrigger
                   size="sm"
                   aria-label="1ページの件数"

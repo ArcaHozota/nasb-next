@@ -30,11 +30,13 @@ export default function ClampText({
         setOpen(next && !!el && el.scrollHeight > el.clientHeight + 1);
       }}
     >
-      <TooltipTrigger asChild>
-        <span ref={ref} className={cn("line-clamp-2", className)}>
-          {text}
-        </span>
-      </TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <span ref={ref} className={cn("line-clamp-2", className)}>
+            {text}
+          </span>
+        }
+      />
       <TooltipContent className="max-w-sm">{text}</TooltipContent>
     </Tooltip>
   );

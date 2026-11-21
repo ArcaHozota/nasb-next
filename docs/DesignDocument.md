@@ -115,7 +115,7 @@ PC ホームは金彩の装飾写本をイメージした見開きとし、左�
 | `src/app` 配下の `page.tsx` | 画面と画面単位の状態。`(admin)/layout.tsx` は認証確認・セッション確認・共通ナビゲーション |
 | `src/components` | 賛美歌フォーム、楽譜登録、歌詞、調の選択、赤字エディタ、通知等の共通部品 |
 | `src/components/home` | PC ホームの見開き表示と、SVG で調号を描く五線譜 |
-| `src/components/ui` | shadcn/ui CLI が生成する公式部品。Button、Dialog、Sidebar、Table、Carousel 等 |
+| `src/components/ui` | shadcn/ui CLI が生成する Base UI + Nova の公式部品。Button、Dialog、Sidebar、Table、Carousel 等 |
 | `src/api` | Axios 共通設定、賛美歌 API の型・取得関数・クエリキー |
 | `src/stores` | Zustand による認証（auth）、CSRF（csrf）、通知・確認（feedback）、未保存状態（unsavedGuard） |
 | `src/hooks` | ホームの画面幅判定、遅延反映、未保存確認、プレイリスト作成の共通処理。`use-mobile.ts` は公式 Sidebar に付属する生成ファイル |
@@ -124,11 +124,13 @@ PC ホームは金彩の装飾写本をイメージした見開きとし、左�
 | `public/assets` | 背景画像、メニュー用 SVG 等。固定パスで配信 |
 | `e2e` | API モックと Playwright による画面操作テスト |
 
-Next.js 16、React 19、TypeScript、Tailwind CSS v4、shadcn/ui・Radix、Zustand、TanStack React Query、Axios、Embla Carousel、Lucide を使用する。インストールされた版はロックファイルで固定する。
+Next.js 16、React 19、TypeScript、Tailwind CSS v4、shadcn/ui（Base UI + Nova）、Zustand、TanStack React Query、Axios、Embla Carousel、Lucide を使用する。インストールされた版はロックファイルで固定する。
 
 #### shadcn/ui 公式部品とアプリ固有の処理
 
-shadcn/ui の生成先は [components.json](../components.json) で管理する。`src/components/ui` と `src/hooks/use-mobile.ts` は生成されたコードをそのまま保つ。画面固有の見た目は呼び出し側で公式部品の props や `className` を使って指定し、共通の配色は `src/app/globals.css` で定義する。たとえば、本人情報の YouTube 連携スイッチの寸法と「廃棄」ボタンの配色はアプリ側で指定する。
+shadcn/ui のスタイルは [components.json](../components.json) の `base-nova` で指定する。`src/components/ui` と `src/hooks/use-mobile.ts` は CLI の生成コードを使う。Dialog、Popover、Select、メニューなどの操作とフォーカス管理は Base UI が担い、既存要素との組み合わせには `render` を使う。ボタンの外観を持つリンクには `buttonVariants` を使い、リンクとしてのセマンティクスを保つ。
+
+`src/app/globals.css` では `shadcn/tailwind.css` の共通ユーティリティを読み込み、アプリの配色を定義する。本人情報の YouTube 連携スイッチの寸法や「廃棄」ボタンの配色など、画面固有の指定はアプリ側の CSS や呼び出し側の `className` で行う。
 
 ホームの画面幅は [use-mobile-viewport.ts](../src/hooks/use-mobile-viewport.ts) で `matchMedia` の変更を購読する。サーバー側とブラウザの初期描画では画面幅を未確定とし、確定後に PC・モバイルに応じた一覧を取得する。管理画面の Sidebar は公式の `use-mobile.ts` を使う。
 
@@ -298,7 +300,7 @@ TanStack Query の既定値は `staleTime: 30秒`、取得失敗時の再試行�
 
 ユニットテストは `src/**/*.test.ts` を対象とする。通常は Node 環境、DOM が必要なファイルだけ jsdom とする。検索の振り分けと順位、歌詞照合、調号、ページ番号、名称サイズ、必須チェック、Base64、Blob 保存・エラー、CSRF 再送・401、プレイリスト進捗・タイムアウト等を確認する。
 
-E2E は [e2e/mock-api.ts](../e2e/mock-api.ts) が `/api/**` の応答を差し替え、実バックエンドを起動しない。ホームでは767pxと768pxでの表示切り替え、モバイルのカルーセル操作、PC の前後のページ送り、取得待ち・失敗時の表示、動きを減らす設定の適用を確認する。管理画面ではログイン、未認証時の遷移、一覧のページ・削除、編集モーダル、破棄・ログアウト確認、ランダム選択、検索条件によるプレイリスト要求等を確認する。モバイルでのスワイプ操作全般、聖書章節の保存、実際の OAuth・YouTube 接続は網羅していない。
+E2E は [e2e/mock-api.ts](../e2e/mock-api.ts) が `/api/**` の応答を差し替え、実バックエンドを起動しない。ホームでは767pxと768pxでの表示切り替え、モバイルのカルーセル操作、PC の前後のページ送り、取得待ち・失敗時の表示、動きを減らす設定の適用を確認する。管理画面ではログイン、未認証時の遷移、一覧のページ送り・表示件数変更・削除、調を選んでの楽譜ダウンロード、編集モーダル、破棄・ログアウト確認、ランダム選択、検索条件によるプレイリスト要求等を確認する。ログアウト確認は上部バーとサイドバーの両方から検証する。モバイルでのスワイプ操作全般、聖書章節の保存、実際の OAuth・YouTube 接続は網羅していない。
 
 ローカルの `pnpm e2e` はビルド後、`.next/standalone` に `public` と `.next/static` を配置し、ポート3100で `server.js` を起動する。同じ URL の既存サーバーがあれば再利用する。CI は先にビルドするため、E2E 側ではサーバー起動だけを行う。
 

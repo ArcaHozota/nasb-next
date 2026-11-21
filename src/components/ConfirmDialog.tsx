@@ -8,7 +8,7 @@
 //     ログアウト・削除       → 「警告」
 //     それ以外(編集内容の破棄・お知らせ・YouTube 連携の確認など) → 「お知らせ」
 // モーダル(Dialog)の中から出すときは、その DialogContent の子として描画する
-// (Radix が入れ子のレイヤーとして扱い、外側のモーダルを閉じずにこちらだけ閉じられる)。
+// (Base UI が入れ子のレイヤーとして扱い、外側のモーダルを閉じずにこちらだけ閉じられる)。
 import type { ReactNode } from "react";
 import {
   AlertDialog,
@@ -53,7 +53,14 @@ export default function ConfirmDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>{CANCEL_LABEL}</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>{CONFIRM_LABEL}</AlertDialogAction>
+          <AlertDialogAction
+            onClick={() => {
+              onConfirm();
+              onOpenChange(false);
+            }}
+          >
+            {CONFIRM_LABEL}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

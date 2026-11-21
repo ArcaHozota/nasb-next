@@ -3,7 +3,7 @@
 // src/components/FeedbackHost.tsx
 // 旧 components/FeedbackHost.vue を移植。App(Providers)直下にグローバルマウントする。
 // shadcn/ui 版: スナックバー → Sonner(<Toaster />)、確認ダイアログ → ConfirmDialog(AlertDialog)。
-// フォーカストラップ・Escキー・背面スクロールのロック・ARIA属性は Radix 側が担当する。
+// フォーカストラップ・Escキー・背面スクロールのロック・ARIA属性は Base UI が担当する。
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { Toaster } from "@/components/ui/sonner";
 import { useFeedbackStore } from "@/stores/feedback";

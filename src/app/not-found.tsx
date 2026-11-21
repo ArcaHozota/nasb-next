@@ -1,7 +1,7 @@
 // src/app/not-found.tsx
 // 存在しないURLに来たときの画面(ルート全体で共通)。
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -11,9 +11,9 @@ export default function NotFound() {
       <p className="text-sm text-gray-600">
         URLが間違っているか、ページが移動または削除された可能性があります。
       </p>
-      <Button asChild>
-        <Link href="/home">ホームへ戻る</Link>
-      </Button>
+      <Link href="/home" className={buttonVariants()}>
+        ホームへ戻る
+      </Link>
     </main>
   );
 }

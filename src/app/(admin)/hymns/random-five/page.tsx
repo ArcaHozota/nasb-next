@@ -281,31 +281,29 @@ function RandomFiveInner() {
               {records.map((item, i) => (
                 <Item
                   key={item.id ?? item.nameJp}
-                  asChild
+                  render={<a href={item.link} target="_blank" rel="noopener noreferrer" />}
                   variant="outline"
                   size="sm"
                   className="glass-item"
                 >
-                  <a href={item.link} target="_blank" rel="noopener noreferrer">
-                    {/* 左右の幅を揃えて(番号 / YouTubeアイコン)、名称を中央に置く */}
-                    <ItemMedia className="w-8 justify-center text-sm font-semibold text-black/40 group-has-data-[slot=item-description]/item:translate-y-0 group-has-data-[slot=item-description]/item:self-center">
-                      {i + 1}
-                    </ItemMedia>
-                    <ItemContent className="items-center gap-0.5 text-center">
-                      <ItemTitle className="text-base font-semibold text-[#006b3c]">
-                        {item.nameJp}
-                      </ItemTitle>
-                      <ItemDescription className="text-gray-700">
-                        {item.nameKr}
-                      </ItemDescription>
-                    </ItemContent>
-                    <ItemActions className="w-8 justify-center">
-                      <SquarePlay
-                        aria-hidden="true"
-                        className="size-5 text-[#c4302b] opacity-70 transition-opacity group-hover/item:opacity-100"
-                      />
-                    </ItemActions>
-                  </a>
+                  {/* 左右の幅を揃えて(番号 / YouTubeアイコン)、名称を中央に置く */}
+                  <ItemMedia className="w-8 justify-center text-sm font-semibold text-black/40 group-has-data-[slot=item-description]/item:translate-y-0 group-has-data-[slot=item-description]/item:self-center">
+                    {i + 1}
+                  </ItemMedia>
+                  <ItemContent className="items-center gap-0.5 text-center">
+                    <ItemTitle className="text-base font-semibold text-[#006b3c]">
+                      {item.nameJp}
+                    </ItemTitle>
+                    <ItemDescription className="text-gray-700">
+                      {item.nameKr}
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions className="w-8 justify-center">
+                    <SquarePlay
+                      aria-hidden="true"
+                      className="size-5 text-[#c4302b] opacity-70 transition-opacity group-hover/item:opacity-100"
+                    />
+                  </ItemActions>
                 </Item>
               ))}
             </ItemGroup>

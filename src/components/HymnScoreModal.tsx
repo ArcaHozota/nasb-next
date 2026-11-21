@@ -2,7 +2,7 @@
 
 // src/components/HymnScoreModal.tsx
 // 旧 components/HymnScoreModal.vue を移植。HymnList から表示するモーダル(ルーティングは行わない)。
-// shadcn/ui 版: createPortal・Escキー処理・背景クリック判定は Dialog(Radix)に任せる。
+// Portal・Esc キー・背景クリックの処理は Base UI の Dialog に任せる。
 // 構成: 見出し(楽譜アップロード + 曲名) / 調 / ファイル / オリジナルキー / 閉じる・アップロード
 import { useRef, useState } from "react";
 import axios from "axios";
@@ -181,13 +181,12 @@ export default function HymnScoreModal({
           <FieldLegend variant="label">調</FieldLegend>
           {/* 選んでいない調は灰色の枠、選んだ調だけ burgundy で塗る */}
           <ToggleGroup
-            type="single"
             variant="outline"
-            value={chord}
-            onValueChange={(v) => {
-              // 選択済みを再クリックすると v が空になるので、選択を維持する
-              if (!v) return;
-              setChord(v);
+            value={chord ? [chord] : []}
+            onValueChange={([value]) => {
+              // 選択中の調を再クリックしても、その調を維持する
+              if (!value) return;
+              setChord(value);
               setChordError(EMPTY_STRING);
             }}
             disabled={uploading}
@@ -200,7 +199,7 @@ export default function HymnScoreModal({
                 key={k.value}
                 value={k.value}
                 aria-label={k.label}
-                className="h-9 rounded-md! border-l! px-0 text-sm data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                className="h-9 rounded-md! border-l! px-0 text-sm data-pressed:border-primary data-pressed:bg-primary data-pressed:text-primary-foreground"
               >
                 {k.label}
               </ToggleGroupItem>
@@ -275,7 +274,7 @@ export default function HymnScoreModal({
           </Button>
         </DialogFooter>
 
-        {/* 上書き確認: 外側の Dialog の子として描画し、Radix に入れ子のレイヤーとして扱わせる */}
+        {/* 上書き確認: 外側の Dialog の子として描画し、Base UI に入れ子のレイヤーとして扱わせる */}
         <ConfirmDialog
           open={confirmOpen}
           onOpenChange={(open) => {

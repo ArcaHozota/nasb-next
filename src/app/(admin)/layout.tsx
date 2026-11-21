@@ -31,6 +31,7 @@ import { DELAY_APOLOGY, EMPTY_STRING } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import Hint from "@/components/Hint";
 import {
   Sidebar,
   SidebarContent,
@@ -49,11 +50,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -316,27 +312,23 @@ export default function AdminLayout({
               />
               <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
             </form>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  type="button"
-                  aria-label="ログアウト"
-                  onClick={onLogout}
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">ログアウト</TooltipContent>
-            </Tooltip>
+            <Hint label="ログアウト" side="bottom">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                type="button"
+                aria-label="ログアウト"
+                onClick={onLogout}
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </Hint>
           </div>
         </header>
 
         {/* ===== 各画面(ここだけがスクロールする) ===== */}
-        {/* スクロールバーは出さない(従来どおり)。Radix の中身ラッパー(display: table)は block に戻す */}
-        <ScrollArea className="min-h-0 flex-1 p-0.75 **:data-[slot=scroll-area-scrollbar]:hidden [&_[data-slot=scroll-area-viewport]>div]:block!">
+        <ScrollArea className="min-h-0 flex-1 p-0.75 **:data-[slot=scroll-area-scrollbar]:hidden">
           {children}
         </ScrollArea>
       </SidebarInset>
@@ -473,25 +465,23 @@ function AdminSidebar({
       <SidebarFooter className="border-t border-sidebar-border p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            {/* modal={false}: メニューから確認ダイアログ(ログアウト)を開いても、
-                Radix同士のフォーカス/ポインタ制御が衝突しないようにする */}
+            {/* メニューからログアウト確認を開けるよう、メニューは非モーダルにする */}
             <DropdownMenu modal={false}>
-              <DropdownMenuTrigger asChild>
-                {/* tooltip は付けない: SidebarMenuButton が Tooltip で包まれると
-                    DropdownMenuTrigger(asChild)が実際のボタンに届かず、メニューが開かなくなる */}
-                <SidebarMenuButton
-                  size="lg"
-                  className="hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  <Avatar className="size-8">
-                    {/* 頭文字が読めるよう、burgundy の円に白い文字 */}
-                    <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
-                      {username.slice(0, 1)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="flex-1 truncate text-[0.9rem]">{username}</span>
-                  <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/60" />
-                </SidebarMenuButton>
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuButton
+                    size="lg"
+                    className="hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground aria-expanded:bg-sidebar-accent aria-expanded:text-sidebar-accent-foreground"
+                  />
+                }
+              >
+                <Avatar className="size-8">
+                  <AvatarFallback className="bg-primary text-xs font-medium text-primary-foreground">
+                    {username.slice(0, 1)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="flex-1 truncate text-[0.9rem]">{username}</span>
+                <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/60" />
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 side="top"
@@ -499,18 +489,18 @@ function AdminSidebar({
                 className="w-56 text-gray-800"
               >
                 <DropdownMenuItem
-                  onSelect={() => {
+                  onClick={() => {
                     onPersonal();
                     closeOnMobile();
                   }}
                 >
                   <UserCog /> 個人スペース
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onMessage}>
+                <DropdownMenuItem onClick={onMessage}>
                   <MessageSquare /> メッセージ
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onSelect={onLogout}>
+                <DropdownMenuItem variant="destructive" onClick={onLogout}>
                   <LogOut /> ログアウト
                 </DropdownMenuItem>
               </DropdownMenuContent>

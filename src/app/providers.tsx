@@ -31,7 +31,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {/* shadcn/ui の Tooltip はアプリ全体で1つの Provider を共有する */}
-      <TooltipProvider delayDuration={200}>
+      <TooltipProvider delay={200}>
         {children}
         <FeedbackHost />
       </TooltipProvider>

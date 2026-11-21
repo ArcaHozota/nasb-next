@@ -17,7 +17,7 @@ import BookPageTurn, {
 } from "@/components/home/BookPageTurn";
 import KeyStaff from "@/components/home/KeyStaff";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
@@ -133,16 +133,18 @@ function HymnPage({
             {hymn.nameKr}
           </p>
         </div>
-        <Button
-          asChild
-          variant="outline"
-          className="book-sans h-9 shrink-0 gap-1.5 rounded-lg border-(--book-blue) bg-transparent! px-3.5 has-[>svg]:px-3.5 text-[13px] font-normal text-(--book-blue) shadow-none hover:bg-(--book-blue)! hover:text-white"
+        <a
+          href={hymn.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "book-sans h-9 shrink-0 gap-1.5 rounded-lg border-(--book-blue) bg-transparent! px-3.5 text-[13px] font-normal text-(--book-blue) shadow-none hover:bg-(--book-blue)! hover:text-white",
+          )}
         >
-          <a href={hymn.link} target="_blank" rel="noopener noreferrer">
-            <SquarePlay className="size-4" aria-hidden="true" />
-            YouTubeで聴く
-          </a>
-        </Button>
+          <SquarePlay className="size-4" aria-hidden="true" />
+          YouTubeで聴く
+        </a>
       </div>
 
       {/* 五線譜: 選んだ調の調号を描き、押すとその調の楽譜をダウンロードする */}
@@ -161,11 +163,10 @@ function HymnPage({
           ))}
         {keys.length > 0 && (
           <ToggleGroup
-            type="single"
-            value={chord ?? ""}
-            onValueChange={(v) => {
-              // 選択済みを再クリックすると v が空になるので、選択を維持する
-              if (v) setPicked(v);
+            value={chord ? [chord] : []}
+            onValueChange={([value]) => {
+              // 選択中の調を再クリックしても、その調を維持する
+              if (value) setPicked(value);
             }}
             aria-label="調を選ぶ"
             className="flex-wrap gap-2"
@@ -174,7 +175,7 @@ function HymnPage({
               <ToggleGroupItem
                 key={k.chord}
                 value={k.chord}
-                className="h-7.5 min-w-11 rounded-lg! border border-(--book-rule) bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-(--book-hover) hover:text-[#2b1d14] data-[state=on]:border-(--book-blue) data-[state=on]:bg-(--book-blue) data-[state=on]:text-white"
+                className="h-7.5 min-w-11 rounded-lg! border border-(--book-rule) bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-(--book-hover) hover:text-[#2b1d14] data-pressed:border-(--book-blue) data-pressed:bg-(--book-blue) data-pressed:text-white"
               >
                 {keyLabel(k.chord)}
                 {k.isOriginal ? "＊" : ""}
@@ -203,8 +204,7 @@ function HymnPage({
               : `「${terms.join("・")}」は歌詞に含まれていません（歌詞が似ている曲）`}
           </p>
         )}
-        {/* Radix の中身ラッパー(display: table)だと長い行で横に伸びるため、block に戻す */}
-        <ScrollArea className="min-h-0 flex-1 [&_[data-slot=scroll-area-viewport]>div]:block!">
+        <ScrollArea className="min-h-0 flex-1">
           <div className="book-lyric pr-2">
             {lyricQuery.isPending && (
               <div className="flex justify-center py-10">
@@ -498,43 +498,46 @@ export default function OpenHymnalHome({
                 const active = i === selectedIndex;
                 return (
                   <li key={r.id}>
-                    <Item asChild className={cn(BOOK_ROW, BOOK_ROW_BTN)}>
-                      <button
-                        type="button"
-                        data-hymn-row
-                        data-active={active}
-                        aria-current={active ? "true" : undefined}
-                        onClick={() => setSelectedId(r.id)}
-                      >
-                        <ItemMedia className={BOOK_ROW_NO}>
-                          {hymnNo(page, pageSize, i)}
-                        </ItemMedia>
-                        <ItemContent className="min-w-0 gap-0">
-                          <span className="flex items-baseline gap-1.5">
-                            <span className="truncate text-[15px] font-bold">
-                              {r.nameJp}
-                            </span>
+                    <Item
+                      className={cn(BOOK_ROW, BOOK_ROW_BTN)}
+                      render={
+                        <button
+                          type="button"
+                          data-hymn-row
+                          data-active={active}
+                          aria-current={active ? "true" : undefined}
+                          onClick={() => setSelectedId(r.id)}
+                        />
+                      }
+                    >
+                      <ItemMedia className={BOOK_ROW_NO}>
+                        {hymnNo(page, pageSize, i)}
+                      </ItemMedia>
+                      <ItemContent className="min-w-0 gap-0">
+                        <span className="flex items-baseline gap-1.5">
+                          <span className="truncate text-[15px] font-bold">
+                            {r.nameJp}
+                          </span>
+                          <span
+                            className="min-w-3 flex-1 -translate-y-1 border-b-2 border-dotted border-(--book-rule)"
+                            aria-hidden="true"
+                          />
+                          {match && (
                             <span
-                              className="min-w-3 flex-1 -translate-y-1 border-b-2 border-dotted border-(--book-rule)"
-                              aria-hidden="true"
-                            />
-                            {match && (
-                              <span
-                                className={cn(
-                                  "shrink-0 text-[11px] tracking-[1px]",
-                                  match.tone,
-                                )}
-                                aria-label={match.label}
-                              >
-                                {match.mark}
-                              </span>
-                            )}
-                          </span>
-                          <span className="noto-serif-kr truncate text-xs text-[#5a4630]">
-                            {r.nameKr}
-                          </span>
-                        </ItemContent>
-                      </button>
+                              className={cn(
+                                "shrink-0 text-[11px] tracking-[1px]",
+                                match.tone,
+                              )}
+                              aria-label={match.label}
+                            >
+                              {match.mark}
+                            </span>
+                          )}
+                        </span>
+                        <span className="noto-serif-kr truncate text-xs text-[#5a4630]">
+                          {r.nameKr}
+                        </span>
+                      </ItemContent>
                     </Item>
                   </li>
                 );

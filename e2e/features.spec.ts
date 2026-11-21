@@ -119,4 +119,17 @@ test.describe("確認ダイアログ(タイトルと「いいえ」「はい」�
     await expect(confirm).toHaveCount(0);
     await expect(page).toHaveURL(/\/mainmenu$/);
   });
+
+  test("サイドバーのユーザーメニューからもログアウトを確認できる", async ({ page }) => {
+    await mockApi(page, { loggedIn: true });
+    await page.goto("/mainmenu");
+
+    await page.getByRole("button", { name: /テストユーザー/ }).press("Enter");
+    await page.getByRole("menuitem", { name: "ログアウト" }).press("Enter");
+    const confirm = page.getByRole("alertdialog", { name: "警告" });
+    await expect(confirm).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(confirm).toBeHidden();
+    await expect(page).toHaveURL(/\/mainmenu$/);
+  });
 });

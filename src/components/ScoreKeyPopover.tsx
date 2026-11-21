@@ -1,21 +1,13 @@
 "use client";
 
 // src/components/ScoreKeyPopover.tsx
-// 楽譜アイコンの「調を選ぶふきだし」(賛美歌一覧・ホームのPC版で共通)。
+// 賛美歌一覧の楽譜アイコンから「調を選ぶふきだし」を出す。
 // 楽譜が1件(以下)ならそのままダウンロード、複数あるときはアイコンの横にふきだしを出し、
 // 調を選んでダウンロードする。オリジナルキーは「Ab*」のように星を付ける。
-// ふきだしは shadcn/ui の Popover(Portal)なので、テーブル等の overflow-hidden に切られない。
-// 位置はアイコン要素(PopoverAnchor + virtualRef)に合わせる。トリガーは非同期で調を取得してから
-// 開く必要があるため、DropdownMenu(トリガーが開閉を握る)ではなく Popover を使っている。
-// 見た目は呼び出し側の className で上書きできる(管理画面=白、ホーム=ガラス風)。
-import { useMemo, useState, type ReactNode } from "react";
-import { Popover as PopoverPrimitive } from "radix-ui";
+// Base UI の Popover を Portal に描画し、取得完了後に楽譜アイコンを基準に開く。
+import { useState, type ReactNode } from "react";
+import { Popover } from "@base-ui/react/popover";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "@/components/ui/popover";
 import { EMPTY_STRING } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -65,10 +57,7 @@ export default function ScoreKeyPopover({
   const [open, setOpen] = useState(false);
   const [keys, setKeys] = useState<ScoreKey[]>([]);
   const [loading, setLoading] = useState(false);
-  // アイコン要素(呼び出し側の ref で受け取る)。描画中に ref.current を書き換えないよう、
-  // ref ではなく state で持ち、Radix に渡す virtualRef はそこから作る
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const virtualRef = useMemo(() => ({ current: anchorEl }), [anchorEl]);
 
   const onClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -89,57 +78,60 @@ export default function ScoreKeyPopover({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover.Root open={open} onOpenChange={setOpen}>
       {children({
         onClick,
         loading,
         open,
         anchorRef: setAnchorEl,
       })}
-      {/* アイコン要素そのものを位置の基準にする(ref を呼び出し側から受け取る) */}
-      <PopoverAnchor
-        virtualRef={
-          virtualRef as React.ComponentProps<typeof PopoverAnchor>["virtualRef"]
-        }
-      />
-      <PopoverContent
-        side={side}
-        align={align}
-        sideOffset={10}
-        collisionPadding={8}
-        className={cn(
-          "noto-serif w-auto min-w-20 rounded-2xl border-gray-200 bg-white p-1.5 text-gray-700 shadow-lg",
-          contentClassName,
-        )}
-      >
-        <ul role="menu" className="flex flex-col">
-          {keys.map((k) => (
-            <li key={k.chord} role="none">
-              <Button
-                type="button"
-                variant="ghost"
-                role="menuitem"
-                className={cn(
-                  "h-auto w-full rounded-lg px-5 py-1.5 text-center hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:ring-0",
-                  itemClassName,
-                )}
-                onClick={() => {
-                  setOpen(false);
-                  void download(id, k.chord);
-                }}
-              >
-                {chordLabel(k.chord)}
-                {k.isOriginal ? "*" : EMPTY_STRING}
-              </Button>
-            </li>
-          ))}
-        </ul>
-        <PopoverPrimitive.Arrow
-          className={cn("fill-white", arrowClassName)}
-          width={14}
-          height={7}
-        />
-      </PopoverContent>
-    </Popover>
+      <Popover.Portal>
+        <Popover.Positioner
+          anchor={anchorEl}
+          side={side}
+          align={align}
+          sideOffset={10}
+          collisionPadding={8}
+          className="isolate z-50"
+        >
+          <Popover.Popup
+            aria-label="楽譜の調を選ぶ"
+            className={cn(
+              "noto-serif min-w-20 origin-(--transform-origin) rounded-2xl bg-white p-1.5 text-gray-700 shadow-lg ring-1 ring-gray-200 outline-none duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+              contentClassName,
+            )}
+          >
+            <ul role="menu" className="flex flex-col">
+              {keys.map((k) => (
+                <li key={k.chord} role="none">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    role="menuitem"
+                    className={cn(
+                      "h-auto w-full rounded-lg px-5 py-1.5 text-center hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10 focus-visible:ring-0",
+                      itemClassName,
+                    )}
+                    onClick={() => {
+                      setOpen(false);
+                      void download(id, k.chord);
+                    }}
+                  >
+                    {chordLabel(k.chord)}
+                    {k.isOriginal ? "*" : EMPTY_STRING}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <Popover.Arrow
+              className={cn(
+                "size-2.5 rotate-45 bg-white data-[side=top]:-bottom-1 data-[side=bottom]:-top-1 data-[side=left]:-right-1 data-[side=right]:-left-1",
+                arrowClassName,
+              )}
+            />
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

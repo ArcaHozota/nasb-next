@@ -384,8 +384,12 @@ export default function BookAddition() {
                 章{chapterLoading && <Spinner className="size-3" />}
               </FieldLabel>
               <Select
-                value={String(chapterId)}
-                onValueChange={setPickedChapterId}
+                value={chapterId === EMPTY_STRING ? null : String(chapterId)}
+                items={chapters.map((chapter) => ({
+                  value: String(chapter.id),
+                  label: chapter.name,
+                }))}
+                onValueChange={(value) => setPickedChapterId(value ?? EMPTY_STRING)}
                 disabled={chapterLoading || chapters.length === 0}
               >
                 <SelectTrigger
@@ -402,7 +406,7 @@ export default function BookAddition() {
                       value={String(c.id)}
                       // 先頭文字によるタイプアヘッドは「第」で始まる章名だと効かないため、
                       // 章番号(「第23章」→「23」)で照合させる。数字キーで章へジャンプできる。
-                      textValue={c.name.replace(/\D/g, "") || c.name}
+                      label={c.name.replace(/\D/g, "") || c.name}
                     >
                       {c.name}
                     </SelectItem>

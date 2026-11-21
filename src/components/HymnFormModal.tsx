@@ -459,7 +459,7 @@ export default function HymnFormModal({
           </Button>
         </DialogFooter>
 
-        {/* 編集内容の破棄確認: 外側の Dialog の子として描画し、Radix に入れ子のレイヤーとして扱わせる */}
+        {/* 編集内容の破棄確認: 外側の Dialog の子として描画し、Base UI に入れ子のレイヤーとして扱わせる */}
         <ConfirmDialog
           open={discardOpen}
           onOpenChange={setDiscardOpen}
