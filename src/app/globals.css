@@ -374,6 +374,7 @@ a.glass-item:hover {
   min-width: 0;
   min-height: 0;
   box-sizing: border-box;
+  /* 金の二重枠(彩飾写本)。上下は枠線、左右は下の box-shadow で同じ二重線を描き、四辺を囲む */
   border-block: 3px double var(--book-gold);
   background-image: var(--book-paper);
   background-size: 100% 100%, 100% 100%, 256px 256px;
@@ -411,7 +412,16 @@ a.glass-item:hover {
   padding: 24px 30px 14px 32px;
   background-color: var(--book-left);
   border-right: 1px solid #c9b28b;
-  box-shadow: inset -18px 0 24px -18px rgba(74, 48, 20, 0.35);
+  /* 左右の金の二重線(1px 線・1px 紙・1px 線。上下の 3px double と同じ形)と、のど側の陰。
+     影なので幅・余白は変わらない */
+  box-shadow:
+    inset 1px 0 0 var(--book-gold),
+    inset 2px 0 0 var(--book-left),
+    inset 3px 0 0 var(--book-gold),
+    inset -1px 0 0 var(--book-gold),
+    inset -2px 0 0 var(--book-left),
+    inset -3px 0 0 var(--book-gold),
+    inset -18px 0 24px -18px rgba(74, 48, 20, 0.35);
 }
 
 .book-page--right {
@@ -419,7 +429,14 @@ a.glass-item:hover {
   gap: 10px;
   padding: 28px 48px 20px 44px;
   background-color: var(--book-right);
-  box-shadow: inset 18px 0 24px -18px rgba(74, 48, 20, 0.3);
+  box-shadow:
+    inset 1px 0 0 var(--book-gold),
+    inset 2px 0 0 var(--book-right),
+    inset 3px 0 0 var(--book-gold),
+    inset -1px 0 0 var(--book-gold),
+    inset -2px 0 0 var(--book-right),
+    inset -3px 0 0 var(--book-gold),
+    inset 18px 0 24px -18px rgba(74, 48, 20, 0.3);
 }
 
 .book-caption {
