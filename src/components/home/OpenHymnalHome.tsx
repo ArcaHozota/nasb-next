@@ -14,6 +14,7 @@ import JerusalemCross from "@/components/JerusalemCross";
 import BookPageTurn, {
   captureBookTurn,
   type BookTurn,
+  type BookTurnHandle,
 } from "@/components/home/BookPageTurn";
 import KeyStaff from "@/components/home/KeyStaff";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -38,6 +39,22 @@ import { useFeedbackStore } from "@/stores/feedback";
 import type { HymnSummary } from "@/api/hymns";
 
 type BookHymn = HymnSummary;
+
+/** ページの角をつかんで、手でめくっている間の指の状態 */
+type DragState = {
+  direction: "next" | "previous";
+  /** つかんだ位置 */
+  x0: number;
+  /** めくった割合(0〜1) */
+  t: number;
+  /** 少しでも動かしたか(動かさずに離したらクリックとして最後までめくる) */
+  moved: boolean;
+  /** 紙の用意ができる前に指を離した */
+  released: boolean;
+};
+
+/** 指を離したとき、最後までめくるか */
+const shouldComplete = (d: DragState) => !d.moved || d.t >= 0.35;
 
 /** 一致度(lineNumber)ごとの◆表示。検索していないときは出さない */
 const MATCH: Record<string, { label: string; mark: string; tone: string }> = {
@@ -265,11 +282,30 @@ export default function OpenHymnalHome({
   const turnRequest = useRef<symbol | null>(null);
   const [preparingPage, setPreparingPage] = useState(false);
   const [bookTurn, setBookTurn] = useState<BookTurn | null>(null);
-  const finishTurn = useCallback(() => {
-    turnRequest.current = null;
-    setPreparingPage(false);
-    setBookTurn(null);
-  }, []);
+  // 手でめくる(ドラッグ)ときの、めくる紙の操作口と指の状態
+  const turnHandle = useRef<BookTurnHandle | null>(null);
+  const drag = useRef<DragState | null>(null);
+  // めくり始める前のページと選んでいた曲(ドラッグを途中でやめたとき、ここへ戻す)
+  const turnFrom = useRef<{ page: number; selectedId: string | null } | null>(
+    null,
+  );
+  // 元のページへ戻したときに、選び直す曲
+  const [restoreId, setRestoreId] = useState<string | null>(null);
+  const finishTurn = useCallback(
+    (completed = true) => {
+      const from = turnFrom.current;
+      turnRequest.current = null;
+      turnFrom.current = null;
+      drag.current = null;
+      setPreparingPage(false);
+      setBookTurn(null);
+      if (!completed && from) {
+        setRestoreId(from.selectedId);
+        onPageChange(from.page);
+      }
+    },
+    [onPageChange],
+  );
 
   useEffect(
     () => () => {
@@ -279,7 +315,10 @@ export default function OpenHymnalHome({
     [],
   );
 
-  const turnPage = async (targetPage: number) => {
+  const turnPage = async (
+    targetPage: number,
+    mode: BookTurn["mode"] = "auto",
+  ) => {
     if (turnRequest.current || targetPage < 1 || targetPage > totalPages)
       return;
     const request = Symbol();
@@ -290,6 +329,7 @@ export default function OpenHymnalHome({
       await onPreparePage(targetPage);
     } catch (error) {
       if (turnRequest.current === request) {
+        drag.current = null;
         finishTurn();
         toast(
           extractErrorMessage(
@@ -310,7 +350,9 @@ export default function OpenHymnalHome({
       : captureBookTurn(
           bookRef.current,
           targetPage > page ? "next" : "previous",
+          mode,
         );
+    turnFrom.current = { page, selectedId };
     if (turn) {
       setPreparingPage(false);
       setBookTurn(turn);
@@ -321,15 +363,72 @@ export default function OpenHymnalHome({
   };
 
   const paging = preparingPage || bookTurn !== null;
+
+  // ===== 手でめくる(ページの下の角をつかんで横にドラッグ) =====
+  // 角を押した時点で次のページを取得してめくり始め、指の位置に合わせて紙を動かす。
+  // 動かさずに離したら(クリック)最後までめくる。少しだけ動かして離したら元に戻す。
+  // めくる紙が用意できた時点で、それまでの指の動き(や離したこと)を反映する
+  const onTurnReady = useCallback((handle: BookTurnHandle | null) => {
+    turnHandle.current = handle;
+    const d = drag.current;
+    if (!handle || !d) return;
+    handle.setProgress(d.t);
+    if (d.released) {
+      drag.current = null;
+      handle.release(shouldComplete(d));
+    }
+  }, []);
+  const onCornerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || paging) return;
+    const direction =
+      e.currentTarget.dataset.side === "next" ? "next" : "previous";
+    const target = direction === "next" ? page + 1 : page - 1;
+    if (target < 1 || target > totalPages) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = {
+      direction,
+      x0: e.clientX,
+      t: 0,
+      moved: false,
+      released: false,
+    };
+    void turnPage(target, "drag");
+  };
+  const onCornerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d || d.released) return;
+    const dx = d.direction === "next" ? d.x0 - e.clientX : e.clientX - d.x0;
+    // 本の幅の8割ほど動かすと、めくり終わる位置になる
+    const width = bookRef.current?.clientWidth ?? 1;
+    const t = Math.min(1, Math.max(0, dx / (width * 0.8)));
+    drag.current = { ...d, t, moved: d.moved || Math.abs(dx) > 4 };
+    turnHandle.current?.setProgress(t);
+  };
+  const onCornerUp = () => {
+    const d = drag.current;
+    if (!d || d.released) return;
+    const handle = turnHandle.current;
+    // まだ紙の用意ができていなければ、用意できた時点(onTurnReady)で反映する
+    if (!handle) {
+      drag.current = { ...d, released: true };
+      return;
+    }
+    drag.current = null;
+    handle.release(shouldComplete(d));
+  };
+
   // 選んだ曲。ページや検索が変わってその曲が一覧に無くなったら、先頭の曲を表示する
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  // ページや検索が変わったら目次の先頭へ。Effect ではなく描画中に state を調整する
+  // ページや検索が変わったら目次の先頭へ(めくるのを途中でやめて戻したときは、選んでいた曲へ)。
+  // Effect ではなく描画中に state を調整する
   // (https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes)
   const resetKey = `${page}|${submittedKeyword}`;
   const [prevResetKey, setPrevResetKey] = useState(resetKey);
   if (prevResetKey !== resetKey) {
     setPrevResetKey(resetKey);
-    setSelectedId(null);
+    setSelectedId(restoreId);
+    if (restoreId !== null) setRestoreId(null);
   }
   const selectedIndex = Math.max(
     0,
@@ -570,7 +669,38 @@ export default function OpenHymnalHome({
               )}
             </article>
           )}
-          {bookTurn && <BookPageTurn turn={bookTurn} onFinish={finishTurn} />}
+          {/* ページの下の角: 乗ると角が少し持ち上がる。押すとめくり、横にドラッグすると手でめくれる
+              (キーボードでは下の「← 前」「次 →」を使う) */}
+          <div
+            className="book-corner"
+            data-side="previous"
+            data-hidden={page <= 1}
+            data-paging={paging}
+            aria-hidden="true"
+            onPointerDown={onCornerDown}
+            onPointerMove={onCornerMove}
+            onPointerUp={onCornerUp}
+            onPointerCancel={onCornerUp}
+          />
+          <div
+            className="book-corner"
+            data-side="next"
+            data-hidden={page >= totalPages}
+            data-paging={paging}
+            aria-hidden="true"
+            onPointerDown={onCornerDown}
+            onPointerMove={onCornerMove}
+            onPointerUp={onCornerUp}
+            onPointerCancel={onCornerUp}
+          />
+          {bookTurn && (
+            <BookPageTurn
+              ref={onTurnReady}
+              turn={bookTurn}
+              bookRef={bookRef}
+              onFinish={finishTurn}
+            />
+          )}
         </div>
       </main>
     </div>
