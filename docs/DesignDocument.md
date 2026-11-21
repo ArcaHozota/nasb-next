@@ -14,29 +14,29 @@
 
 賛美歌の曲名・歌詞・楽譜を閲覧、検索できるようにし、管理利用者が賛美歌、聖書の章節および本人の情報を管理できるようにする。また、YouTube と連携して賛美歌のプレイリストを作成できるようにする。
 
-| 利用者 | 主な利用 |
-| --- | --- |
-| 未ログインの閲覧者 | ホームで賛美歌を検索・閲覧し、楽譜を取得する |
+| 利用者                   | 主な利用                                                         |
+| ------------------------ | ---------------------------------------------------------------- |
+| 未ログインの閲覧者       | ホームで賛美歌を検索・閲覧し、楽譜を取得する                     |
 | ログイン済みの管理利用者 | 賛美歌・楽譜・聖書の節・本人情報を管理し、YouTube 連携を利用する |
 
 ホームは幅768pxを境に PC とモバイルの表示を切り替える。モバイルのホームにはログインボタンを置かないが、`/login` の直接表示や管理画面の利用を画面幅で拒否する処理はない。管理画面のサイドバーはモバイルではドロワーになる。画面側の認証確認は操作上の制御であり、権限の最終的な検証はバックエンドに依存する。
 
 ### 2.2 機能要件
 
-| ID | 要件 | 現行の実現方法 |
-| --- | --- | --- |
-| F01 | 賛美歌の閲覧 | PC は金彩の装飾写本風の見開きと紙をめくるページ送り、モバイルは横スワイプのカードと歌詞シートで閲覧する |
-| F02 | 賛美歌の検索 | ホームでは入力に応じて画面内検索とサーバー検索を使い分ける。一致度を示し、歌詞の一致箇所を強調する |
-| F03 | 楽譜の取得 | 登録された調を選び、楽譜をダウンロードする。PC ホームでは選択中の調の五線譜を押して取得する |
-| F04 | 認証 | ログイン・ログアウトし、管理画面の表示前にログイン状態を確認する |
-| F05 | 賛美歌の管理 | 一覧の検索・ページ送り、モーダルでの追加・編集、削除可否の確認と削除を行う |
-| F06 | 楽譜の登録 | ファイル、調、オリジナル指定を送信し、409 応答時は上書きを確認する |
-| F07 | ランダム選択 | キーワードによる5曲の選択を API に要求する。管理ヘッダーからの検索にも対応する |
-| F08 | プレイリスト | 一覧の検索条件またはランダム選択結果から YouTube プレイリストを作成し、進捗と結果を示す |
-| F09 | 聖書の章節入力 | 書・章・節と英語・日本語本文を入力する。登録済みの節は読み込み、保存前に上書きを確認する |
-| F10 | 本人情報と連携 | ログイン中の本人の情報を更新し、YouTube 連携の開始・解除を行う |
-| F11 | 編集内容の保護 | 賛美歌の追加・編集と聖書章節入力で、対象操作による未保存内容の破棄を確認する |
-| F12 | エラー通知 | 入力不備、通信失敗、セッション失効、操作結果等を通知し、描画エラーと404の画面を用意する |
+| ID  | 要件           | 現行の実現方法                                                                                          |
+| --- | -------------- | ------------------------------------------------------------------------------------------------------- |
+| F01 | 賛美歌の閲覧   | PC は金彩の装飾写本風の見開きと紙をめくるページ送り、モバイルは横スワイプのカードと歌詞シートで閲覧する |
+| F02 | 賛美歌の検索   | ホームでは入力に応じて画面内検索とサーバー検索を使い分ける。一致度を示し、歌詞の一致箇所を強調する      |
+| F03 | 楽譜の取得     | 登録された調を選び、楽譜をダウンロードする。PC ホームでは選択中の調の五線譜を押して取得する             |
+| F04 | 認証           | ログイン・ログアウトし、管理画面の表示前にログイン状態を確認する                                        |
+| F05 | 賛美歌の管理   | 一覧の検索・ページ送り、モーダルでの追加・編集、削除可否の確認と削除を行う                              |
+| F06 | 楽譜の登録     | ファイル、調、オリジナル指定を送信し、409 応答時は上書きを確認する                                      |
+| F07 | ランダム選択   | キーワードによる5曲の選択を API に要求する。管理ヘッダーからの検索にも対応する                          |
+| F08 | プレイリスト   | 一覧の検索条件またはランダム選択結果から YouTube プレイリストを作成し、進捗と結果を示す                 |
+| F09 | 聖書の章節入力 | 書・章・節と英語・日本語本文を入力する。登録済みの節は読み込み、保存前に上書きを確認する                |
+| F10 | 本人情報と連携 | ログイン中の本人の情報を更新し、YouTube 連携の開始・解除を行う                                          |
+| F11 | 編集内容の保護 | 賛美歌の追加・編集と聖書章節入力で、対象操作による未保存内容の破棄を確認する                            |
+| F12 | エラー通知     | 入力不備、通信失敗、セッション失効、操作結果等を通知し、描画エラーと404の画面を用意する                 |
 
 聖書奉読・聖書章節選択、レシート明細入力、メッセージは未実装である。メニューを押すと未実装のトーストを出し、実画面には遷移しない。
 
@@ -69,18 +69,18 @@ Next.js App Router がページと共通レイアウトを構成し、ブラウ�
 
 ### 3.2 画面と遷移
 
-| パス | 画面 | 利用条件・主な操作 |
-| --- | --- | --- |
-| `/` | 入口 | サーバー側で `/home` へ転送 |
-| `/home` | ホーム | 公開。検索、曲の選択、歌詞、楽譜取得、PC のログイン導線 |
-| `/login` | ログイン | ユーザー名・パスワードを送信し、成功後に `/mainmenu` へ移動 |
-| `/mainmenu` | メインメニュー | 認証。賛美歌一覧、ランダム選択等への入口 |
-| `/hymns` | 賛美歌情報メンテナンス | 認証。検索、追加・編集モーダル、削除、楽譜登録・取得、プレイリスト作成 |
-| `/hymns/random-five` | 賛美歌ランダム選択 | 認証。検索・再選択、結果からのプレイリスト作成 |
-| `/books/add` | 聖書章節入力 | 認証。書・章・節と英語・日本語本文の登録・更新 |
-| `/personal` | ユーザー情報 | 認証。本人情報更新、YouTube 連携・解除 |
-| `/error` | エラー | 認証。`errMsg` を URI デコード・UTF-8 Base64 復号して表示。失敗時は既定文言 |
-| その他 | 404 | 存在しないパスの案内とホームへのリンク |
+| パス                 | 画面                   | 利用条件・主な操作                                                          |
+| -------------------- | ---------------------- | --------------------------------------------------------------------------- |
+| `/`                  | 入口                   | サーバー側で `/home` へ転送                                                 |
+| `/home`              | ホーム                 | 公開。検索、曲の選択、歌詞、楽譜取得、PC のログイン導線                     |
+| `/login`             | ログイン               | ユーザー名・パスワードを送信し、成功後に `/mainmenu` へ移動                 |
+| `/mainmenu`          | メインメニュー         | 認証。賛美歌一覧、ランダム選択等への入口                                    |
+| `/hymns`             | 賛美歌情報メンテナンス | 認証。検索、追加・編集モーダル、削除、楽譜登録・取得、プレイリスト作成      |
+| `/hymns/random-five` | 賛美歌ランダム選択     | 認証。検索・再選択、結果からのプレイリスト作成                              |
+| `/books/add`         | 聖書章節入力           | 認証。書・章・節と英語・日本語本文の登録・更新                              |
+| `/personal`          | ユーザー情報           | 認証。本人情報更新、YouTube 連携・解除                                      |
+| `/error`             | エラー                 | 認証。`errMsg` を URI デコード・UTF-8 Base64 復号して表示。失敗時は既定文言 |
+| その他               | 404                    | 存在しないパスの案内とホームへのリンク                                      |
 
 `src/app/(admin)` は URL に含まれないルートグループであり、管理画面の認証確認と共通レイアウトを適用する。`src/app/error.tsx` は描画エラーを受け止める境界で、URL の `/error` 画面とは別のものである。
 
@@ -90,16 +90,16 @@ PC ホームは金彩の装飾写本をイメージした見開きとし、左�
 
 ### 3.3 データの概念
 
-| データ | 主な項目・用途 |
-| --- | --- |
-| 賛美歌一覧 | 文字列 `id`、`nameJp`、`nameKr`、`link`、一致度 `lineNumber`、任意の `snippet` |
-| 賛美歌詳細 | 一覧とは別に、`lyric`、`classic`、`updatedTime`、`updatedUser` を編集に使用 |
-| 検索索引 | `version`、`hymns`。各曲の日本語名、韓国語名、英語名 `nameEn`、日本語・英語歌詞の `lines` 等 |
-| 楽譜 | 賛美歌、調 `chord`、ファイル、オリジナル指定 `isOriginal`。曲と調を指定して取得 |
-| 聖書の節 | 書・章の ID と名称、節番号、`textEn`、`textJp`。既存節には表示名 `name` もある |
-| 認証利用者 | 文字列 `id`、`username`、画面側で空配列に設定する `roles` |
-| 本人情報 | `loginAccount`、`username`、`password`、`dateOfBirth`、`email` |
-| CSRF | `token`、`headerName`、`parameterName`。要求時にはヘッダーを使用 |
+| データ           | 主な項目・用途                                                                                      |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| 賛美歌一覧       | 文字列 `id`、`nameJp`、`nameKr`、`link`、一致度 `lineNumber`、任意の `snippet`                      |
+| 賛美歌詳細       | 一覧とは別に、`lyric`、`classic`、`updatedTime`、`updatedUser` を編集に使用                         |
+| 検索索引         | `version`、`hymns`。各曲の日本語名、韓国語名、英語名 `nameEn`、日本語・英語歌詞の `lines` 等        |
+| 楽譜             | 賛美歌、調 `chord`、ファイル、オリジナル指定 `isOriginal`。曲と調を指定して取得                     |
+| 聖書の節         | 書・章の ID と名称、節番号、`textEn`、`textJp`。既存節には表示名 `name` もある                      |
+| 認証利用者       | 文字列 `id`、`username`、画面側で空配列に設定する `roles`                                           |
+| 本人情報         | `loginAccount`、`username`、`password`、`dateOfBirth`、`email`                                      |
+| CSRF             | `token`、`headerName`、`parameterName`。要求時にはヘッダーを使用                                    |
 | プレイリスト処理 | `playlistId`、`playlistUrl`、状態 `state`、対象件数 `total`、追加済み件数 `added`、任意の `message` |
 
 上記は画面・API 上の論理項目であり、物理テーブル定義ではない。賛美歌の19桁の Snowflake ID は JavaScript の数値精度を避けるため文字列で扱う。`snippet` は取得・生成するが、現行のホーム・管理一覧では表示しない。型の主な定義は [src/api/hymns.ts](../src/api/hymns.ts) と [src/lib/localSearch.ts](../src/lib/localSearch.ts) にある。
@@ -108,21 +108,21 @@ PC ホームは金彩の装飾写本をイメージした見開きとし、左�
 
 ### 4.1 構成要素
 
-| 領域 | 責務 |
-| --- | --- |
-| `src/app/layout.tsx`・`fonts.ts` | HTML の言語・タイトル・アイコン、全体の CSS・フォントと Provider の適用 |
-| `src/app/providers.tsx` | QueryClientProvider、共通 TooltipProvider、FeedbackHost、起動時 CSRF 取得 |
-| `src/app` 配下の `page.tsx` | 画面と画面単位の状態。`(admin)/layout.tsx` は認証確認・セッション確認・共通ナビゲーション |
-| `src/components` | 賛美歌フォーム、楽譜登録、歌詞、調の選択、赤字エディタ、通知等の共通部品 |
-| `src/components/home` | PC ホームの見開き表示と、SVG で調号を描く五線譜 |
-| `src/components/ui` | shadcn/ui CLI が生成する Base UI + Nova の公式部品。Button、Dialog、Sidebar、Table、Carousel 等 |
-| `src/api` | Axios 共通設定、賛美歌 API の型・取得関数・クエリキー |
-| `src/stores` | Zustand による認証（auth）、CSRF（csrf）、通知・確認（feedback）、未保存状態（unsavedGuard） |
-| `src/hooks` | ホームの画面幅判定、遅延反映、未保存確認、プレイリスト作成の共通処理。`use-mobile.ts` は公式 Sidebar に付属する生成ファイル |
-| `src/lib` | 検索、歌詞照合、調号、ダウンロード、プレイリストのポーリング、入力検証、ページ番号等 |
-| `src/app/globals.css` | デザイントークン、ガラス表現、書体のクラス、赤字エディタ、見開きホーム |
-| `public/assets` | 背景画像、メニュー用 SVG 等。固定パスで配信 |
-| `e2e` | API モックと Playwright による画面操作テスト |
+| 領域                             | 責務                                                                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `src/app/layout.tsx`・`fonts.ts` | HTML の言語・タイトル・アイコン、全体の CSS・フォントと Provider の適用                                                     |
+| `src/app/providers.tsx`          | QueryClientProvider、共通 TooltipProvider、FeedbackHost、起動時 CSRF 取得                                                   |
+| `src/app` 配下の `page.tsx`      | 画面と画面単位の状態。`(admin)/layout.tsx` は認証確認・セッション確認・共通ナビゲーション                                   |
+| `src/components`                 | 賛美歌フォーム、楽譜登録、歌詞、調の選択、赤字エディタ、通知等の共通部品                                                    |
+| `src/components/home`            | PC ホームの見開き表示と、SVG で調号を描く五線譜                                                                             |
+| `src/components/ui`              | shadcn/ui CLI が生成する Base UI + Nova の公式部品。Button、Dialog、Sidebar、Table、Carousel 等                             |
+| `src/api`                        | Axios 共通設定、賛美歌 API の型・取得関数・クエリキー                                                                       |
+| `src/stores`                     | Zustand による認証（auth）、CSRF（csrf）、通知・確認（feedback）、未保存状態（unsavedGuard）                                |
+| `src/hooks`                      | ホームの画面幅判定、遅延反映、未保存確認、プレイリスト作成の共通処理。`use-mobile.ts` は公式 Sidebar に付属する生成ファイル |
+| `src/lib`                        | 検索、歌詞照合、調号、ダウンロード、プレイリストのポーリング、入力検証、ページ番号等                                        |
+| `src/app/globals.css`            | デザイントークン、ガラス表現、書体のクラス、赤字エディタ、見開きホーム                                                      |
+| `public/assets`                  | 背景画像、メニュー用 SVG 等。固定パスで配信                                                                                 |
+| `e2e`                            | API モックと Playwright による画面操作テスト                                                                                |
 
 Next.js 16、React 19、TypeScript、Tailwind CSS v4、shadcn/ui（Base UI + Nova）、Zustand、TanStack React Query、Axios、Embla Carousel、Lucide を使用する。インストールされた版はロックファイルで固定する。
 
@@ -157,26 +157,26 @@ shadcn/ui のスタイルは [components.json](../components.json) の `base-nov
 - 曲名の完全一致・前方一致・部分一致、歌詞の部分一致、文字2-gramの被覆率を採点する。あいまい一致の被覆率下限は0.7で、曲名には3文字以上の順序一致も使う。同点は索引の順序を維持する。
 - ローカル採点は0.9超を `CADMIUM`、0.7以上を `BURGUNDY`、それ未満の正の点を `NAPLES`、非一致を `SNOWY` とする。一致曲を点の高い順に先に並べ、非一致曲も後方に残す。一致がない場合は通常順の全曲を表示して案内する。索引の取得に失敗した場合はサーバー検索へ戻す。
 
-| `lineNumber` | 表示 | PC ホームの記号 |
-| --- | --- | --- |
-| `CADMIUM` | よく一致 | ◆◆◆ |
-| `BURGUNDY` | 一致 | ◆◆◇ |
-| `NAPLES` | やや一致 | ◆◇◇ |
-| `SNOWY`・その他 | 関連 | ◇◇◇ |
+| `lineNumber`    | 表示     | PC ホームの記号 |
+| --------------- | -------- | --------------- |
+| `CADMIUM`       | よく一致 | ◆◆◆             |
+| `BURGUNDY`      | 一致     | ◆◆◇             |
+| `NAPLES`        | やや一致 | ◆◇◇             |
+| `SNOWY`・その他 | 関連     | ◇◇◇             |
 
 一致度は検索を確定した場合に表示する。PC ホームの目次には検索中も通し番号を残す。歌詞照合は検索語の先頭の絞り込み記号を外し、`&` で区切り、空白と重複を除く。本文は NFC・大文字小文字を区別しない一致で分割し、PC は臙脂の下線、モバイルは黄色の背景で強調して一致箇所数を示す。ローカル検索のあいまい照合とは別処理なので、検索結果に含まれていても本文中の一致箇所が0になる場合がある。
 
 TanStack Query の既定値は `staleTime: 30秒`、取得失敗時の再試行は1回とする。主な例外は次のとおり。`staleTime` は取得済みデータを新しいとみなす期間であり、その時間ごとの自動ポーリングを意味しない。
 
-| 対象 | 設定・扱い |
-| --- | --- |
-| 検索索引・歌詞 | 5分 |
-| 楽譜の調の一覧 | 60秒。ホームと管理一覧でキャッシュを共有 |
-| 編集用の賛美歌詳細 | 0。フォーカス復帰・再接続での再取得と再試行を無効化 |
-| 本人情報 | 0。フォーカス復帰・再接続での再取得を無効化 |
-| 書・章の一覧 | `Infinity`。利用中は新しいデータとして扱う |
-| ランダム選択 | `staleTime: Infinity`、`gcTime: 0`、再試行なし。検索ごとの nonce で引き直す |
-| 既存節の照会 | `gcTime: 0`。参照されなくなった結果は保持しない |
+| 対象               | 設定・扱い                                                                  |
+| ------------------ | --------------------------------------------------------------------------- |
+| 検索索引・歌詞     | 5分                                                                         |
+| 楽譜の調の一覧     | 60秒。ホームと管理一覧でキャッシュを共有                                    |
+| 編集用の賛美歌詳細 | 0。フォーカス復帰・再接続での再取得と再試行を無効化                         |
+| 本人情報           | 0。フォーカス復帰・再接続での再取得を無効化                                 |
+| 書・章の一覧       | `Infinity`。利用中は新しいデータとして扱う                                  |
+| ランダム選択       | `staleTime: Infinity`、`gcTime: 0`、再試行なし。検索ごとの nonce で引き直す |
+| 既存節の照会       | `gcTime: 0`。参照されなくなった結果は保持しない                             |
 
 賛美歌の追加・編集・削除後は `hymns` で始まるクエリを無効化する。歌詞編集後はその曲の `lyric`、楽譜登録後はその曲の `score-keys` も無効化する。検索条件の切り替え等で `keepPreviousData` が働く場合は前回の行を残し、取得中は薄く表示する。PC ホームの「前」「次」では、移動先の一覧を先に用意する。
 
@@ -233,13 +233,13 @@ TanStack Query の既定値は `staleTime: 30秒`、取得失敗時の再試行�
 
 ### 4.7 未保存確認・通知・エラー
 
-| 対象 | 未保存確認の範囲 |
-| --- | --- |
-| 賛美歌の追加・編集 | 基準値との差を検知し、モーダルの閉じる・×・背景クリック・Esc で破棄を確認。保存中は閉じない |
-| 聖書章節入力 | 本文の入力・既存本文との差を検知。書・章・節の選択値だけの変更は対象外 |
-| 管理レイアウトの移動 | `dirty` を見て、サイドバー等から別パスへ移動する前とログアウト前に確認 |
-| ブラウザからの離脱 | 対象フォームが未保存の間、タブを閉じる・再読み込み等に `beforeunload` の標準確認 |
-| 本人情報・楽譜登録・プレイリスト | 共通の未保存確認を適用していない。楽譜はアップロード中にモーダルを閉じる操作のみ抑止 |
+| 対象                             | 未保存確認の範囲                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------- |
+| 賛美歌の追加・編集               | 基準値との差を検知し、モーダルの閉じる・×・背景クリック・Esc で破棄を確認。保存中は閉じない |
+| 聖書章節入力                     | 本文の入力・既存本文との差を検知。書・章・節の選択値だけの変更は対象外                      |
+| 管理レイアウトの移動             | `dirty` を見て、サイドバー等から別パスへ移動する前とログアウト前に確認                      |
+| ブラウザからの離脱               | 対象フォームが未保存の間、タブを閉じる・再読み込み等に `beforeunload` の標準確認            |
+| 本人情報・楽譜登録・プレイリスト | 共通の未保存確認を適用していない。楽譜はアップロード中にモーダルを閉じる操作のみ抑止        |
 
 管理レイアウトの確認は専用の `go()` を経由する操作に適用する。App Router のすべての遷移やブラウザの戻る・進むを一律に止めるガードではない。同じパスへの移動はクエリの有無によらず確認を省く。強制ログアウトでは `bypass` により標準確認を抑止する。
 
@@ -253,48 +253,48 @@ TanStack Query の既定値は `staleTime: 30秒`、取得失敗時の再試行�
 
 パスは `/api` を除いたフロントエンド上の指定。下表は画面が使用する範囲であり、認可条件、全応答形式、エラーコードの完全な定義はバックエンド側で定める。
 
-| メソッド・パス | 用途・主な指定／応答 |
-| --- | --- |
-| GET `/common/csrf` | `token`・`headerName`・`parameterName` の取得 |
-| GET `/common/me` | 認証確認。`id`・`username` を取得 |
-| POST `/login`、`/logout` | ログイン（`username`・`password` のフォーム送信）、ログアウト |
-| GET `/hymns` | `pageNum`・`pageSize`・`keyword`。`records`・`totalRecords` を取得 |
-| GET `/hymns/search-index` | 画面内検索索引の `version`・`hymns` を取得 |
-| GET `/hymns/{id}`、`/hymns/{id}/lyric` | 編集用詳細、`id`・`lyric` の取得 |
-| POST `/hymns` | `pageSize` と賛美歌情報を送信。追加先の `X-Page-Num` を参照 |
-| PUT・DELETE `/hymns/{id}` | 更新（`id`・`updatedTime` 等）・削除 |
-| GET `/hymns/duplicate-check-jp`・`/hymns/duplicate-check-kr` | `id` と `nameJp` または `nameKr` による名称重複確認 |
-| GET `/hymns/{id}/delete-check` | 削除可否の事前確認 |
-| GET `/hymns/{id}/score` | `keysOnly=true` で調一覧。それ以外は任意の `chord` で Blob 取得 |
-| POST `/hymns/{id}/score` | `score`・`chord`・`isOriginal`・`overwrite` を multipart 送信 |
-| GET `/hymns/random`・`/common/search` | `keyword` によるランダム選択。前者は画面内、後者は管理ヘッダーから使用 |
-| GET `/books`・`/books/{bookId}/chapters` | 書・章の `id`・`name` を取得 |
-| GET `/books/{chapterId}/verse` | `verseNo` による既存節の配列を取得し、先頭を使用 |
-| POST `/books` | `chapterId`・節番号 `id`・`textEn`・`textJp` の保存 |
-| GET・PUT `/students/{id}` | 本人情報の取得・更新 |
-| GET `/students/duplicate-check` | `id`・`loginAccount` による重複確認 |
-| GET `/youtube/status`・`/youtube/authorize-url` | `linked` の取得、ブラウザ遷移による認可開始 |
-| POST `/youtube/unlink` | YouTube 連携解除 |
-| POST `/youtube/create-playlist` | `keyword` または `hymnIds` で作成開始。`PlaylistStatus` を受け取る |
-| GET `/youtube/playlist-status` | `playlistId` で `running`・`done`・`failed` と件数等を取得 |
+| メソッド・パス                                               | 用途・主な指定／応答                                                   |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| GET `/common/csrf`                                           | `token`・`headerName`・`parameterName` の取得                          |
+| GET `/common/me`                                             | 認証確認。`id`・`username` を取得                                      |
+| POST `/login`、`/logout`                                     | ログイン（`username`・`password` のフォーム送信）、ログアウト          |
+| GET `/hymns`                                                 | `pageNum`・`pageSize`・`keyword`。`records`・`totalRecords` を取得     |
+| GET `/hymns/search-index`                                    | 画面内検索索引の `version`・`hymns` を取得                             |
+| GET `/hymns/{id}`、`/hymns/{id}/lyric`                       | 編集用詳細、`id`・`lyric` の取得                                       |
+| POST `/hymns`                                                | `pageSize` と賛美歌情報を送信。追加先の `X-Page-Num` を参照            |
+| PUT・DELETE `/hymns/{id}`                                    | 更新（`id`・`updatedTime` 等）・削除                                   |
+| GET `/hymns/duplicate-check-jp`・`/hymns/duplicate-check-kr` | `id` と `nameJp` または `nameKr` による名称重複確認                    |
+| GET `/hymns/{id}/delete-check`                               | 削除可否の事前確認                                                     |
+| GET `/hymns/{id}/score`                                      | `keysOnly=true` で調一覧。それ以外は任意の `chord` で Blob 取得        |
+| POST `/hymns/{id}/score`                                     | `score`・`chord`・`isOriginal`・`overwrite` を multipart 送信          |
+| GET `/hymns/random`・`/common/search`                        | `keyword` によるランダム選択。前者は画面内、後者は管理ヘッダーから使用 |
+| GET `/books`・`/books/{bookId}/chapters`                     | 書・章の `id`・`name` を取得                                           |
+| GET `/books/{chapterId}/verse`                               | `verseNo` による既存節の配列を取得し、先頭を使用                       |
+| POST `/books`                                                | `chapterId`・節番号 `id`・`textEn`・`textJp` の保存                    |
+| GET・PUT `/students/{id}`                                    | 本人情報の取得・更新                                                   |
+| GET `/students/duplicate-check`                              | `id`・`loginAccount` による重複確認                                    |
+| GET `/youtube/status`・`/youtube/authorize-url`              | `linked` の取得、ブラウザ遷移による認可開始                            |
+| POST `/youtube/unlink`                                       | YouTube 連携解除                                                       |
+| POST `/youtube/create-playlist`                              | `keyword` または `hymnIds` で作成開始。`PlaylistStatus` を受け取る     |
+| GET `/youtube/playlist-status`                               | `playlistId` で `running`・`done`・`failed` と件数等を取得             |
 
 ## 5. テスト・ビルド・運用
 
 ### 5.1 コマンドと自動検証
 
-| コマンド | 目的 |
-| --- | --- |
-| `pnpm install` | 依存関係の導入。pnpm の版は `package.json` の `packageManager` に従う |
-| `pnpm install --frozen-lockfile` | CI・Docker と同じ、ロックファイルを変更しない導入 |
-| `pnpm dev` | ポート3000の開発サーバー。開発時の API 転送を有効化 |
-| `pnpm lint` | ESLint による静的解析 |
-| `pnpm typecheck` | `tsc --noEmit` による型検査 |
-| `pnpm test`・`pnpm test:watch` | Vitest の一括実行・監視実行 |
-| `pnpm build` | Next.js の本番向けビルドと standalone 出力の生成 |
-| `pnpm start` | ビルド済みアプリを `next start` で起動。コンテナの起動方法は6.1に記載 |
-| `pnpm exec playwright install chromium` | ローカル E2E 用のブラウザの導入 |
-| `pnpm e2e` | Playwright による Chromium の画面操作テスト |
-| `docker build .` | Node.js による配信イメージの作成 |
+| コマンド                                | 目的                                                                  |
+| --------------------------------------- | --------------------------------------------------------------------- |
+| `pnpm install`                          | 依存関係の導入。pnpm の版は `package.json` の `packageManager` に従う |
+| `pnpm install --frozen-lockfile`        | CI・Docker と同じ、ロックファイルを変更しない導入                     |
+| `pnpm dev`                              | ポート3000の開発サーバー。開発時の API 転送を有効化                   |
+| `pnpm lint`                             | ESLint による静的解析                                                 |
+| `pnpm typecheck`                        | `tsc --noEmit` による型検査                                           |
+| `pnpm test`・`pnpm test:watch`          | Vitest の一括実行・監視実行                                           |
+| `pnpm build`                            | Next.js の本番向けビルドと standalone 出力の生成                      |
+| `pnpm start`                            | ビルド済みアプリを `next start` で起動。コンテナの起動方法は6.1に記載 |
+| `pnpm exec playwright install chromium` | ローカル E2E 用のブラウザの導入                                       |
+| `pnpm e2e`                              | Playwright による Chromium の画面操作テスト                           |
+| `docker build .`                        | Node.js による配信イメージの作成                                      |
 
 [ESLint の設定](../eslint.config.mjs) では、公式部品をそのまま管理するため、`use-mobile.ts` と `carousel.tsx` の `react-hooks/set-state-in-effect`、`sidebar.tsx` の `react-hooks/purity` にファイル単位の例外を設ける。前者は Effect 内の初期値の設定、後者は読み込み表示の幅を決める乱数が対象となった箇所である。アプリ側には両方のルールを適用する。公式部品を再生成したときは、差分と例外の要否を確認してから Lint・型検査・E2E を実行する。
 
@@ -331,13 +331,13 @@ E2E は [e2e/mock-api.ts](../e2e/mock-api.ts) が `/api/**` の応答を差し�
 
 参考先の Vue 版設計書には AWS の配置と運用があるが、本プロジェクトへの適用を確認できる資料・構成ファイルは含まれない。次は本プロジェクトの確定仕様とはせず、運用側の資料で管理する。
 
-| 項目 | 確認する内容 |
-| --- | --- |
-| DNS・TLS・CDN | Route 53・ACM・CloudFront 等の利用、HTTPS 終端、オリジン通信、キャッシュ |
-| 実行基盤 | サーバー種別、OS・CPU アーキテクチャ、コンテナ配置、イメージ保管先 |
-| ネットワーク・DB | VPC・サブネット・セキュリティグループ、DB 製品と接続経路 |
-| デプロイ | Jenkins 等の利用、取得するイメージタグ、停止時間、ロールバック手順 |
-| 運用・秘密情報 | 監視・ログ・アラート、バックアップ・復旧、資格情報の保管・更新 |
+| 項目             | 確認する内容                                                             |
+| ---------------- | ------------------------------------------------------------------------ |
+| DNS・TLS・CDN    | Route 53・ACM・CloudFront 等の利用、HTTPS 終端、オリジン通信、キャッシュ |
+| 実行基盤         | サーバー種別、OS・CPU アーキテクチャ、コンテナ配置、イメージ保管先       |
+| ネットワーク・DB | VPC・サブネット・セキュリティグループ、DB 製品と接続経路                 |
+| デプロイ         | Jenkins 等の利用、取得するイメージタグ、停止時間、ロールバック手順       |
+| 運用・秘密情報   | 監視・ログ・アラート、バックアップ・復旧、資格情報の保管・更新           |
 
 アカウント ID、インスタンス ID、秘密情報などの識別子・認証情報は本書に記載しない。
 
