@@ -78,12 +78,11 @@
 }
 
 .input {
-  --input: rgb(100 116 139 / 38%);
   display: block;
   height: 46px;
-  padding: 7px 15px;
-  background: rgb(255 255 255 / 97%);
-  color: #172033;
+  padding: 7px 14px;
+  background-color: var(--background);
+  color: var(--foreground);
   font-size: 1rem;
   line-height: 1.5;
 }

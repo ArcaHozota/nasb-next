@@ -80,6 +80,10 @@ test.describe("ログイン", () => {
     await page.goto("/login");
     const username = page.getByLabel("ユーザ名");
     const password = page.getByLabel("パスワード");
+    for (const input of [username, password]) {
+      await expect(input).toHaveCSS("background-color", "rgb(255, 255, 255)");
+      await expect(input).toHaveCSS("border-top-color", "rgb(209, 213, 219)");
+    }
     await username.fill("tester");
     await password.fill("wrong");
     await page.clock.pauseAt(new Date("2026-11-21T00:01:00Z"));
