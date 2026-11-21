@@ -11,8 +11,7 @@
   position: relative;
   width: 360px;
   max-width: calc(100% - 32px);
-  padding: 30px 28px;
-  border: 1px solid transparent;
+  padding-block: 30px;
   border-radius: 20px;
   overflow: visible;
   background: transparent;
@@ -24,7 +23,7 @@
 
 .card::before {
   position: absolute;
-  inset: -1px;
+  inset: 0;
   border: 1px solid rgb(255 255 255 / 60%);
   border-radius: inherit;
   background: rgb(15 23 42 / 66%);
@@ -46,6 +45,8 @@
 
 .content {
   position: relative;
+  width: 62%;
+  margin-inline: auto;
   padding: 0;
 }
 
@@ -71,7 +72,7 @@
   display: block;
   margin-bottom: 8px;
   color: white;
-  font-size: 0.9375rem;
+  font-size: 0.75rem;
   font-weight: 700;
   line-height: 1.5;
 }
@@ -81,7 +82,6 @@
   display: block;
   height: 46px;
   padding: 7px 15px;
-  border-radius: 6px;
   background: rgb(255 255 255 / 97%);
   color: #172033;
   font-size: 1rem;
@@ -93,7 +93,6 @@
   height: 46px;
   padding-inline: 16px;
   border-color: rgb(255 255 255 / 33%);
-  border-radius: 6px;
   background-clip: border-box;
   font-weight: 800;
 }

@@ -6,7 +6,7 @@ test.describe("ログイン", () => {
     await mockApi(page, { login: { status: 200 } });
     await page.goto("/login");
 
-    await page.getByLabel("ユーザー名").fill("tester");
+    await page.getByLabel("ユーザ名").fill("tester");
     await page.getByLabel("パスワード").fill("secret");
     await page.getByRole("button", { name: "ログイン" }).click();
 
@@ -20,12 +20,12 @@ test.describe("ログイン", () => {
     await mockApi(page, { login: { status: 401 } });
     await page.goto("/login");
 
-    await page.getByLabel("ユーザー名").fill("tester");
+    await page.getByLabel("ユーザ名").fill("tester");
     await page.getByLabel("パスワード").fill("wrong");
     await page.getByLabel("パスワード").press("Enter");
 
     await expect(
-      page.getByText("ユーザー名またはパスワードが正しくありません。"),
+      page.getByText("ユーザ名またはパスワードが正しくありません。"),
     ).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
   });
@@ -36,7 +36,7 @@ test.describe("ログイン", () => {
     await mockApi(page, { login: { status: 500 } });
     await page.goto("/login");
 
-    await page.getByLabel("ユーザー名").fill("tester");
+    await page.getByLabel("ユーザ名").fill("tester");
     await page.getByLabel("パスワード").fill("secret");
     await page.getByRole("button", { name: "ログイン" }).click();
 
@@ -46,25 +46,25 @@ test.describe("ログイン", () => {
       ),
     ).toBeVisible();
     await expect(
-      page.getByText("ユーザー名またはパスワードが正しくありません。"),
+      page.getByText("ユーザ名またはパスワードが正しくありません。"),
     ).toHaveCount(0);
   });
 
-  test("ユーザー名の欄でも Enter で送信でき、連打しても1回しか送らない", async ({
+  test("ユーザ名の欄でも Enter で送信でき、連打しても1回しか送らない", async ({
     page,
   }) => {
     const api = await mockApi(page, { login: { status: 401, delayMs: 500 } });
     await page.goto("/login");
 
     await page.getByLabel("パスワード").fill("secret");
-    const username = page.getByLabel("ユーザー名");
+    const username = page.getByLabel("ユーザ名");
     await username.fill("tester");
     await username.press("Enter");
     await page.keyboard.press("Enter");
     await page.keyboard.press("Enter");
 
     await expect(
-      page.getByText("ユーザー名またはパスワードが正しくありません。"),
+      page.getByText("ユーザ名またはパスワードが正しくありません。"),
     ).toBeVisible();
     expect(
       api.calls.filter((c) => c.method === "POST" && c.path === "/login"),
@@ -78,7 +78,7 @@ test.describe("ログイン", () => {
     await page.clock.install({ time: start });
     await mockApi(page, { login: { status: 401 } });
     await page.goto("/login");
-    const username = page.getByLabel("ユーザー名");
+    const username = page.getByLabel("ユーザ名");
     const password = page.getByLabel("パスワード");
     await username.fill("tester");
     await password.fill("wrong");
@@ -87,11 +87,28 @@ test.describe("ログイン", () => {
     const submit = page.getByRole("button", { name: "ログイン", exact: true });
     const cardPosition = await card.boundingBox();
     const buttonPosition = await submit.boundingBox();
-    if (!buttonPosition) throw new Error("ログインボタンが表示されていません");
+    if (!cardPosition || !buttonPosition) {
+      throw new Error("ログインカードまたはボタンが表示されていません");
+    }
 
     await expect(card).toHaveCSS("width", "360px");
-    await expect(username).toHaveCSS("height", "46px");
-    await expect(submit).toHaveCSS("height", "46px");
+    expect(buttonPosition.width).toBeCloseTo(cardPosition.width * 0.62, 1);
+    expect(buttonPosition.x).toBeCloseTo(
+      cardPosition.x + (cardPosition.width - buttonPosition.width) / 2,
+      1,
+    );
+    for (const control of [username, password, submit]) {
+      await expect(control).toHaveCSS("height", "46px");
+      await expect(control).toHaveCSS("border-top-left-radius", "9.888px");
+      expect(await control.boundingBox()).toMatchObject({
+        x: buttonPosition.x,
+        width: buttonPosition.width,
+      });
+    }
+    for (const label of await card.locator("label").all()) {
+      await expect(label).toHaveCSS("font-size", "12px");
+    }
+
     const response = page.waitForResponse(
       (r) => new URL(r.url()).pathname === "/api/login",
     );
@@ -128,7 +145,7 @@ test.describe("ログイン", () => {
     await expect(error).toHaveCount(0);
     await page.clock.runFor(1);
     await expect(error).toContainText(
-      "ユーザー名またはパスワードが正しくありません。",
+      "ユーザ名またはパスワードが正しくありません。",
     );
     await expect(username).toHaveValue("tester");
     await expect(password).toHaveValue("wrong");

@@ -60,7 +60,7 @@ function LoginForm() {
       // パスワードの誤りと区別して伝える
       setError(
         axios.isAxiosError(e) && e.response?.status === 401
-          ? "ユーザー名またはパスワードが正しくありません。"
+          ? "ユーザ名またはパスワードが正しくありません。"
           : "ログインできませんでした。時間をおいて再度お試しください。",
       );
       setLoading(false);
@@ -86,7 +86,7 @@ function LoginForm() {
 
               <Field className={styles.field}>
                 <FieldLabel htmlFor="login-username" className={styles.label}>
-                  ユーザー名
+                  ユーザ名
                 </FieldLabel>
                 <Input
                   id="login-username"
