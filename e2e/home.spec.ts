@@ -20,6 +20,16 @@ test("画面幅768pxでカルーセルとPCの目次を切り替える", async (
   await page.setViewportSize({ width: 768, height: 900 });
   await expect(pager).toBeVisible();
   await expect(slides).toHaveCount(0);
+  const book = page.locator(".book");
+  const left = book.locator(".book-page--left");
+  const right = book.locator(".book-page--right");
+  const leftWidth = await left.evaluate((el) => el.getBoundingClientRect().width);
+  const rightWidth = await right.evaluate((el) => el.getBoundingClientRect().width);
+  expect(leftWidth / rightWidth).toBeCloseTo(454 / 736, 3);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(left).toHaveCSS("width", "454px");
+  await expect(right).toHaveCSS("width", "736px");
 
   await page.setViewportSize({ width: 767, height: 900 });
   await expect(slides).toBeVisible();
@@ -34,9 +44,14 @@ test("ホーム一覧の空白のエラー文言には既定の通知を表示�
     route.fulfill({ status: 500, json: { message: " \t " } }),
   );
   await page.goto("/home");
-  await expect(
-    page.getByText("データの取得に失敗しました", { exact: true }),
-  ).toBeVisible();
+  const toast = page.locator("[data-sonner-toast]");
+  const message = toast.getByText("データの取得に失敗しました", { exact: true });
+  await expect(message).toBeVisible();
+  await expect(toast).toHaveCSS("background-color", "rgb(229, 231, 235)");
+  await expect(message).toHaveCSS("color", "rgb(128, 0, 32)");
+  await expect(message).toHaveCSS("font-family", /^"Noto Serif JP"/);
+  await expect(message).toHaveCSS("font-weight", "700");
+  await expect(message).toHaveCSS("text-align", "center");
 });
 
 test("取得済みの見開きを保ったまま待ち、前後に紙をめくる", async ({ page }) => {

@@ -14,13 +14,14 @@ export default function FeedbackHost() {
 
   return (
     <>
-      {/* スナックバー(旧 MUI Snackbar 相当): 画面下中央・濃いグレー */}
+      {/* トーストは画面下中央に表示する */}
       <Toaster
         position="bottom-center"
         toastOptions={{
           classNames: {
             toast:
-              "!rounded !border-0 !bg-gray-800 !px-4 !py-3 !text-sm !text-white !shadow-lg",
+              "noto-serif rounded! border-0! bg-border! px-4! py-3! text-center text-sm! text-primary! shadow-lg!",
+            title: "font-bold!",
           },
         }}
       />

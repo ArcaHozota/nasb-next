@@ -349,15 +349,19 @@ a.glass-item:hover {
   overflow-x: clip;
 }
 
-/* 見開きは幅最大1190px・高さ740px。低い画面ではページ全体をスクロールする。 */
+/* 原寸の紙面は左454px・右736px。狭い画面では左右を同じ比率で縮める。 */
 .book {
-  --book-contents-width: 40%;
+  --book-left-size: 454;
+  --book-right-size: 736;
+  --book-spread-size: calc(var(--book-left-size) + var(--book-right-size));
+  --book-cover-edge: 4px;
+  --book-contents-width: calc(100% * var(--book-left-size) / var(--book-spread-size));
   position: relative;
   isolation: isolate;
   display: flex;
-  width: min(1190px, 100%);
+  width: min(calc(var(--book-spread-size) * 1px + 2 * var(--book-cover-edge)), 100%);
   height: 740px;
-  border: 4px solid #24364b;
+  border: var(--book-cover-edge) solid #24364b;
   border-bottom-width: 6px;
   border-radius: 3px;
   box-shadow: 0 2px 0 #917042, 0 5px 0 #1b2838, 0 18px 40px #0007;
@@ -482,7 +486,7 @@ a.glass-item:hover {
   --turn-fold: -90deg;
   --turn-end: -178deg;
   --turn-skew: 2.4deg;
-  --turn-land-width: 0.667;
+  --turn-land-width: calc(var(--book-left-size) / var(--book-right-size));
   --turn-shadow-direction: to left;
   --turn-clip: inset(0 100% 0 0);
   position: absolute;
@@ -497,7 +501,7 @@ a.glass-item:hover {
   --turn-fold: 90deg;
   --turn-end: 178deg;
   --turn-skew: -2.4deg;
-  --turn-land-width: 1.5;
+  --turn-land-width: calc(var(--book-right-size) / var(--book-left-size));
   --turn-shadow-direction: to right;
   --turn-clip: inset(0 0 0 100%);
 }
