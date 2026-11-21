@@ -87,6 +87,26 @@
   line-height: 1.5;
 }
 
+/* フォーカス: shadcn/ui 標準の burgundy の枠と 3px のリング。
+   ガラス(濃い地)の上では primary(#800020)の半透明のリングが沈んで見えないため、
+   リングだけ明るめの burgundy にする(Tailwind の ring が使う変数を上書き) */
+.input:focus-visible {
+  --tw-ring-color: rgb(192 64 95 / 70%);
+}
+
+/* ブラウザの自動入力: Chrome / Safari は保存済みのユーザ名・パスワードを入れた欄の地を
+   水色(#e8f0fe)にし、background-color では上書きできない。内側への塗りつぶしの影で白に戻し、
+   文字色もそろえる。フォーカス中のリング(--tw-ring-shadow)は影の後ろに重ねて残す */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  box-shadow:
+    inset 0 0 0 1000px var(--background),
+    var(--tw-ring-shadow, 0 0 #0000);
+}
+
 .submit {
   width: 100%;
   height: 46px;

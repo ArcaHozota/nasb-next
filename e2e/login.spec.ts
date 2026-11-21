@@ -157,6 +157,34 @@ test.describe("ログイン", () => {
   });
 });
 
+test("入力欄: キーボードで選ぶと明るい burgundy のリングが出て、自動入力の水色は白で隠す", async ({
+  page,
+}) => {
+  await mockApi(page, {});
+  await page.goto("/login");
+  const username = page.getByLabel("ユーザ名");
+  await username.fill("tester");
+  await page.getByLabel("パスワード").focus();
+  await page.keyboard.press("Shift+Tab");
+  await expect(username).toHaveCSS("border-top-color", "rgb(128, 0, 32)");
+  await expect(username).toHaveCSS("box-shadow", /rgba\(192, 64, 95, 0\.7\) 0px 0px 0px 3px/);
+
+  // 自動入力はテストのブラウザでは起こせないため、ルールが入っていることを確かめる
+  const autofill = await page.evaluate(() =>
+    [...document.styleSheets].flatMap((sheet) => {
+      try {
+        return [...sheet.cssRules];
+      } catch {
+        return [];
+      }
+    })
+      .filter((r): r is CSSStyleRule => r instanceof CSSStyleRule)
+      .find((r) => r.selectorText.includes(":-webkit-autofill"))
+      ?.style.boxShadow ?? "",
+  );
+  expect(autofill).toContain("inset 0 0 0 1000px var(--background)");
+});
+
 test("未ログインで管理画面を開くとホームへ戻る", async ({ page }) => {
   await mockApi(page, { loggedIn: false });
   await page.goto("/hymns");
