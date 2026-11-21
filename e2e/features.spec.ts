@@ -122,6 +122,9 @@ test.describe("確認ダイアログ(タイトルと「いいえ」「はい」�
 
     await page.getByRole("button", { name: "ログアウト" }).click();
     const confirm = page.getByRole("alertdialog", { name: "警告" });
+    const title = confirm.getByRole("heading", { name: "警告", exact: true });
+    await expect(title).toHaveCSS("font-family", /^"Noto Serif JP"/);
+    await expect(title).toHaveCSS("font-weight", "700");
     await expect(confirm).toContainText("ログアウトしますか？");
     await confirm.getByRole("button", { name: "いいえ" }).click();
     await expect(confirm).toHaveCount(0);

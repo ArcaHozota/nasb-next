@@ -48,11 +48,13 @@ export default function ConfirmDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="noto-serif">
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogTitle className="font-bold">{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>{CANCEL_LABEL}</AlertDialogCancel>
+          <AlertDialogCancel onClick={onCancel}>
+            {CANCEL_LABEL}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
               onConfirm();
