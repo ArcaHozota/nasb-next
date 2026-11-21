@@ -15,12 +15,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Field, FieldLabel } from "@/components/ui/field";
 import PageBackground from "@/components/PageBackground";
+import PcOnly from "@/components/PcOnly";
+import "@fontsource/noto-sans-jp/800.css";
+import "@fontsource/noto-sans-jp/900.css";
+import styles from "./login.module.css";
 
-// ガラス風カードの上に置くため半透明の白背景にする
-const LOGIN_INPUT =
-  "h-10 border-white/60 bg-white/80 focus-visible:border-primary focus-visible:ring-primary/30";
+const MIN_LOGIN_DURATION_MS = 3300;
 
 export default function LoginView() {
+  return (
+    <PcOnly>
+      <LoginForm />
+    </PcOnly>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
 
@@ -37,7 +47,13 @@ export default function LoginView() {
     setError(EMPTY_STRING);
     setLoading(true);
     try {
-      await login(username, password);
+      const [result] = await Promise.allSettled([
+        login(username, password),
+        new Promise<void>((resolve) =>
+          setTimeout(resolve, MIN_LOGIN_DURATION_MS),
+        ),
+      ]);
+      if (result.status === "rejected") throw result.reason;
       router.push("/mainmenu");
     } catch (e: unknown) {
       // 認証失敗はサーバーが 401 を返す。それ以外(通信エラー・500 など)は
@@ -47,75 +63,83 @@ export default function LoginView() {
           ? "ユーザー名またはパスワードが正しくありません。"
           : "ログインできませんでした。時間をおいて再度お試しください。",
       );
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center">
+    <div className={styles.page}>
       <PageBackground src="/assets/login-bg.webp" />
 
-      <Card className="w-90 gap-0 rounded-[18px] border-white/45 bg-white/25 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-2xl backdrop-saturate-150">
-        <CardContent className="p-4">
-          <form onSubmit={onLogin} aria-label="ログイン">
-          <h1 className="mb-6 text-center text-2xl font-bold tracking-wide text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.4)]">
-            NASB1995
-          </h1>
-
-          <Field className="mb-4 gap-1.5">
-            <FieldLabel
-              htmlFor="login-username"
-              className="font-normal text-white/90"
+      <Card className={styles.card} data-login-card data-loading={loading}>
+        <p className="sr-only" role="status">
+          {loading ? "ログイン中です" : ""}
+        </p>
+        <CardContent className={styles.content}>
+          <form onSubmit={onLogin} aria-label="ログイン" aria-busy={loading}>
+            <fieldset
+              className={styles.fields}
+              disabled={loading}
+              aria-hidden={loading}
             >
-              ユーザー名
-            </FieldLabel>
-            <Input
-              id="login-username"
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              type="text"
-              className={LOGIN_INPUT}
-            />
-          </Field>
+              <h1 className={styles.title}>NASB1995</h1>
 
-          <Field className="mb-4 gap-1.5">
-            <FieldLabel
-              htmlFor="login-password"
-              className="font-normal text-white/90"
+              <Field className={styles.field}>
+                <FieldLabel htmlFor="login-username" className={styles.label}>
+                  ユーザー名
+                </FieldLabel>
+                <Input
+                  id="login-username"
+                  autoComplete="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  type="text"
+                  className={styles.input}
+                />
+              </Field>
+
+              <Field className={styles.field}>
+                <FieldLabel htmlFor="login-password" className={styles.label}>
+                  パスワード
+                </FieldLabel>
+                <Input
+                  id="login-password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  className={styles.input}
+                />
+              </Field>
+
+              {error && (
+                <Alert variant="destructive" className={styles.error}>
+                  <CircleAlert aria-hidden="true" />
+                  <AlertDescription className={styles.errorText}>
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </fieldset>
+
+            <Button
+              className={styles.submit}
+              type="submit"
+              disabled={loading}
+              aria-label={loading ? "ログイン中" : "ログイン"}
             >
-              パスワード
-            </FieldLabel>
-            <Input
-              id="login-password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              type="password"
-              className={LOGIN_INPUT}
-            />
-          </Field>
-
-          {error && (
-            <Alert
-              variant="destructive"
-              className="mb-4 border-red-300 bg-red-50/95 py-2"
-            >
-              <CircleAlert />
-              <AlertDescription className="text-red-700">
-                {error}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <Button
-            className="w-full font-bold"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? <Spinner /> : <span>ログイン</span>}
-          </Button>
+              {loading ? (
+                <span className={styles.progress} aria-hidden="true">
+                  <Spinner
+                    className="size-[18px]"
+                    viewBox="1.875 1.875 20.25 20.25"
+                    strokeWidth={2.25}
+                  />
+                </span>
+              ) : (
+                "ログイン"
+              )}
+            </Button>
           </form>
         </CardContent>
       </Card>

@@ -34,6 +34,7 @@ import PageBackground from "@/components/PageBackground";
 import HymnScoreModal from "@/components/HymnScoreModal";
 import HymnFormModal from "@/components/HymnFormModal";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -111,7 +112,15 @@ export default function HymnList() {
   const [submittedKeyword, setSubmittedKeyword] = useState(EMPTY_STRING);
 
   const pageParams = { pageNum: page, pageSize, keyword: submittedKeyword };
-  const { data, isFetching } = useQuery({
+  const {
+    data,
+    error,
+    isError,
+    isFetching,
+    isSuccess,
+    isPlaceholderData,
+    refetch,
+  } = useQuery({
     queryKey: hymnKeys.page(pageParams),
     queryFn: () => fetchHymnPage(pageParams),
     placeholderData: keepPreviousData,
@@ -124,7 +133,8 @@ export default function HymnList() {
 
   // 最後のページの最後の1件を削除した等で、今のページが総ページ数を超えたら最終ページへ戻す
   // (Effect ではなく描画中に state を調整する。取得中は前ページのデータなので判定しない)
-  if (!isFetching && data && page > totalPages) {
+  const listReady = isSuccess && !isFetching && !isPlaceholderData;
+  if (listReady && page > totalPages) {
     setPage(totalPages);
   }
 
@@ -189,9 +199,8 @@ export default function HymnList() {
     );
     if (!ok) return;
     try {
-      const { headers } = await api.delete(`/hymns/${item.id}`);
-      const msg = headers["x-page-num"] ?? "削除しました";
-      toast(msg);
+      await api.delete(`/hymns/${item.id}`);
+      toast("削除しました");
       void invalidateHymns(queryClient);
     } catch (e: unknown) {
       toast(extractErrorMessage(e, "削除に失敗しました"));
@@ -235,7 +244,11 @@ export default function HymnList() {
 
         <CardContent className="p-6">
           <div className="mb-4 grid grid-cols-[12%_34%_30%_24%] items-center gap-2">
-            <form role="search" className="col-span-2" onSubmit={onSearchSubmit}>
+            <form
+              role="search"
+              className="col-span-2"
+              onSubmit={onSearchSubmit}
+            >
               <InputGroup className="max-w-120 has-[[data-slot=input-group-control]:focus-visible]:border-primary has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20">
                 <InputGroupInput
                   value={keyword}
@@ -262,11 +275,7 @@ export default function HymnList() {
             {/* 操作列と同じ幅のセルに収め、列内で中央寄せにする
                 (下の操作列のアイコンボタンと同じjustify-center) */}
             <div className="flex items-center justify-center gap-2">
-              <Button
-                className="font-bold"
-                type="button"
-                onClick={goAdd}
-              >
+              <Button className="font-bold" type="button" onClick={goAdd}>
                 <CirclePlus className="h-4 w-4" /> 賛美歌情報追加
               </Button>
               <Hint label="プレイリスト作成">
@@ -274,7 +283,7 @@ export default function HymnList() {
                   size="icon"
                   aria-label="プレイリスト作成"
                   type="button"
-                  disabled={playlist.creating}
+                  disabled={playlist.creating || !listReady}
                   onClick={onCreatePlaylist}
                 >
                   {playlist.creating ? (
@@ -287,7 +296,39 @@ export default function HymnList() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-md border border-gray-200">
+          {isError && (
+            <Alert variant="destructive" className="mb-4 gap-2">
+              <AlertDescription>
+                <p>
+                  {extractErrorMessage(error, "賛美歌一覧の取得に失敗しました")}
+                </p>
+                {data && (
+                  <p>
+                    一覧を更新できませんでした。表示中の一覧は前回取得した内容です。
+                  </p>
+                )}
+              </AlertDescription>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-fit"
+                disabled={isFetching}
+                onClick={() => void refetch()}
+              >
+                再試行
+              </Button>
+            </Alert>
+          )}
+          <div
+            className="overflow-hidden rounded-md border border-gray-200"
+            aria-busy={isFetching}
+            hidden={isError && !data}
+          >
+            {isFetching && (
+              <span className="sr-only" role="status">
+                賛美歌一覧を読み込み中です
+              </span>
+            )}
             <Table className="table-fixed">
               <colgroup>
                 <col style={{ width: "12%" }} />
@@ -334,7 +375,7 @@ export default function HymnList() {
                       </TableCell>
                     </TableRow>
                   ))}
-                {!isFetching && records.length === 0 && (
+                {listReady && records.length === 0 && (
                   <TableRow className="hover:bg-transparent">
                     <TableCell
                       colSpan={4}
@@ -358,7 +399,7 @@ export default function HymnList() {
                         "hover:brightness-[0.97]",
                         row.link && "cursor-pointer",
                         // ページ切替中は前ページの行を薄く表示する
-                        isFetching && "opacity-50",
+                        (isFetching || isError) && "opacity-50",
                       )}
                       onClick={() => openYoutube(row)}
                       onKeyDown={(e) => {
@@ -488,10 +529,13 @@ export default function HymnList() {
 
           {/* ページネーション(旧 DataGrid の paginationMode="server" 相当) */}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-600">
-            <div>
-              全{totalRecords}件 / {page} / {totalPages}ページ
-            </div>
-            <div className="flex items-center gap-3">
+            {data && !isPlaceholderData && (
+              <div>
+                全{totalRecords}件 / {page} / {totalPages}ページ
+                {isError && <span>（前回取得時）</span>}
+              </div>
+            )}
+            <div className="ml-auto flex items-center gap-3">
               <Select
                 value={String(pageSize)}
                 items={pageSizeOptions.map((opt) => ({
@@ -516,7 +560,7 @@ export default function HymnList() {
                 </SelectContent>
               </Select>
 
-              <Pagination className="mx-0 w-auto">
+              <Pagination className={cn("mx-0 w-auto", !data && "hidden")}>
                 <PaginationContent className="gap-0.5 rounded-md border border-gray-300 bg-white p-0.5">
                   <PaginationItem>
                     <Hint label="前のページ">

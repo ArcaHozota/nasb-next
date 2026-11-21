@@ -1,13 +1,14 @@
 "use client";
 
 // src/components/home/KeyStaff.tsx
-// 選んだ長調の調号を描いたト音記号の五線譜。押すとその調の楽譜をダウンロードする(PC版ホーム)。
+// 選んだ長調の調号を描いたト音記号の五線譜。押すとその調の楽譜をダウンロードする。
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { accidentalSteps, keySignature } from "@/lib/keySignature";
 import { cn } from "@/lib/utils";
 import { TREBLE_CLEF_G_LINE, TREBLE_CLEF_PATH } from "@/lib/trebleClef";
+import type { ScoreStaffState } from "@/hooks/use-hymn-score";
 
 // 五線の位置(viewBox 上の y)。線の間隔 8、段(線と間)の間隔 4
 const TOP_LINE_Y = 20;
@@ -66,13 +67,15 @@ export default function KeyStaff({
   isOriginal,
   state,
   onDownload,
+  className,
 }: {
   /** 選択中の調(null: 楽譜なし・読み込み中) */
   chord: string | null;
   isOriginal: boolean;
   /** ready: 押せる / loading: 調の一覧を取得中 / empty: 楽譜未登録 / downloading: ダウンロード中 */
-  state: "ready" | "loading" | "empty" | "downloading";
+  state: ScoreStaffState;
   onDownload: () => void;
+  className?: string;
 }) {
   const sig = keySignature(chord);
   const steps = accidentalSteps(sig);
@@ -93,6 +96,7 @@ export default function KeyStaff({
       className={cn(
         // 五線譜そのものがボタン。Button 既定の高さ・余白・太字を打ち消し、薄い罫線の面にする
         "book-staff h-auto max-w-full items-center justify-start gap-4.5 self-start rounded-md border border-transparent py-1.5 pr-3.5 pl-1.5 text-base! leading-normal! font-normal whitespace-normal text-[#4a3426] has-[>svg]:pr-3.5 has-[>svg]:pl-1.5 hover:border-(--book-rule) hover:bg-(--book-hover) hover:text-[#4a3426] focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--book-blue) disabled:text-[#b8a888] disabled:opacity-100",
+        className,
       )}
       disabled={disabled}
       aria-label={

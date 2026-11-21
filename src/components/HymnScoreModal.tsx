@@ -31,6 +31,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Switch } from "@/components/ui/switch";
 import { useFeedbackStore } from "@/stores/feedback";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import { keyLabel, MAJOR_KEYS } from "@/lib/keySignature";
 
 /** バックエンドの上限(現行 struts.multipart.maxSize と同じ 30MB) */
 const MAX_FILE_BYTES = 30 * 1024 * 1024;
@@ -41,26 +42,6 @@ type Props = {
   onClose: () => void;
   onUploaded: () => void;
 };
-
-/**
- * 12長調。value は DB(HYMNS_WORK.CHORD)に保存する値(ASCII)、label は画面表示。
- * 値はバックエンド(HymnService.MajorKeys)の許可リストと同じにすること(並び順は画面だけのもの)。
- * 6列で並べ、上の段が A, B♭, B, C, D♭, D、下の段が E♭, E, F, G♭, G, A♭ になる(半音ずつ上がる順)。
- */
-const MAJOR_KEYS = [
-  { value: "A", label: "A" },
-  { value: "Bb", label: "B♭" },
-  { value: "B", label: "B" },
-  { value: "C", label: "C" },
-  { value: "Db", label: "D♭" },
-  { value: "D", label: "D" },
-  { value: "Eb", label: "E♭" },
-  { value: "E", label: "E" },
-  { value: "F", label: "F" },
-  { value: "Gb", label: "G♭" },
-  { value: "G", label: "G" },
-  { value: "Ab", label: "A♭" },
-] as const;
 
 export default function HymnScoreModal({
   hymnId,
@@ -142,7 +123,7 @@ export default function HymnScoreModal({
     await doUpload(true);
   };
 
-  const chordLabel = MAJOR_KEYS.find((k) => k.value === chord)?.label ?? chord;
+  const chordLabel = keyLabel(chord);
 
   return (
     <Dialog
@@ -194,14 +175,14 @@ export default function HymnScoreModal({
             aria-invalid={!!chordError}
             className="grid w-full grid-cols-6 gap-1.5"
           >
-            {MAJOR_KEYS.map((k) => (
+            {MAJOR_KEYS.map((key) => (
               <ToggleGroupItem
-                key={k.value}
-                value={k.value}
-                aria-label={k.label}
+                key={key}
+                value={key}
+                aria-label={keyLabel(key)}
                 className="h-9 rounded-md! border-l! px-0 text-sm data-pressed:border-primary data-pressed:bg-primary data-pressed:text-primary-foreground"
               >
-                {k.label}
+                {keyLabel(key)}
               </ToggleGroupItem>
             ))}
           </ToggleGroup>

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import JerusalemCross from "@/components/JerusalemCross";
+import PcOnly from "@/components/PcOnly";
 import {
   Anchor,
   Package,
@@ -67,6 +68,18 @@ import {
 const SESSION_CHECK_INTERVAL_MS = 15_000;
 
 export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <PcOnly>
+      <AuthenticatedLayout>{children}</AuthenticatedLayout>
+    </PcOnly>
+  );
+}
+
+function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -225,7 +238,9 @@ export default function AdminLayout({
       await logout();
       hardRedirectHome();
     } catch (e) {
-      toast(extractErrorMessage(e, "ログアウトに失敗しました。"));
+      toast(
+        extractErrorMessage(e, "ログアウトに失敗しました。もう一度お試しください。"),
+      );
     } finally {
       loggingOut.current = false;
     }

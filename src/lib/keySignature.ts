@@ -1,5 +1,5 @@
 // src/lib/keySignature.ts
-// 長調12種(楽譜の調。HymnScoreModal の MAJOR_KEYS と同じ値)の調号と日本語名。
+// 楽譜で扱う長調12種の並び順、調号と日本語名。
 // ト音記号の五線譜に調号(♯・♭)を描くための位置もここで決める。
 
 type KeySignature = {
@@ -12,6 +12,27 @@ type KeySignature = {
   /** 表示用の調名(例: B♭) */
   label: string;
 };
+
+/** A から半音ずつ上がる順。値はバックエンドの許可リストと同じ。 */
+export const MAJOR_KEYS = [
+  "A",
+  "Bb",
+  "B",
+  "C",
+  "Db",
+  "D",
+  "Eb",
+  "E",
+  "F",
+  "Gb",
+  "G",
+  "Ab",
+];
+
+export function keyOrder(chord: string) {
+  const index = MAJOR_KEYS.indexOf(chord);
+  return index === -1 ? MAJOR_KEYS.length : index;
+}
 
 const SIGNATURES: Record<string, Omit<KeySignature, "label">> = {
   C: { accidental: null, count: 0, nameJa: "ハ長調" },
@@ -33,7 +54,9 @@ export const keyLabel = (chord: string) =>
   chord.length > 1 && chord.endsWith("b") ? `${chord.slice(0, -1)}♭` : chord;
 
 /** 調の情報。未知の調は null */
-export function keySignature(chord: string | null | undefined): KeySignature | null {
+export function keySignature(
+  chord: string | null | undefined,
+): KeySignature | null {
   if (!chord) return null;
   const sig = SIGNATURES[chord];
   return sig ? { ...sig, label: keyLabel(chord) } : null;

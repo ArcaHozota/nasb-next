@@ -32,7 +32,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { extractErrorMessage } from "@/lib/constants";
 import { keyLabel } from "@/lib/keySignature";
 import { countHits, lyricQueryOptions } from "@/lib/lyrics";
-import { scoreKeysQueryOptions } from "@/lib/scoreKeys";
+import { useHymnScore } from "@/hooks/use-hymn-score";
 import { cn } from "@/lib/utils";
 import { useFeedbackStore } from "@/stores/feedback";
 import type { HymnSummary } from "@/api/hymns";
@@ -79,36 +79,9 @@ function HymnPage({
   terms: string[];
   onDownload: (id: string, chord?: string) => Promise<void>;
 }) {
-  const keysQuery = useQuery(scoreKeysQueryOptions(hymn.id));
+  const { keysQuery, keys, chord, isOriginal, staffState, setPicked, download } =
+    useHymnScore(hymn.id, onDownload);
   const lyricQuery = useQuery(lyricQueryOptions(hymn.id));
-  const keys = keysQuery.data ?? [];
-
-  // 最初はオリジナルキー、無ければ並びの最初の調
-  const [picked, setPicked] = useState<string | null>(null);
-  const defaultChord =
-    keys.find((k) => k.isOriginal)?.chord ?? keys[0]?.chord ?? null;
-  const chord =
-    picked && keys.some((k) => k.chord === picked) ? picked : defaultChord;
-  const isOriginal = keys.find((k) => k.chord === chord)?.isOriginal ?? false;
-
-  const [downloading, setDownloading] = useState(false);
-  const download = async () => {
-    if (!chord) return;
-    setDownloading(true);
-    try {
-      await onDownload(hymn.id, chord);
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const staffState = keysQuery.isPending
-    ? "loading"
-    : keys.length === 0
-      ? "empty"
-      : downloading
-        ? "downloading"
-        : "ready";
 
   const match = terms.length > 0 ? matchOf(hymn.lineNumber) : null;
   const lyric = lyricQuery.data ?? "";

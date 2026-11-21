@@ -26,6 +26,19 @@ test("画面幅768pxでカルーセルとPCの目次を切り替える", async (
   await expect(pager).toHaveCount(0);
 });
 
+test("ホーム一覧の空白のエラー文言には既定の通知を表示する", async ({
+  page,
+}) => {
+  await mockApi(page);
+  await page.route("**/api/hymns?**", (route) =>
+    route.fulfill({ status: 500, json: { message: " \t " } }),
+  );
+  await page.goto("/home");
+  await expect(
+    page.getByText("データの取得に失敗しました", { exact: true }),
+  ).toBeVisible();
+});
+
 test("取得済みの見開きを保ったまま待ち、前後に紙をめくる", async ({ page }) => {
   await page.setViewportSize({ width: 780, height: 900 });
   const api = await mockApi(page, { hymns: makeHymns(25) });

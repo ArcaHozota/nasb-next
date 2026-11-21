@@ -38,6 +38,10 @@ describe("extractBlobErrorMessage", () => {
       "   ",
       "123",
       '""',
+      '"   "',
+      '{"message":null}',
+      '{"message":false}',
+      '{"message":" \\t "}',
     ]) {
       expect(await extractBlobErrorMessage(blobError(body), FALLBACK)).toBe(
         FALLBACK,

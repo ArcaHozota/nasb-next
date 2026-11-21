@@ -6,14 +6,14 @@
 import type { QueryClient } from "@tanstack/react-query";
 import api from "@/api/axios";
 import { extractErrorMessage } from "@/lib/constants";
+import { keyOrder } from "@/lib/keySignature";
 import { useFeedbackStore } from "@/stores/feedback";
 import type { ScoreKey } from "@/components/ScoreKeyPopover";
 
 /** 調の一覧を新鮮とみなす時間。他の端末でのアップロードもこの時間内には反映される */
 const SCORE_KEYS_STALE_MS = 60 * 1000;
 
-const scoreKeysQueryKey = (id: string) =>
-  ["score-keys", String(id)] as const;
+const scoreKeysQueryKey = (id: string) => ["score-keys", String(id)] as const;
 
 /** 調の一覧のクエリ設定(useQuery・fetchQuery の両方で使う) */
 export const scoreKeysQueryOptions = (id: string) => ({
@@ -23,10 +23,16 @@ export const scoreKeysQueryOptions = (id: string) => ({
       params: { keysOnly: true },
     });
     const list = Array.isArray(data) ? data : [];
-    return list.map((k: { chord: string; isOriginal?: boolean | string }) => ({
-      chord: k.chord,
-      isOriginal: k.isOriginal === true || k.isOriginal === "true",
-    }));
+    return list
+      .map(
+        (k: { chord: string; isOriginal?: boolean | string }): ScoreKey => ({
+          chord: k.chord,
+          isOriginal: k.isOriginal === true || k.isOriginal === "true",
+        }),
+      )
+      .sort(
+        (a: ScoreKey, b: ScoreKey) => keyOrder(a.chord) - keyOrder(b.chord),
+      );
   },
   staleTime: SCORE_KEYS_STALE_MS,
 });
@@ -36,10 +42,8 @@ export const fetchScoreKeysCached = (
   id: string,
 ): Promise<ScoreKey[]> => queryClient.fetchQuery(scoreKeysQueryOptions(id));
 
-export const invalidateScoreKeys = (
-  queryClient: QueryClient,
-  id: string,
-) => queryClient.invalidateQueries({ queryKey: scoreKeysQueryKey(id) });
+export const invalidateScoreKeys = (queryClient: QueryClient, id: string) =>
+  queryClient.invalidateQueries({ queryKey: scoreKeysQueryKey(id) });
 
 /** 調の一覧を取得する。失敗したときはトーストを出して null を返す */
 export async function fetchScoreKeysOrToast(

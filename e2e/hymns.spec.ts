@@ -26,8 +26,8 @@ test.describe("賛美歌一覧", () => {
       if (url.searchParams.has("keysOnly")) {
         await route.fulfill({
           json: [
-            { chord: "G", isOriginal: true },
             { chord: "Ab", isOriginal: false },
+            { chord: "G", isOriginal: true },
           ],
         });
       } else {
@@ -39,7 +39,7 @@ test.describe("賛美歌一覧", () => {
     const trigger = page.getByRole("button", { name: "楽譜をダウンロード" });
     await trigger.click();
     const popup = page.getByRole("dialog", { name: "楽譜の調を選ぶ" });
-    await expect(popup.getByRole("menuitem", { name: "G*" })).toBeVisible();
+    await expect(popup.getByRole("menuitem")).toHaveText(["G*", "A♭"]);
 
     const downloading = page.waitForEvent("download");
     await popup.getByRole("menuitem", { name: "A♭" }).click();

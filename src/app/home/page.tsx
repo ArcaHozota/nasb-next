@@ -2,7 +2,7 @@
 
 // src/app/home/page.tsx
 // 旧 views/HomeView.vue を移植
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   useInfiniteQuery,
@@ -10,7 +10,6 @@ import {
   useQueryClient,
   keepPreviousData,
 } from "@tanstack/react-query";
-import type { AxiosError } from "axios";
 import { ScrollText, Search, SearchX } from "lucide-react";
 import {
   fetchHymnPage,
@@ -18,9 +17,7 @@ import {
   type HymnPage,
   type HymnSummary,
 } from "@/api/hymns";
-import { type ScoreKey } from "@/components/ScoreKeyPopover";
-import ScoreKeyDialog from "@/components/ScoreKeyDialog";
-import LyricViewer, { type LyricTarget } from "@/components/LyricViewer";
+import MobileHymnSheet from "@/components/home/MobileHymnSheet";
 import OpenHymnalHome from "@/components/home/OpenHymnalHome";
 import { extractTerms } from "@/lib/lyrics";
 import {
@@ -29,8 +26,7 @@ import {
   shouldSearchOnServer,
 } from "@/lib/localSearch";
 import { useFeedbackStore } from "@/stores/feedback";
-import { EMPTY_STRING } from "@/lib/constants";
-import { fetchScoreKeysOrToast } from "@/lib/scoreKeys";
+import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
 import { downloadScoreOrToast } from "@/lib/download";
 import PageBackground from "@/components/PageBackground";
 import Hint from "@/components/Hint";
@@ -80,30 +76,16 @@ const lineClass = (line: string) =>
 // ===== カード部品(モバイルのカルーセル) =====
 // PC版は components/home/OpenHymnalHome.tsx(開いた讃美歌集)で表示する。
 
-// 調を選ぶダイアログ・歌詞シートをカードと同じガラス風にする。
+// 曲の詳細シートをカードと同じガラス風にする。
 // 色はカードの色(.glass-card.is-burgundy 等)に合わせ、カードの兄弟のように見せる。
 const BUBBLE_GLASS =
   "rounded-[18px] border-white/45 text-white backdrop-blur-[20px] backdrop-saturate-[180%] shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.8)]";
-const BUBBLE_ITEM =
-  "text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.66)] hover:bg-white/25 hover:text-white focus-visible:bg-white/25";
 const bubbleTone = (line: string) =>
   ({
-    BURGUNDY: {
-      bg: "bg-[rgba(128,0,32,0.55)]",
-      arrow: "fill-[rgba(128,0,32,0.55)]",
-    },
-    NAPLES: {
-      bg: "bg-[rgba(246,201,28,0.6)]",
-      arrow: "fill-[rgba(246,201,28,0.6)]",
-    },
-    CADMIUM: {
-      bg: "bg-[rgba(13,92,51,0.55)]",
-      arrow: "fill-[rgba(13,92,51,0.55)]",
-    },
-  })[line] ?? {
-    bg: "bg-[rgba(255,255,255,0.4)]",
-    arrow: "fill-[rgba(255,255,255,0.4)]",
-  };
+    BURGUNDY: "bg-[rgba(128,0,32,0.82)]",
+    NAPLES: "bg-[rgba(103,68,0,0.85)]",
+    CADMIUM: "bg-[rgba(13,92,51,0.85)]",
+  })[line] ?? "bg-[rgba(58,43,34,0.85)]";
 
 // カードのエフェクト。
 //   浮き上がり: hover:-translate-y-1 / 押したときの縮み: active:scale-[0.98]
@@ -141,14 +123,13 @@ const LYRIC_BTN =
 // props が変わらないカードは描き直さない
 const HymnCard = memo(function HymnCard({
   item,
-  onScore,
-  onLyric,
+  index,
+  onOpen,
   className,
 }: {
   item: HymnRecord;
-  onScore: (id: string) => void;
-  /** 歌詞を表示する(画面の下から出るシート) */
-  onLyric: (item: HymnRecord) => void;
+  index: number;
+  onOpen: (index: number) => void;
   className?: string;
 }) {
   return (
@@ -178,28 +159,16 @@ const HymnCard = memo(function HymnCard({
         </a>
       </div>
       <div className="relative z-1 mt-3 flex items-center justify-end gap-3.5">
-        <Hint label="歌詞" side="bottom">
+        <Hint label="詳細（歌詞・楽譜）" side="bottom">
           <Button
             type="button"
             variant="ghost"
             size="icon"
             className={cn(SCORE_BTN, LYRIC_BTN)}
-            aria-label="歌詞"
-            onClick={() => onLyric(item)}
+            aria-label="詳細（歌詞・楽譜）"
+            onClick={() => onOpen(index)}
           >
             <ScrollText aria-hidden="true" />
-          </Button>
-        </Hint>
-        <Hint label="楽譜ダウンロード" side="bottom">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={SCORE_BTN}
-            aria-label="楽譜ダウンロード"
-            onClick={() => onScore(item.id)}
-          >
-            𝄞
           </Button>
         </Hint>
       </div>
@@ -241,21 +210,21 @@ type SlideKind = "card" | "skeleton" | "placeholder";
 const CarouselSlide = memo(function CarouselSlide({
   kind,
   item,
-  onScore,
-  onLyric,
+  index,
+  onOpen,
 }: {
   kind: SlideKind;
   item: HymnRecord | undefined;
-  onScore: (id: string) => void;
-  onLyric: (item: HymnRecord) => void;
+  index: number;
+  onOpen: (index: number) => void;
 }) {
   return (
     <CarouselItem className="basis-4/5 pl-3">
       {kind === "card" && item ? (
         <HymnCard
           item={item}
-          onScore={onScore}
-          onLyric={onLyric}
+          index={index}
+          onOpen={onOpen}
           className="is-slide h-full"
         />
       ) : kind === "skeleton" ? (
@@ -335,6 +304,7 @@ export default function HomeView() {
   // モバイル: カルーセルの現在位置(画面検索では、この位置から先読み分だけカードを描く)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [detailIndex, setDetailIndex] = useState<number | null>(null);
   // 一致が1曲も無かったときの案内(全曲を通常の順序で出している)
   const localNotice =
     isLocal && local && local.hitCount === 0
@@ -350,6 +320,7 @@ export default function HomeView() {
       return;
     }
     setPage(1);
+    setDetailIndex(null);
   }, [isMobile]);
 
   const pageParams = {
@@ -369,9 +340,10 @@ export default function HomeView() {
   const {
     data: mobileData,
     isFetching: mobileFetching,
-    isFetchingNextPage,
+    isFetchNextPageError,
     hasNextPage,
     fetchNextPage,
+    refetch: refetchMobile,
     error: mobileError,
   } = useInfiniteQuery({
     queryKey: hymnKeys.infinite(MOBILE_BATCH_SIZE, submittedKeyword),
@@ -389,15 +361,12 @@ export default function HomeView() {
     enabled: isMobile === true && !isLocal,
   });
 
-  const anyError = error ?? mobileError;
+  const anyError = isLocal ? null : isMobile ? mobileError : error;
   useEffect(() => {
     if (anyError) {
-      const msg =
-        (anyError as AxiosError<string>)?.response?.data ?? "通信エラー";
-      toast(typeof msg === "string" ? msg : "通信エラー");
+      toast(extractErrorMessage(anyError, "データの取得に失敗しました"));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anyError]);
+  }, [anyError, toast]);
 
   const records: HymnRecord[] = isLocal
     ? localAll.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -416,8 +385,9 @@ export default function HomeView() {
     });
   };
 
+  const mobilePosition = Math.max(currentSlide, detailIndex ?? 0);
   const mobileRecords: HymnRecord[] = isLocal
-    ? localAll.slice(0, currentSlide + MOBILE_BATCH_SIZE)
+    ? localAll.slice(0, mobilePosition + MOBILE_BATCH_SIZE)
     : (mobileData?.pages.flatMap((p) => p.records) ?? []);
   const mobileTotal = isLocal
     ? localAll.length
@@ -456,23 +426,26 @@ export default function HomeView() {
       isMobile &&
       !isLocal &&
       hasNextPage &&
-      !isFetchingNextPage &&
-      currentSlide >= mobileRecords.length - MOBILE_PREFETCH_REMAINING
+      !mobileFetching &&
+      !mobileError &&
+      mobilePosition >= mobileRecords.length - MOBILE_PREFETCH_REMAINING
     ) {
-      fetchNextPage();
+      void fetchNextPage();
     }
   }, [
     isMobile,
     isLocal,
-    currentSlide,
+    mobilePosition,
     mobileRecords.length,
     hasNextPage,
-    isFetchingNextPage,
+    mobileFetching,
+    mobileError,
     fetchNextPage,
   ]);
 
   // 検索やロゴクリックでデータが入れ替わる時は、カルーセルを先頭へ戻す
   const resetCarousel = () => {
+    setDetailIndex(null);
     carouselApi?.scrollTo(0, true);
     setCurrentSlide(0);
   };
@@ -492,45 +465,14 @@ export default function HomeView() {
     onSearch();
   };
 
-  // この曲で楽譜が登録されている調の一覧(失敗時はトーストを出して null)
-  // モバイル: 調が複数ある曲は中央ダイアログで選ばせ、1件ならそのままダウンロード
-  const [keyDialog, setKeyDialog] = useState<{
-    item: HymnRecord;
-    keys: ScoreKey[];
-  } | null>(null);
-  const onMobileScore = async (id: string) => {
-    const keys = await fetchScoreKeysOrToast(queryClient, id);
-    if (keys === null) return;
-    const item = mobileRecords.find((r) => r?.id === id);
-    if (keys.length > 1 && item) setKeyDialog({ item, keys });
-    else await downloadScoreOrToast(id);
+  const detail = detailIndex === null ? undefined : mobileRecords[detailIndex];
+  const stepDetail = (direction: -1 | 1) => {
+    if (detailIndex === null) return;
+    const next = detailIndex + direction;
+    if (!mobileRecords[next]) return;
+    setDetailIndex(next);
+    carouselApi?.scrollTo(next, true);
   };
-  // カード(memo)に渡すための、参照が変わらない版。
-  // 中身は毎回の描画で最新の onMobileScore に差し替えるので、古い mobileRecords を掴むことはない
-  const onMobileScoreRef = useRef(onMobileScore);
-  useEffect(() => {
-    onMobileScoreRef.current = onMobileScore;
-  });
-  const stableOnMobileScore = useCallback(
-    (id: string) => void onMobileScoreRef.current(id),
-    [],
-  );
-
-  // ===== 歌詞の表示(照合) =====
-  // 表示中の曲(null なら閉じている)。モバイルは画面の下から出るシートで表示する
-  // (PC版は開いた讃美歌集の右ページに歌詞を常に表示する)
-  const [lyricTarget, setLyricTarget] = useState<LyricTarget | null>(null);
-  // setState は参照が変わらないので、memo したカードに渡しても再描画を起こさない
-  const openLyric = useCallback(
-    (item: HymnRecord) =>
-      setLyricTarget({
-        id: item.id,
-        nameJp: item.nameJp,
-        nameKr: item.nameKr,
-        lineNumber: item.lineNumber,
-      }),
-    [],
-  );
   // ハイライトする語。確定した検索キーワードから作る(入力中の文字では変わらない)
   const lyricTerms = useMemo(
     () => extractTerms(submittedKeyword),
@@ -648,7 +590,7 @@ export default function HomeView() {
                 <SkeletonCard className="is-slide w-4/5 shrink-0" />
               </div>
             ) : mobileRecords.length === 0 ? (
-              <NoResults />
+              !anyError && <NoResults />
             ) : (
               <Carousel
                 // 枠の内側に上下 py-7 の余白を足し、-my-7 で相殺して配置は変えない(浮き上がり・光が切れないように)
@@ -671,8 +613,8 @@ export default function HomeView() {
                         key={i}
                         kind={kind}
                         item={item}
-                        onScore={stableOnMobileScore}
-                        onLyric={openLyric}
+                        index={i}
+                        onOpen={setDetailIndex}
                       />
                     );
                   })}
@@ -690,38 +632,35 @@ export default function HomeView() {
           </>
         )}
 
-        <LyricViewer
-          target={lyricTarget}
-          terms={lyricTerms}
-          variant="sheet"
-          onClose={() => setLyricTarget(null)}
-          contentClassName={cn(
-            BUBBLE_GLASS,
-            bubbleTone(lyricTarget?.lineNumber ?? "").bg,
-            "border",
-          )}
-        />
+        {anyError && (
+          <Alert variant="destructive" className="mt-3 gap-2">
+            <AlertDescription>
+              {extractErrorMessage(anyError, "データの取得に失敗しました")}
+            </AlertDescription>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-fit"
+              disabled={mobileFetching}
+              onClick={() => void (isFetchNextPageError ? fetchNextPage() : refetchMobile())}
+            >
+              再試行
+            </Button>
+          </Alert>
+        )}
 
-        <ScoreKeyDialog
-          open={keyDialog !== null}
-          onOpenChange={(o) => {
-            if (!o) setKeyDialog(null);
-          }}
-          title={
-            keyDialog
-              ? `${keyDialog.item.nameJp} / ${keyDialog.item.nameKr}`
-              : undefined
-          }
-          keys={keyDialog?.keys ?? []}
-          onSelect={(chord) => {
-            if (keyDialog) void downloadScoreOrToast(keyDialog.item.id, chord);
-          }}
-          contentClassName={cn(
+        <MobileHymnSheet
+          target={detail}
+          position={(detailIndex ?? 0) + 1}
+          total={mobileTotal}
+          canNext={detailIndex !== null && !!mobileRecords[detailIndex + 1]}
+          onStep={stepDetail}
+          terms={lyricTerms}
+          onClose={() => setDetailIndex(null)}
+          className={cn(
             BUBBLE_GLASS,
-            bubbleTone(keyDialog?.item.lineNumber ?? "").bg,
-            "border",
+            bubbleTone(detail?.lineNumber ?? ""),
           )}
-          itemClassName={BUBBLE_ITEM}
         />
 
         {isMobile && (
