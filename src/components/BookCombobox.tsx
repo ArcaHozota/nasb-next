@@ -26,6 +26,7 @@ type BookOption = { id: number | string; name: string };
 type Props = {
   id?: string;
   books: BookOption[];
+  disabled?: boolean;
   value: number | string;
   onChange: (id: number | string) => void;
   className?: string;
@@ -34,6 +35,7 @@ type Props = {
 export default function BookCombobox({
   id,
   books,
+  disabled,
   value,
   onChange,
   className,
@@ -51,23 +53,22 @@ export default function BookCombobox({
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            disabled={books.length === 0}
+            disabled={disabled || books.length === 0}
             className={cn(
               "w-full justify-between bg-transparent px-2 text-left font-normal hover:bg-transparent focus-visible:border-primary focus-visible:ring-primary/20",
               className,
             )}
           >
-            <span className={cn("truncate", !selected && "text-muted-foreground")}>
+            <span
+              className={cn("truncate", !selected && "text-muted-foreground")}
+            >
               {selected?.name ?? "書を選択"}
             </span>
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         }
       />
-      <PopoverContent
-        align="start"
-        className="w-(--anchor-width) min-w-56 p-0"
-      >
+      <PopoverContent align="start" className="w-(--anchor-width) min-w-56 p-0">
         <Command className={className}>
           <CommandInput placeholder="書名で検索…" />
           <CommandList className="max-h-72">

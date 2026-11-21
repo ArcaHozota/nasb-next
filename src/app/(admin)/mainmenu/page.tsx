@@ -3,7 +3,7 @@
 // src/app/(admin)/mainmenu/page.tsx
 // 旧 views/MainMenu.vue を移植
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useGuardedNavigation } from "@/hooks/use-guarded-navigation";
 import { Card } from "@/components/ui/card";
 import { useFeedbackStore } from "@/stores/feedback";
 import { DELAY_APOLOGY } from "@/lib/constants";
@@ -18,7 +18,7 @@ type MenuCard = {
 };
 
 export default function MainMenu() {
-  const router = useRouter();
+  const { go } = useGuardedNavigation();
   const toast = useFeedbackStore((s) => s.toast);
 
   const cards: MenuCard[] = [
@@ -34,14 +34,14 @@ export default function MainMenu() {
       title: "賛美歌集め",
       color: "#002fa7",
       img: "/assets/bourbon.svg",
-      action: () => router.push("/hymns"),
+      action: () => void go("/hymns"),
     },
     {
       key: "random",
       title: "ランダム選択",
       color: "#006400",
       img: "/assets/newaragon.svg",
-      action: () => router.push("/hymns/random-five"),
+      action: () => void go("/hymns/random-five"),
     },
   ];
 

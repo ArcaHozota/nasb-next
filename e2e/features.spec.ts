@@ -6,11 +6,19 @@ test("賛美歌一覧のプレイリスト作成は、検索条件だけを送�
 }) => {
   const api = await mockApi(page, { loggedIn: true, hymns: makeHymns(12) });
   await page.goto("/hymns");
+  await expect(page.getByText("全12件 / 1 / 2ページ")).toBeVisible();
 
   const search = page.getByRole("search").getByLabel("キーワード");
   await search.fill("賛美");
-  await search.press("Enter");
-  await expect(page.getByText("全12件 / 1 / 2ページ")).toBeVisible();
+  await Promise.all([
+    page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return (
+        url.pathname === "/api/hymns" && url.searchParams.get("keyword") === "賛美"
+      );
+    }),
+    search.press("Enter"),
+  ]);
   const hymnRequests = () =>
     api.calls.filter((c) => c.method === "GET" && c.path === "/hymns");
   const before = hymnRequests().length;

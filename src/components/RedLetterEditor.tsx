@@ -6,122 +6,21 @@
 import {
   forwardRef,
   useEffect,
+  useId,
   useImperativeHandle,
   useRef,
 } from "react";
 import { EMPTY_STRING } from "@/lib/constants";
 
-type Segment = { text: string; red: boolean };
-
-const MARKER_REGEX = /\{\{([\s\S]*?)\}\}/g;
-
-function parseToSegments(raw: string): Segment[] {
-  const segments: Segment[] = [];
-  let lastIndex = 0;
-  let m: RegExpExecArray | null;
-  MARKER_REGEX.lastIndex = 0;
-  while ((m = MARKER_REGEX.exec(raw)) !== null) {
-    if (m.index > lastIndex) {
-      segments.push({ text: raw.slice(lastIndex, m.index), red: false });
-    }
-    segments.push({ text: m[1], red: true });
-    lastIndex = m.index + m[0].length;
-  }
-  if (lastIndex < raw.length) {
-    segments.push({ text: raw.slice(lastIndex), red: false });
-  }
-  if (segments.length === 0) segments.push({ text: EMPTY_STRING, red: false });
-  return segments;
-}
-
-function segmentsToRaw(segments: Segment[]): string {
-  return segments
-    .map((s) => (s.red ? `{{${s.text}}}` : s.text))
-    .join(EMPTY_STRING);
-}
-
-function domToSegments(container: HTMLElement): Segment[] {
-  const segments: Segment[] = [];
-  container.childNodes.forEach((node) => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      segments.push({ text: node.textContent ?? EMPTY_STRING, red: false });
-    } else if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as HTMLElement;
-      segments.push({
-        text: el.textContent ?? EMPTY_STRING,
-        red: el.classList.contains("red-letter"),
-      });
-    }
-  });
-  return segments;
-}
-
-function renderSegments(container: HTMLElement, segments: Segment[]) {
-  container.innerHTML = EMPTY_STRING;
-  segments.forEach((seg) => {
-    if (seg.red) {
-      const span = document.createElement("span");
-      span.className = "red-letter";
-      span.textContent = seg.text;
-      container.appendChild(span);
-    } else if (seg.text) {
-      container.appendChild(document.createTextNode(seg.text));
-    }
-  });
-}
-
-function getCaretOffset(container: HTMLElement): number {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return 0;
-  const range = sel.getRangeAt(0);
-  const pre = range.cloneRange();
-  pre.selectNodeContents(container);
-  pre.setEnd(range.endContainer, range.endOffset);
-  return pre.toString().length;
-}
-
-function setCaretOffset(container: HTMLElement, offset: number) {
-  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
-  let remaining = offset;
-  let node: Node | null;
-  while ((node = walker.nextNode())) {
-    const len = node.textContent?.length ?? 0;
-    if (remaining <= len) {
-      const range = document.createRange();
-      range.setStart(node, remaining);
-      range.collapse(true);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-      return;
-    }
-    remaining -= len;
-  }
-  const range = document.createRange();
-  range.selectNodeContents(container);
-  range.collapse(false);
-  const sel = window.getSelection();
-  sel?.removeAllRanges();
-  sel?.addRange(range);
-}
-
-// 指定ノードから container に向かって遡り、red-letter span を探す
-function findRedLetterAncestor(
-  node: Node | null,
-  container: HTMLElement,
-): HTMLElement | null {
-  let cur: Node | null = node;
-  while (cur && cur !== container) {
-    if (
-      cur.nodeType === Node.ELEMENT_NODE &&
-      (cur as HTMLElement).classList.contains("red-letter")
-    ) {
-      return cur as HTMLElement;
-    }
-    cur = cur.parentNode;
-  }
-  return null;
-}
+import {
+  parseToSegments,
+  renderSegments,
+  domToSegments,
+  segmentsToRaw,
+  getCaretOffset,
+  setCaretOffset,
+  findRedLetterAncestor,
+} from "@/lib/redLetter";
 
 export type RedLetterEditorHandle = {
   wrapSelection: () => void;
@@ -129,6 +28,8 @@ export type RedLetterEditorHandle = {
 
 type RedLetterEditorProps = {
   value: string;
+  label: string;
+  disabled?: boolean;
   onChange: (value: string) => void;
   placeholder?: string;
   error?: boolean;
@@ -138,50 +39,66 @@ type RedLetterEditorProps = {
 
 const RedLetterEditor = forwardRef<RedLetterEditorHandle, RedLetterEditorProps>(
   function RedLetterEditor(
-    { value, onChange, placeholder, error, helperText, minHeight = 84 },
+    {
+      value,
+      label,
+      disabled,
+      onChange,
+      placeholder,
+      error,
+      helperText,
+      minHeight = 84,
+    },
     ref,
   ) {
     const containerRef = useRef<HTMLDivElement | null>(null);
-    // Reactではuserefで持つインスタンス変数(再レンダーを起こさない)
-    const skipNextSync = useRef(false);
+    const helperId = useId();
     const isComposing = useRef(false);
-    const mounted = useRef(false);
 
-    // 外部からのvalue変更(初期化・保存後のクリアなど)の時だけDOMを作り直す
     useEffect(() => {
-      if (skipNextSync.current) {
-        skipNextSync.current = false;
-        return;
-      }
       const el = containerRef.current;
-      if (!el) return;
-      renderSegments(el, parseToSegments(value));
+      if (el && segmentsToRaw(domToSegments(el)) !== value)
+        renderSegments(el, parseToSegments(value));
     }, [value]);
-
-    // 初回マウント時にも描画する(旧 watch(..., {immediate:true}) 相当)
-    useEffect(() => {
-      if (mounted.current) return;
-      mounted.current = true;
-      const el = containerRef.current;
-      if (!el) return;
-      renderSegments(el, parseToSegments(value));
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const reconcile = () => {
       const el = containerRef.current;
-      if (!el) return;
+      if (!el || disabled) return;
       const caret = getCaretOffset(el);
       const segments = domToSegments(el);
-      const raw = segmentsToRaw(segments);
-      skipNextSync.current = true;
-      onChange(raw);
-      requestAnimationFrame(() => {
-        if (!containerRef.current) return;
-        renderSegments(containerRef.current, segments);
-        setCaretOffset(containerRef.current, caret);
-      });
+      renderSegments(el, segments);
+      if (document.activeElement === el) setCaretOffset(el, caret);
+      onChange(segmentsToRaw(segments));
     };
+
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
+      const onBreak = (event: InputEvent) => {
+        if (
+          disabled ||
+          event.isComposing ||
+          isComposing.current ||
+          event.inputType !== "insertLineBreak"
+        )
+          return;
+        const selection = window.getSelection();
+        if (!selection?.rangeCount) return;
+        const range = selection.getRangeAt(0);
+        if (!el.contains(range.commonAncestorContainer)) return;
+        event.preventDefault();
+        range.deleteContents();
+        const newline = document.createTextNode("\n");
+        range.insertNode(newline);
+        range.setStartAfter(newline);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      };
+      el.addEventListener("beforeinput", onBreak);
+      return () => el.removeEventListener("beforeinput", onBreak);
+    }, [disabled]);
 
     const onInput = () => {
       if (!isComposing.current) reconcile();
@@ -200,7 +117,8 @@ const RedLetterEditor = forwardRef<RedLetterEditorHandle, RedLetterEditorProps>(
       wrapSelection: () => {
         const el = containerRef.current;
         const sel = window.getSelection();
-        if (!el || !sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+        if (disabled || !el || !sel || sel.rangeCount === 0 || sel.isCollapsed)
+          return;
         const range = sel.getRangeAt(0);
         if (!el.contains(range.commonAncestorContainer)) return;
 
@@ -238,7 +156,13 @@ const RedLetterEditor = forwardRef<RedLetterEditorHandle, RedLetterEditorProps>(
       <div>
         <div
           ref={containerRef}
-          contentEditable
+          contentEditable={!disabled}
+          aria-disabled={disabled}
+          role="textbox"
+          aria-multiline="true"
+          aria-label={label}
+          aria-invalid={!!error}
+          aria-describedby={helperText ? helperId : undefined}
           data-placeholder={placeholder}
           className={`noto-serif red-letter-editor ${error ? "is-error" : EMPTY_STRING}`}
           style={{ minHeight: `${minHeight}px` }}
@@ -248,7 +172,10 @@ const RedLetterEditor = forwardRef<RedLetterEditorHandle, RedLetterEditorProps>(
           suppressContentEditableWarning
         />
         {helperText && (
-          <p className={`mt-1 text-xs ${error ? "text-red-700" : "text-gray-600"}`}>
+          <p
+            id={helperId}
+            className={`mt-1 text-xs ${error ? "text-red-700" : "text-gray-600"}`}
+          >
             {helperText}
           </p>
         )}

@@ -2,6 +2,7 @@
 // YouTube連携まわりの共通処理。
 
 import api from "@/api/axios";
+import { extractErrorMessage } from "@/lib/constants";
 
 // バックエンドの ProjectConstants.MESSAGE_YOUTUBE_REAUTH_REQUIRED と同じ文言。
 // 再認証が必要な409(JSON文字列ボディ)と、未連携の409(ボディなし)を見分けるために使う。
@@ -21,11 +22,11 @@ export function getYoutubeReauthConfirmText(e: unknown): string | null {
   return `${YOUTUBE_REAUTH_REQUIRED_MESSAGE}今は個人情報画面へ移動していいですか。`;
 }
 
-/** バックエンドの PlaylistStatus（state: running / done / failed） */
+/** バックエンドの PlaylistStatus（state: running / done / failed / cancelled） */
 export type PlaylistStatus = {
   playlistId: string;
   playlistUrl: string;
-  state: "running" | "done" | "failed";
+  state: "running" | "done" | "failed" | "cancelled";
   total: number;
   added: number;
   message?: string;
@@ -48,13 +49,20 @@ const POLL_TIMEOUT_MS = 10 * 60 * 1000;
  * (前段のCloudFrontは30秒で切れるため)。ここで playlist-status を見て完了・失敗を待つ。
  *
  * - 開始時のエラー(409:未連携・再認証など)は、これまでと同じく axios のエラーとして投げる。
- * - 追加の失敗は、サーバーのメッセージを持つ Error を投げる(extractErrorMessage の fallback ではなく
- *   e.message を使う側で表示すること)。
+ * - 追加の失敗は、サーバーのメッセージを持つ PlaylistError を投げる。
+ *   extractErrorMessage(e.message, fallback) で文言を表示すること。
+ * - options.signal が中止されたら、進捗の確認をやめて PlaylistCancelled を投げる。作成の受け付け(POST)は
+ *   途中で切らない(切ってもサーバー側では作られるため)。受け付けられたら options.onStarted に ID を渡す。
  */
 export async function createPlaylistAndWait(
   target: PlaylistTarget,
   onProgress?: (s: PlaylistStatus) => void,
+  options: {
+    signal?: AbortSignal;
+    onStarted?: (playlistId: string) => void;
+  } = {},
 ): Promise<PlaylistStatus> {
+  const { signal, onStarted } = options;
   const body =
     "keyword" in target
       ? { keyword: target.keyword.normalize("NFC") }
@@ -63,6 +71,8 @@ export async function createPlaylistAndWait(
     "/youtube/create-playlist",
     body,
   );
+  onStarted?.(started.playlistId);
+  if (signal?.aborted) throw new PlaylistCancelled();
   let status = started;
   onProgress?.(status);
   const t0 = Date.now();
@@ -72,18 +82,41 @@ export async function createPlaylistAndWait(
         "プレイリストの作成に時間がかかっています。しばらくしてからYouTubeでご確認ください。",
       );
     }
-    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    await sleep(POLL_INTERVAL_MS, signal);
     const { data } = await api.get<PlaylistStatus>("/youtube/playlist-status", {
       params: { playlistId: started.playlistId },
+      signal,
     });
+    if (signal?.aborted) throw new PlaylistCancelled();
     status = data;
     onProgress?.(status);
   }
+  if (status.state === "cancelled") throw new PlaylistCancelled();
   if (status.state === "failed") {
-    throw new PlaylistError(status.message ?? "プレイリスト作成に失敗しました");
+    throw new PlaylistError(
+      extractErrorMessage(status, "プレイリスト作成に失敗しました"),
+    );
   }
   return status;
 }
 
 /** 追加の失敗など、サーバーから受け取った文言をそのまま表示するためのエラー */
 export class PlaylistError extends Error {}
+
+/** 作成を中止した(画面を離れた)ので、進捗の確認をやめた。利用者には何も表示しない */
+export class PlaylistCancelled extends Error {}
+
+/** 待つ。signal が中止されたら、すぐに PlaylistCancelled で終わる */
+const sleep = (ms: number, signal?: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) return reject(new PlaylistCancelled());
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new PlaylistCancelled());
+    };
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });

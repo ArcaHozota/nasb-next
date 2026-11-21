@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { Check, Plus, RotateCcw, Undo2, X } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDuplicateCheck } from "@/hooks/use-duplicate-check";
 import api from "@/api/axios";
 import { fetchHymnDetail, hymnKeys, invalidateHymns } from "@/api/hymns";
 import { invalidateLyric } from "@/lib/lyrics";
@@ -138,42 +139,28 @@ export default function HymnFormModal({
     lyric: EMPTY_STRING,
   });
 
-  const checkNameJp = async (e: React.FocusEvent<HTMLInputElement>) => {
-    const name = e.target.value.trim();
-    setErrors((er) => ({ ...er, nameJp: EMPTY_STRING }));
-    if (!name) return;
-    try {
-      await api.get("/hymns/duplicate-check-jp", {
-        params: { id: form.id ?? EMPTY_STRING, nameJp: name },
-      });
-    } catch (e) {
-      setErrors((er) => ({
-        ...er,
-        nameJp: extractErrorMessage(e, "この名称は既に使われています。"),
-      }));
-    }
-  };
-
-  const checkNameKr = async (e: React.FocusEvent<HTMLInputElement>) => {
-    const name = e.target.value.trim().normalize("NFC");
-    setErrors((er) => ({ ...er, nameKr: EMPTY_STRING }));
-    if (!name) return;
-    try {
-      await api.get("/hymns/duplicate-check-kr", {
-        params: { id: form.id ?? EMPTY_STRING, nameKr: name },
-      });
-    } catch (e) {
-      setErrors((er) => ({
-        ...er,
-        nameKr: extractErrorMessage(e, "この名称は既に使われています。"),
-      }));
-    }
-  };
-
+  const [validating, setValidating] = useState(false);
+  const nameJpCheck = useDuplicateCheck(
+    "/hymns/duplicate-check-jp",
+    "nameJp",
+    form.id,
+    form.nameJp.trim(),
+    "この名称は既に使われています。",
+    "名称の重複確認に失敗しました。もう一度お試しください。",
+  );
+  const nameKrCheck = useDuplicateCheck(
+    "/hymns/duplicate-check-kr",
+    "nameKr",
+    form.id,
+    form.nameKr.trim().normalize("NFC"),
+    "この名称は既に使われています。",
+    "名称の重複確認に失敗しました。もう一度お試しください。",
+  );
   const onSubmit = async () => {
+    if (saving || (isEdit && detailQuery.isFetching)) return;
     const nextErrors = {
-      nameJp: required(form.nameJp) || errors.nameJp,
-      nameKr: required(form.nameKr) || errors.nameKr,
+      nameJp: required(form.nameJp),
+      nameKr: required(form.nameKr),
       link: required(form.link),
       lyric: required(form.lyric),
     };
@@ -186,7 +173,18 @@ export default function HymnFormModal({
       toast("ログイン情報の取得に失敗しました。再度ログインしてください。");
       return;
     }
-    saveMutation.mutate(form);
+    setValidating(true);
+    try {
+      const results = await Promise.all([
+        nameJpCheck.check(),
+        nameKrCheck.check(),
+      ]);
+      if (results.every(Boolean)) await saveMutation.mutateAsync(form);
+    } catch {
+      // 保存失敗の通知は mutation の onError が行う。
+    } finally {
+      setValidating(false);
+    }
   };
 
   const saveMutation = useMutation({
@@ -233,9 +231,12 @@ export default function HymnFormModal({
     },
     onError: (e) => toast(extractErrorMessage(e, "保存に失敗しました")),
   });
-  const saving = saveMutation.isPending;
+  const saving = validating || saveMutation.isPending;
 
   const onReset = () => {
+    nameJpCheck.reset();
+    nameKrCheck.reset();
+
     // 入力を捨てると、基準(追加は空、編集は読み込んだ内容)に戻る
     setEdits({});
     setErrors({
@@ -328,21 +329,25 @@ export default function HymnFormModal({
             <Input
               id="hymn-name-jp"
               value={form.nameJp}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, nameJp: e.target.value }))
-              }
+              onChange={(e) => {
+                nameJpCheck.reset();
+                setErrors((prev) => ({ ...prev, nameJp: "" }));
+                setForm((f) => ({ ...f, nameJp: e.target.value }));
+              }}
               type="text"
               disabled={saving}
               placeholder="いつくしみ深き"
-              aria-invalid={!!errors.nameJp}
+              aria-invalid={!!(errors.nameJp || nameJpCheck.error)}
               aria-describedby={
-                errors.nameJp ? "hymn-name-jp-error" : undefined
+                errors.nameJp || nameJpCheck.error
+                  ? "hymn-name-jp-error"
+                  : undefined
               }
               className={inputClass}
-              onBlur={checkNameJp}
+              onBlur={() => void nameJpCheck.check()}
             />
             <FieldError id="hymn-name-jp-error" className="text-xs">
-              {errors.nameJp}
+              {errors.nameJp || nameJpCheck.error}
             </FieldError>
           </Field>
 
@@ -351,21 +356,25 @@ export default function HymnFormModal({
             <Input
               id="hymn-name-kr"
               value={form.nameKr}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, nameKr: e.target.value }))
-              }
+              onChange={(e) => {
+                nameKrCheck.reset();
+                setErrors((prev) => ({ ...prev, nameKr: "" }));
+                setForm((f) => ({ ...f, nameKr: e.target.value }));
+              }}
               type="text"
               disabled={saving}
               placeholder="죄짐 맡은 우리 구주"
-              aria-invalid={!!errors.nameKr}
+              aria-invalid={!!(errors.nameKr || nameKrCheck.error)}
               aria-describedby={
-                errors.nameKr ? "hymn-name-kr-error" : undefined
+                errors.nameKr || nameKrCheck.error
+                  ? "hymn-name-kr-error"
+                  : undefined
               }
               className={inputClass}
-              onBlur={checkNameKr}
+              onBlur={() => void nameKrCheck.check()}
             />
             <FieldError id="hymn-name-kr-error" className="text-xs">
-              {errors.nameKr}
+              {errors.nameKr || nameKrCheck.error}
             </FieldError>
           </Field>
         </div>
@@ -453,7 +462,11 @@ export default function HymnFormModal({
           >
             閉じる
           </Button>
-          <Button type="button" disabled={saving} onClick={onSubmit}>
+          <Button
+            type="button"
+            disabled={saving || (isEdit && detailQuery.isFetching)}
+            onClick={onSubmit}
+          >
             {saving ? <Spinner /> : isEdit ? <Check /> : <Plus />}
             {isEdit ? "更新" : "追加"}
           </Button>

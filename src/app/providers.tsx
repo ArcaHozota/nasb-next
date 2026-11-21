@@ -7,10 +7,12 @@ import { useEffect, useRef } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useCsrfStore } from "@/stores/csrf";
+import { installHistoryGuard } from "@/lib/historyGuard";
 import FeedbackHost from "@/components/FeedbackHost";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
+  useEffect(installHistoryGuard, []);
   const initialized = useRef(false);
 
   useEffect(() => {

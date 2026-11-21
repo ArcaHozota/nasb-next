@@ -24,10 +24,15 @@ import api from "@/api/axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuthStore } from "@/stores/auth";
 import { useFeedbackStore } from "@/stores/feedback";
-import { useUnsavedGuard } from "@/stores/unsavedGuard";
+import { confirmLeave } from "@/lib/confirmLeave";
+import { useGuardedNavigation } from "@/hooks/use-guarded-navigation";
 import { hardRedirectHome, SESSION_EXPIRED_MESSAGE } from "@/lib/session";
 import { Spinner } from "@/components/ui/spinner";
-import { DELAY_APOLOGY, EMPTY_STRING } from "@/lib/constants";
+import {
+  DELAY_APOLOGY,
+  EMPTY_STRING,
+  extractErrorMessage,
+} from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -68,6 +73,7 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { go } = useGuardedNavigation();
   // ストア全体ではなく、使う値・関数だけを購読する
   // (確認ダイアログの開閉のたびに管理画面全体が再描画されないようにする)
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -75,7 +81,7 @@ export default function AdminLayout({
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const logout = useAuthStore((s) => s.logout);
   const toast = useFeedbackStore((s) => s.toast);
-  const confirm = useFeedbackStore((s) => s.confirm);
+  const loggingOut = useRef(false);
 
   const [keyword, setKeyword] = useState(EMPTY_STRING);
   // 認証確認がまだ済んでいない間は描画しない(旧 router.beforeEach 相当)
@@ -211,25 +217,18 @@ export default function AdminLayout({
 
   // 編集中の内容(聖書章節入力など)があるまま画面内を移動するとき、先に確認する。
   // 同じ画面への移動は確認しない。ブラウザを閉じる等は useUnsavedChanges(beforeunload)が担当。
-  const confirmLeave = async (toPath?: string) => {
-    if (!useUnsavedGuard.getState().dirty) return true;
-    if (toPath !== undefined && toPath.split("?")[0] === pathname) return true;
-    return confirm("編集中の内容があります。破棄して移動しますか？", "お知らせ");
-  };
-
-  const go = async (url: string) => {
-    if (await confirmLeave(url)) router.push(url);
-  };
-
   const onLogout = async () => {
-    if (!(await confirmLeave())) return;
-    const ok = await confirm("ログアウトしますか？", "警告");
-    if (!ok) return;
-    await logout();
-    // 状態を完全にリセットするためフルリロードする
-    // (React Query のキャッシュを残すと、次にログインした人に前の人のデータが見えてしまう)。
-    // 破棄に同意済みの未保存警告(beforeunload)は出さない。
-    hardRedirectHome();
+    if (loggingOut.current) return;
+    loggingOut.current = true;
+    try {
+      if (!(await confirmLeave(true))) return;
+      await logout();
+      hardRedirectHome();
+    } catch (e) {
+      toast(extractErrorMessage(e, "ログアウトに失敗しました。"));
+    } finally {
+      loggingOut.current = false;
+    }
   };
 
   const onSearch = async () => {
@@ -480,7 +479,9 @@ function AdminSidebar({
                     {username.slice(0, 1)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="flex-1 truncate text-[0.9rem]">{username}</span>
+                <span className="flex-1 truncate text-[0.9rem]">
+                  {username}
+                </span>
                 <ChevronsUpDown className="ml-auto size-4 text-sidebar-foreground/60" />
               </DropdownMenuTrigger>
               <DropdownMenuContent

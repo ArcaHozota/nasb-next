@@ -15,6 +15,7 @@ import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import PageBackground from "@/components/PageBackground";
 import { EMPTY_STRING, extractErrorMessage } from "@/lib/constants";
+import { verseNumberError } from "@/lib/verse";
 import { REQUIRED_MESSAGE } from "@/lib/form";
 import RedLetterEditor, {
   type RedLetterEditorHandle,
@@ -73,9 +74,9 @@ export default function BookAddition() {
   const [errors, setErrors] = useState({
     textEn: false,
     textJp: false,
-    verseId: false,
+    verseId: "",
   });
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmedKey, setConfirmedKey] = useState<string | null>(null);
 
   const textEnEditorRef = useRef<RedLetterEditorHandle | null>(null);
   const textJpEditorRef = useRef<RedLetterEditorHandle | null>(null);
@@ -123,7 +124,10 @@ export default function BookAddition() {
   // ===== 既存の節の確認(章・節を入力して一定時間たったら問い合わせる) =====
   // 登録済みなら編集モード(ボタンが「更新」になり、本文を読み込む)
   const lookupVerse = verseId.trim();
-  const lookupReady = !!chapterId && /^\d+$/.test(lookupVerse);
+  const chapterReady =
+    !chapterLoading &&
+    chapters.some((chapter) => String(chapter.id) === String(chapterId));
+  const lookupReady = chapterReady && !verseNumberError(lookupVerse);
   const lookupKey = `${chapterId}|${lookupVerse}`;
   const debouncedKey = useDebouncedValue(lookupKey, LOOKUP_DELAY);
   const verseQuery = useQuery({
@@ -152,7 +156,7 @@ export default function BookAddition() {
       ? "loading" // 入力が落ち着くのを待っている
       : verseQuery.isError
         ? "error"
-        : verseQuery.isPending
+        : verseQuery.isPending || verseQuery.isFetching
           ? "loading"
           : verseQuery.data
             ? "found"
@@ -198,7 +202,7 @@ export default function BookAddition() {
 
   const handleVerseIdChange = (v: string) => {
     setVerseId(v);
-    if (isFilled(v)) setErrors((er) => ({ ...er, verseId: false }));
+    setErrors((er) => ({ ...er, verseId: er.verseId && verseNumberError(v) }));
   };
 
   // 既存の節の本文を入力欄へ読み込む(入力済みの内容は捨てる)
@@ -213,6 +217,14 @@ export default function BookAddition() {
   };
 
   const doSave = async () => {
+    if (
+      saving ||
+      !lookupReady ||
+      lookup === "loading" ||
+      !isFilled(textEn) ||
+      !isFilled(textJp)
+    )
+      return;
     setSaving(true);
     try {
       const { data } = await api.post("/books", {
@@ -224,7 +236,7 @@ export default function BookAddition() {
       toast(typeof data === "string" ? data : "追加済み");
       setVerseId(EMPTY_STRING);
       setEdited(null);
-      setErrors({ textEn: false, textJp: false, verseId: false });
+      setErrors({ textEn: false, textJp: false, verseId: "" });
     } catch (e: unknown) {
       toast(extractErrorMessage(e, "保存に失敗しました"));
     } finally {
@@ -236,16 +248,16 @@ export default function BookAddition() {
     const nextErrors = {
       textEn: !isFilled(textEn),
       textJp: !isFilled(textJp),
-      verseId: !isFilled(verseId),
+      verseId: verseNumberError(verseId),
     };
     setErrors(nextErrors);
-    if (Object.values(nextErrors).some(Boolean)) {
+    if (!chapterReady || Object.values(nextErrors).some(Boolean)) {
       toast("入力情報不正");
       return;
     }
     // 登録済み(更新になる)場合、または既存かどうか確認できなかった場合は、上書き確認を出す
     if (lookup === "found" || lookup === "error") {
-      setConfirmOpen(true);
+      setConfirmedKey(lookupKey);
       return;
     }
     void doSave();
@@ -281,6 +293,8 @@ export default function BookAddition() {
             </div>
             <div className="flex-1">
               <RedLetterEditor
+                label="英語"
+                disabled={saving}
                 ref={textEnEditorRef}
                 value={textEn}
                 onChange={handleTextEnChange}
@@ -303,6 +317,7 @@ export default function BookAddition() {
                 aria-label="選択範囲を赤文字にする"
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
+                disabled={saving}
                 onClick={onWrapSelection}
               >
                 <Baseline className="size-5" />
@@ -316,6 +331,8 @@ export default function BookAddition() {
             </div>
             <div className="flex-1">
               <RedLetterEditor
+                label="日本語"
+                disabled={saving}
                 ref={textJpEditorRef}
                 value={textJp}
                 onChange={handleTextJpChange}
@@ -345,6 +362,7 @@ export default function BookAddition() {
                     type="button"
                     variant="link"
                     className="ml-2 h-auto p-0 text-inherit underline hover:opacity-80"
+                    disabled={saving}
                     onClick={loadExisting}
                   >
                     既存の内容を読み込む
@@ -368,6 +386,7 @@ export default function BookAddition() {
                 書
               </FieldLabel>
               <BookCombobox
+                disabled={saving}
                 id="book-select"
                 books={books}
                 value={bookId}
@@ -389,8 +408,10 @@ export default function BookAddition() {
                   value: String(chapter.id),
                   label: chapter.name,
                 }))}
-                onValueChange={(value) => setPickedChapterId(value ?? EMPTY_STRING)}
-                disabled={chapterLoading || chapters.length === 0}
+                onValueChange={(value) =>
+                  setPickedChapterId(value ?? EMPTY_STRING)
+                }
+                disabled={saving || chapterLoading || chapters.length === 0}
               >
                 <SelectTrigger
                   id="chapter-select"
@@ -413,6 +434,9 @@ export default function BookAddition() {
                   ))}
                 </SelectContent>
               </Select>
+              {!chapterLoading && !chapterReady && (
+                <FieldError>章を選択してください。</FieldError>
+              )}
             </Field>
 
             <Field className="w-full md:w-[22%] gap-1.5">
@@ -423,6 +447,7 @@ export default function BookAddition() {
                 節
               </FieldLabel>
               <Input
+                disabled={saving}
                 id="verse-input"
                 value={verseId}
                 type="text"
@@ -436,7 +461,7 @@ export default function BookAddition() {
               />
               {errors.verseId && (
                 <FieldError id="verse-input-error" className="text-xs">
-                  {REQUIRED_MESSAGE}
+                  {errors.verseId}
                 </FieldError>
               )}
             </Field>
@@ -457,7 +482,9 @@ export default function BookAddition() {
               <Button
                 className="noto-serif w-full"
                 type="button"
-                disabled={saving || lookup === "loading"}
+                aria-label={isUpdate ? "更新" : "追加"}
+                aria-busy={saving}
+                disabled={saving || !chapterReady || lookup === "loading"}
                 onClick={onStore}
               >
                 {saving ? (
@@ -479,15 +506,19 @@ export default function BookAddition() {
 
       {/* 上書き確認 */}
       <ConfirmDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
+        open={confirmedKey !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmedKey(null);
+        }}
         title="上書きの確認"
         description={
           isUpdate
             ? `${verseLabel} は既に登録されています。入力した内容で上書きして更新しますか?`
             : "既存の節かどうか確認できませんでした。既に登録されている場合は上書きされます。保存しますか?"
         }
-        onConfirm={() => void doSave()}
+        onConfirm={() => {
+          if (confirmedKey === lookupKey) void doSave();
+        }}
       />
     </div>
   );

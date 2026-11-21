@@ -67,7 +67,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async (): Promise<void> => {
     await api.post("/logout");
     set(deriveFromUser(null));
-    await useCsrfStore.getState().fetchCsrf(); // 新しいトークンを取得しておく
+    useCsrfStore.setState({ csrf: null });
   },
 
   login: async (username: string, password: string): Promise<void> => {

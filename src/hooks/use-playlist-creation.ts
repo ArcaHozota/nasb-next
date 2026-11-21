@@ -6,12 +6,14 @@
 //  - 完了したら「YouTubeへ移動しますか」を確認する
 //  - 409(未連携・再認証が必要)なら、個人設定へ移動するか確認する
 //  - それ以外のエラーはトーストに出す
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { startPlaylist, usePlaylistJob } from "@/stores/playlistJob";
+import { waitForLeaveDecision } from "@/lib/confirmLeave";
+import { useGuardedNavigation } from "@/hooks/use-guarded-navigation";
 import {
   createPlaylistAndWait,
   getYoutubeReauthConfirmText,
   PlaylistError,
+  PlaylistCancelled,
   type PlaylistTarget,
 } from "@/lib/youtube";
 import { extractErrorMessage } from "@/lib/constants";
@@ -20,11 +22,11 @@ import { useFeedbackStore } from "@/stores/feedback";
 const YOUTUBE_PLAYLISTS_URL = "https://www.youtube.com/feed/playlists";
 
 export function usePlaylistCreation() {
-  const router = useRouter();
+  const { go } = useGuardedNavigation();
   const toast = useFeedbackStore((s) => s.toast);
   const confirm = useFeedbackStore((s) => s.confirm);
-  const [creating, setCreating] = useState(false);
-  const [progress, setProgress] = useState("");
+  const creating = usePlaylistJob((s) => !!s.job);
+  const progress = usePlaylistJob((s) => s.progress);
 
   /**
    * resolveTarget: 対象の曲(ID の一覧か、検索条件)を決める。対象が無いときは、自分でトーストを出して null を返す。
@@ -33,14 +35,24 @@ export function usePlaylistCreation() {
   const create = async (
     resolveTarget: () => Promise<PlaylistTarget | null>,
   ) => {
-    setCreating(true);
+    const job = startPlaylist();
+    if (!job) {
+      toast("プレイリストを作成中です。完了までお待ちください。");
+      return;
+    }
     try {
       const target = await resolveTarget();
-      if (!target) return;
+      if (!target || job.signal.aborted) return;
       if ("hymnIds" in target && target.hymnIds.length === 0) return;
-      await createPlaylistAndWait(target, (st) =>
-        setProgress(`${st.added}/${st.total}`),
+      await createPlaylistAndWait(
+        target,
+        (st) =>
+          usePlaylistJob.setState({ progress: `${st.added}/${st.total}` }),
+        job,
       );
+      await waitForLeaveDecision();
+      if (job.signal.aborted) return;
+      job.finish();
       const proceed = await confirm(
         "プレイリストを作成しました。今はYouTubeへ移動してよろしいでしょうか。",
         "お知らせ",
@@ -49,6 +61,9 @@ export function usePlaylistCreation() {
         window.open(YOUTUBE_PLAYLISTS_URL, "_blank", "noopener,noreferrer");
       }
     } catch (e: unknown) {
+      await waitForLeaveDecision();
+      if (job.signal.aborted || e instanceof PlaylistCancelled) return;
+      job.finish();
       if (
         e &&
         typeof e === "object" &&
@@ -62,17 +77,17 @@ export function usePlaylistCreation() {
           : await confirm(
               "YouTube連携がまだ完了していません。連携ページへ移動しますか？",
             );
-        if (ok) router.push("/personal");
+        if (ok) await go("/personal");
         return;
       }
       toast(
-        e instanceof PlaylistError
-          ? e.message
-          : extractErrorMessage(e, "プレイリスト作成に失敗しました"),
+        extractErrorMessage(
+          e instanceof PlaylistError ? e.message : e,
+          "プレイリスト作成に失敗しました",
+        ),
       );
     } finally {
-      setCreating(false);
-      setProgress("");
+      job.finish();
     }
   };
 

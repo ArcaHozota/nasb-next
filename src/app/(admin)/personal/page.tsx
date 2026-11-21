@@ -25,6 +25,11 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { IdCard, Eye, EyeOff, Zap, Trash2, SquarePlay } from "lucide-react";
+import { useDuplicateCheck } from "@/hooks/use-duplicate-check";
+import { useGuardedNavigation } from "@/hooks/use-guarded-navigation";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { confirmLeave } from "@/lib/confirmLeave";
+import { useUnsavedGuard } from "@/stores/unsavedGuard";
 import api from "@/api/axios";
 import { Input } from "@/components/ui/input";
 import {
@@ -94,6 +99,7 @@ const toDateInputValue = (src: string) => {
 };
 
 function StudentEditionInner() {
+  const { go, needsConfirmation } = useGuardedNavigation();
   const searchParams = useSearchParams();
   const router = useRouter();
   const toast = useFeedbackStore((s) => s.toast);
@@ -136,6 +142,12 @@ function StudentEditionInner() {
     ...(studentQuery.data ?? { ...emptyForm, id: userId }),
     ...edits,
   };
+  const baseline = studentQuery.data ?? emptyForm;
+  useUnsavedChanges(
+    (Object.keys(edits) as (keyof StudentForm)[]).some(
+      (key) => edits[key] !== baseline[key],
+    ),
+  );
   const setForm = (update: (f: StudentForm) => StudentForm) => {
     const next = update(form);
     const changed: Partial<StudentForm> = {};
@@ -199,7 +211,9 @@ function StudentEditionInner() {
       ? "YouTubeアカウントと連携します"
       : "「YouTube連携」をONにすると押せます";
 
-  const onYoutubeConnect = () => {
+  const onYoutubeConnect = async () => {
+    if (!(await confirmLeave())) return;
+    useUnsavedGuard.getState().setBypass();
     // 連携開始はバックエンドが直接Google同意画面へリダイレクトするため、
     // fetch/XHRやNext.jsのクライアント遷移(router.push)ではなく、ブラウザの通常の画面遷移にする。
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
@@ -222,28 +236,19 @@ function StudentEditionInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const checkAccount = async (e: React.FocusEvent<HTMLInputElement>) => {
-    setErrors((er) => ({ ...er, loginAccount: EMPTY_STRING }));
-    const name = e.target.value.trim();
-    if (!name) return;
-    try {
-      await api.get("/students/duplicate-check", {
-        params: { id: form.id ?? EMPTY_STRING, loginAccount: name },
-      });
-    } catch (e: unknown) {
-      setErrors((er) => ({
-        ...er,
-        loginAccount: extractErrorMessage(
-          e,
-          "このアカウントは既に使われています。",
-        ),
-      }));
-    }
-  };
-
+  const [validating, setValidating] = useState(false);
+  const loginAccountCheck = useDuplicateCheck(
+    "/students/duplicate-check",
+    "loginAccount",
+    form.id,
+    form.loginAccount.trim(),
+    "このアカウントは既に使われています。",
+    "アカウントの重複確認に失敗しました。もう一度お試しください。",
+  );
   const onUpdate = async () => {
+    if (saving || !studentQuery.data || studentQuery.isFetching) return;
     const nextErrors = {
-      loginAccount: required(form.loginAccount) || errors.loginAccount,
+      loginAccount: required(form.loginAccount),
       username: required(form.username),
       password: required(form.password),
       dateOfBirth: required(form.dateOfBirth),
@@ -254,7 +259,15 @@ function StudentEditionInner() {
       toast("入力情報不正");
       return;
     }
-    updateMutation.mutate(form);
+    setValidating(true);
+    try {
+      if (await loginAccountCheck.check())
+        await updateMutation.mutateAsync(form);
+    } catch {
+      // 更新失敗の通知は mutation の onError が行う。
+    } finally {
+      setValidating(false);
+    }
   };
 
   const updateMutation = useMutation({
@@ -273,14 +286,18 @@ function StudentEditionInner() {
       // 次に開いたとき、更新後の内容を読み込み直す
       void queryClient.invalidateQueries({ queryKey: studentKey(userId) });
       toast(typeof data === "string" ? data : "更新しました");
+      setEdits({});
+      useUnsavedGuard.getState().setDirty(false);
       router.push("/mainmenu");
     },
     onError: (e) => toast(extractErrorMessage(e, "更新に失敗しました")),
   });
-  const saving = updateMutation.isPending;
+  const saving = validating || updateMutation.isPending;
 
   // 入力を捨てて、サーバーの最新の内容を読み込み直す
   const onRestore = () => {
+    loginAccountCheck.reset();
+
     setErrors({
       loginAccount: EMPTY_STRING,
       username: EMPTY_STRING,
@@ -302,7 +319,16 @@ function StudentEditionInner() {
         <BreadcrumbList className="font-semibold text-[#fffff0] [text-shadow:0_1px_3px_rgba(0,0,0,0.45)]">
           <BreadcrumbItem>
             <BreadcrumbLink
-              render={<Link href="/mainmenu" />}
+              render={
+                <Link
+                  href="/mainmenu"
+                  onNavigate={(event) => {
+                    if (!needsConfirmation("/mainmenu")) return;
+                    event.preventDefault();
+                    void go("/mainmenu");
+                  }}
+                />
+              }
               className="text-[#fffff0] hover:text-white hover:underline"
             >
               メインメニュー
@@ -337,7 +363,7 @@ function StudentEditionInner() {
         <CardContent className="p-6">
           <FieldGroup className="gap-6">
             {/* ===== 基本情報 ===== */}
-            <FieldSet>
+            <FieldSet disabled={saving}>
               <FieldLegend variant="label" className="text-base font-bold">
                 基本情報
               </FieldLegend>
@@ -353,22 +379,29 @@ function StudentEditionInner() {
                     <Input
                       id="personal-account"
                       value={form.loginAccount}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, loginAccount: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        loginAccountCheck.reset();
+                        setErrors((prev) => ({ ...prev, loginAccount: "" }));
+                        setForm((f) => ({
+                          ...f,
+                          loginAccount: e.target.value,
+                        }));
+                      }}
                       type="text"
                       placeholder="アカウントを入力してください"
-                      aria-invalid={!!errors.loginAccount}
+                      aria-invalid={
+                        !!(errors.loginAccount || loginAccountCheck.error)
+                      }
                       aria-describedby={
-                        errors.loginAccount
+                        errors.loginAccount || loginAccountCheck.error
                           ? "personal-account-error"
                           : undefined
                       }
                       className={INPUT_CLASS}
-                      onBlur={checkAccount}
+                      onBlur={() => void loginAccountCheck.check()}
                     />
                     <FieldError id="personal-account-error" className="text-xs">
-                      {errors.loginAccount}
+                      {errors.loginAccount || loginAccountCheck.error}
                     </FieldError>
                   </Field>
 
@@ -454,7 +487,7 @@ function StudentEditionInner() {
             <FieldSeparator />
 
             {/* ===== セキュリティ ===== */}
-            <FieldSet>
+            <FieldSet disabled={saving}>
               <FieldLegend variant="label" className="text-base font-bold">
                 セキュリティ
               </FieldLegend>
@@ -508,7 +541,7 @@ function StudentEditionInner() {
             <FieldSeparator />
 
             {/* ===== 外部連携 ===== */}
-            <FieldSet>
+            <FieldSet disabled={saving}>
               <FieldLegend variant="label" className="text-base font-bold">
                 外部連携
               </FieldLegend>
@@ -550,7 +583,10 @@ function StudentEditionInner() {
                 <div className="flex shrink-0 items-center gap-3">
                   {/* 連携処理中はつまみを隠してスピナーを表示する(従来のトグルと同じ見た目) */}
                   <span className="relative inline-flex">
-                    <Hint label="ONで連携ボタンが押せるようになります" wrapDisabled>
+                    <Hint
+                      label="ONで連携ボタンが押せるようになります"
+                      wrapDisabled
+                    >
                       <Switch
                         id="personal-youtube"
                         checked={youtubeToggleOn}
@@ -593,7 +629,11 @@ function StudentEditionInner() {
         </CardContent>
 
         <CardFooter className="flex justify-end gap-2 border-t bg-white/60 px-6 py-4">
-          <Button type="button" disabled={saving} onClick={onUpdate}>
+          <Button
+            type="button"
+            disabled={saving || !studentQuery.data || studentQuery.isFetching}
+            onClick={onUpdate}
+          >
             {saving ? (
               <Spinner />
             ) : (
@@ -606,6 +646,7 @@ function StudentEditionInner() {
             variant="secondary"
             className="bg-gray-500 text-white hover:bg-gray-500/90"
             type="button"
+            disabled={saving}
             onClick={onRestore}
           >
             <Trash2 className="h-4 w-4" /> 廃棄
