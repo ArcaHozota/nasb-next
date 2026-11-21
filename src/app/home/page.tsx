@@ -642,7 +642,9 @@ export default function HomeView() {
               size="sm"
               className="w-fit"
               disabled={mobileFetching}
-              onClick={() => void (isFetchNextPageError ? fetchNextPage() : refetchMobile())}
+              onClick={() =>
+                void (isFetchNextPageError ? fetchNextPage() : refetchMobile())
+              }
             >
               再試行
             </Button>
@@ -657,10 +659,7 @@ export default function HomeView() {
           onStep={stepDetail}
           terms={lyricTerms}
           onClose={() => setDetailIndex(null)}
-          className={cn(
-            BUBBLE_GLASS,
-            bubbleTone(detail?.lineNumber ?? ""),
-          )}
+          className={cn(BUBBLE_GLASS, bubbleTone(detail?.lineNumber ?? ""))}
         />
 
         {isMobile && (

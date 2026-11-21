@@ -79,11 +79,7 @@ export default function AdminLayout({
   );
 }
 
-function AuthenticatedLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { go } = useGuardedNavigation();
@@ -239,7 +235,10 @@ function AuthenticatedLayout({
       hardRedirectHome();
     } catch (e) {
       toast(
-        extractErrorMessage(e, "ログアウトに失敗しました。もう一度お試しください。"),
+        extractErrorMessage(
+          e,
+          "ログアウトに失敗しました。もう一度お試しください。",
+        ),
       );
     } finally {
       loggingOut.current = false;
@@ -490,11 +489,7 @@ function AdminSidebar({
                 </span>
                 <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                align="start"
-                className="w-56"
-              >
+              <DropdownMenuContent side="top" align="start" className="w-56">
                 <DropdownMenuItem
                   onClick={() => {
                     onPersonal();
