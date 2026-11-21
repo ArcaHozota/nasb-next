@@ -74,7 +74,7 @@ export default function MainMenu() {
                 alt={card.title}
                 className="h-full w-full object-cover"
               />
-              <div className="absolute bottom-0 w-full bg-black/35 py-3 text-center text-white transition-colors duration-200">
+              <div className="absolute bottom-0 w-full bg-border py-3 text-center text-card-foreground transition-colors duration-200">
                 <h2 className="text-xl group-hover:text-(--hover-color)!">
                   {card.title}
                 </h2>

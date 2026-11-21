@@ -171,7 +171,7 @@ function RandomFiveInner() {
       <PageBackground src="/assets/mainmenu-bg6.webp" />
 
       <Card className="randomfive-card noto-serif glass-panel relative overflow-hidden rounded-[18px] gap-0 py-0">
-        <CardHeader className="gap-0 flex items-center bg-card px-4 py-3 text-card-foreground">
+        <CardHeader className="gap-0 flex items-center bg-border px-4 py-3 text-card-foreground">
           <LayoutGrid className="mr-2 h-5 w-5" />
           <CardTitle
             role="heading"
@@ -281,7 +281,13 @@ function RandomFiveInner() {
               {records.map((item, i) => (
                 <Item
                   key={item.id ?? item.nameJp}
-                  render={<a href={item.link} target="_blank" rel="noopener noreferrer" />}
+                  render={
+                    <a
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  }
                   variant="outline"
                   size="sm"
                   className="glass-item"

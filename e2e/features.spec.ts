@@ -1,6 +1,36 @@
 import { expect, test } from "@playwright/test";
 import { makeHymns, mockApi } from "./mock-api";
 
+test("管理画面の上部バーと見出しの色を揃え、サイドバーに Nova の押下効果を使う", async ({
+  page,
+}) => {
+  await mockApi(page, { loggedIn: true, hymns: makeHymns(1) });
+  await page.goto("/mainmenu");
+
+  const panelColor = "rgb(229, 231, 235)";
+  await expect(page.locator('[data-slot="sidebar-inset"] > header')).toHaveCSS(
+    "background-color",
+    panelColor,
+  );
+  await expect(
+    page.getByRole("heading", { name: "賛美歌集め" }).locator(".."),
+  ).toHaveCSS("background-color", panelColor);
+
+  const item = page.getByRole("button", { name: "賛美歌一覧", exact: true });
+  await item.hover();
+  await expect(item).toHaveCSS("translate", "none");
+  await page.mouse.down();
+  await expect(item).toHaveCSS("translate", "0px 1px");
+  await page.mouse.up();
+
+  await expect(page).toHaveURL(/\/hymns$/);
+  await expect(item).toHaveCSS("translate", "none");
+  await expect(page.locator('[data-slot="card-header"]')).toHaveCSS(
+    "background-color",
+    panelColor,
+  );
+});
+
 test("賛美歌一覧のプレイリスト作成は、検索条件だけを送る(全件を取り直さない)", async ({
   page,
 }) => {

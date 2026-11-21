@@ -302,7 +302,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       />
 
       <SidebarInset className="min-w-0 overflow-hidden bg-transparent">
-        <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-2 text-card-foreground sm:px-4">
+        <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-input bg-border px-2 text-card-foreground sm:px-4">
           <SidebarTrigger
             aria-label="サイドバーの開閉"
             className="size-8 hover:bg-accent hover:text-accent-foreground"
@@ -398,9 +398,10 @@ function AdminSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
+              render={<Button variant="ghost" />}
               size="lg"
               aria-label="メインメニューへ"
-              className="h-auto gap-2.5 py-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
+              className="h-auto justify-start gap-2.5 border-0 py-3 font-normal transition-[width,height,padding,translate] group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
               onClick={() => {
                 onBrand();
                 closeOnMobile();
@@ -433,6 +434,7 @@ function AdminSidebar({
                     return (
                       <SidebarMenuItem key={item.key}>
                         <SidebarMenuButton
+                          render={<Button variant="ghost" />}
                           isActive={item.isActive}
                           tooltip={
                             item.pending ? `${item.title}(準備中)` : item.title
@@ -442,7 +444,7 @@ function AdminSidebar({
                             closeOnMobile();
                           }}
                           className={cn(
-                            "h-9 gap-3 text-[0.95rem] [&>svg]:size-5 group-data-[collapsible=icon]:[&>svg]:size-4",
+                            "h-9 justify-start gap-3 border-0 text-[0.95rem] font-normal transition-[width,height,padding,translate] [&>svg]:size-5 group-data-[collapsible=icon]:[&>svg]:size-4",
                             "hover:bg-muted hover:text-foreground",
                             "data-active:font-semibold data-active:shadow-[inset_3px_0_0_var(--primary)] data-active:hover:bg-accent data-active:hover:text-accent-foreground",
                             item.pending && "pr-16 text-muted-foreground",
