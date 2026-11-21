@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "@jest/globals";
 import { accidentalSteps, keyLabel, keySignature } from "./keySignature";
 
 describe("keyLabel", () => {
@@ -33,7 +33,7 @@ describe("keySignature", () => {
 
   it("12長調すべてに調号がある", () => {
     for (const k of ["A", "Ab", "B", "Bb", "C", "D", "Db", "E", "Eb", "F", "G", "Gb"]) {
-      expect(keySignature(k), k).not.toBeNull();
+      expect(keySignature(k)).not.toBeNull();
     }
   });
 });

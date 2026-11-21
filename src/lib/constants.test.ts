@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "@jest/globals";
 import { base64ToUtf8, extractErrorMessage, utf8ToBase64 } from "./constants";
 import { REQUIRED_MESSAGE, required } from "./form";
 

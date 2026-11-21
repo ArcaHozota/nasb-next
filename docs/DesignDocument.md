@@ -289,7 +289,7 @@ TanStack Query の既定値は `staleTime: 30秒`、取得失敗時の再試行�
 | `pnpm dev`                              | ポート3000の開発サーバー。開発時の API 転送を有効化                   |
 | `pnpm lint`                             | ESLint による静的解析                                                 |
 | `pnpm typecheck`                        | `tsc --noEmit` による型検査                                           |
-| `pnpm test`・`pnpm test:watch`          | Vitest の一括実行・監視実行                                           |
+| `pnpm test`・`pnpm test:watch`          | Jest の一括実行・監視実行                                             |
 | `pnpm build`                            | Next.js の本番向けビルドと standalone 出力の生成                      |
 | `pnpm start`                            | ビルド済みアプリを `next start` で起動。コンテナの起動方法は6.1に記載 |
 | `pnpm exec playwright install chromium` | ローカル E2E 用のブラウザの導入                                       |
@@ -298,7 +298,7 @@ TanStack Query の既定値は `staleTime: 30秒`、取得失敗時の再試行�
 
 [ESLint の設定](../eslint.config.mjs) では、公式部品をそのまま管理するため、`use-mobile.ts` と `carousel.tsx` の `react-hooks/set-state-in-effect`、`sidebar.tsx` の `react-hooks/purity` にファイル単位の例外を設ける。前者は Effect 内の初期値の設定、後者は読み込み表示の幅を決める乱数が対象となった箇所である。アプリ側には両方のルールを適用する。公式部品を再生成したときは、差分と例外の要否を確認してから Lint・型検査・E2E を実行する。
 
-ユニットテストは `src/**/*.test.ts` を対象とする。通常は Node 環境、DOM が必要なファイルだけ jsdom とする。検索の振り分けと順位、歌詞照合、調号、ページ番号、名称サイズ、必須チェック、Base64、Blob 保存・エラー、CSRF 再送・401、プレイリスト進捗・タイムアウト等を確認する。
+ユニットテストは [jest.config.mjs](../jest.config.mjs) の `next/jest` 設定で `src/**/*.test.ts` を実行する。既定は Node 環境とし、DOM が必要なファイルでは `@jest-environment jsdom` を指定する。検索の振り分けと順位、歌詞照合、調号、ページ番号、名称サイズ、必須チェック、Base64、Blob 保存・エラー、CSRF 再送・401、プレイリスト進捗・タイムアウト等を確認する。
 
 E2E は [e2e/mock-api.ts](../e2e/mock-api.ts) が `/api/**` の応答を差し替え、実バックエンドを起動しない。ホームでは767pxと768pxでの表示切り替え、モバイルのカルーセル操作、PC の前後のページ送り、取得待ち・失敗時の表示、動きを減らす設定の適用を確認する。管理画面ではログイン、未認証時の遷移、一覧のページ送り・表示件数変更・削除、調を選んでの楽譜ダウンロード、編集モーダル、破棄・ログアウト確認、ランダム選択、検索条件によるプレイリスト要求等を確認する。ログアウト確認は上部バーとサイドバーの両方から検証する。モバイルでのスワイプ操作全般、聖書章節の保存、実際の OAuth・YouTube 接続は網羅していない。
 

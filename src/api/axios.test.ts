@@ -1,18 +1,27 @@
 // api/axios.ts のインターセプター(CSRFトークンの付与・403時の再送・401時の強制ログアウト)。
 // 実際の通信はせず、axios の adapter を差し替えて応答を作る。
-import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { setImmediate } from "node:timers/promises";
+import {
+  AxiosError,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from "axios";
+import { beforeEach, describe, expect, it, jest } from "@jest/globals";
 
-const { hardRedirectHome } = vi.hoisted(() => ({ hardRedirectHome: vi.fn() }));
-vi.mock("@/lib/session", () => ({
-  hardRedirectHome,
-  SESSION_EXPIRED_MESSAGE: "期限切れ",
-  REDIRECT_MESSAGE_KEY: "redirectMessage",
+const session =
+  jest.requireActual<typeof import("@/lib/session")>("@/lib/session");
+const redirectHome = jest.fn<typeof session.hardRedirectHome>();
+jest.doMock("@/lib/session", () => ({
+  ...session,
+  hardRedirectHome: redirectHome,
 }));
 
-import api from "./axios";
-import { useAuthStore } from "@/stores/auth";
-import { useCsrfStore } from "@/stores/csrf";
+const { default: api } =
+  jest.requireActual<typeof import("./axios")>("./axios");
+const { useAuthStore } =
+  jest.requireActual<typeof import("@/stores/auth")>("@/stores/auth");
+const { useCsrfStore } =
+  jest.requireActual<typeof import("@/stores/csrf")>("@/stores/csrf");
 
 type Reply = { status: number; data?: unknown };
 type Handler = (config: InternalAxiosRequestConfig) => Reply;
@@ -37,7 +46,13 @@ function respondWith(handler: Handler) {
       config,
     };
     if (status >= 400) {
-      throw new AxiosError(`HTTP ${status}`, "ERR_BAD_RESPONSE", config, null, response);
+      throw new AxiosError(
+        `HTTP ${status}`,
+        "ERR_BAD_RESPONSE",
+        config,
+        null,
+        response,
+      );
     }
     return response;
   };
@@ -57,9 +72,13 @@ const csrfReply = (): Reply => ({
 beforeEach(() => {
   calls = [];
   csrfIssued = 0;
-  hardRedirectHome.mockReset();
+  redirectHome.mockReset();
   useCsrfStore.setState({
-    csrf: { token: "token-0", headerName: "X-CSRF-TOKEN", parameterName: "_csrf" },
+    csrf: {
+      token: "token-0",
+      headerName: "X-CSRF-TOKEN",
+      parameterName: "_csrf",
+    },
   });
   useAuthStore.setState({ isLoggedIn: false });
 });
@@ -115,12 +134,16 @@ describe("403 のときの再送", () => {
 
 describe("401 のとき", () => {
   it("別端末ログイン(SESSION_INVALIDATED)なら、メッセージつきでホームへ戻す", async () => {
-    respondWith(() => ({ status: 401, data: { error: "SESSION_INVALIDATED" } }));
+    respondWith(() => ({
+      status: 401,
+      data: { error: "SESSION_INVALIDATED" },
+    }));
 
     // ページ遷移するので Promise は決着しない(以降のエラー表示を走らせないため)
     void api.get("/hymns");
-    await vi.waitFor(() => expect(hardRedirectHome).toHaveBeenCalledTimes(1));
-    expect(hardRedirectHome.mock.calls[0][0]).toContain("別の端末");
+    await setImmediate();
+    expect(redirectHome).toHaveBeenCalledTimes(1);
+    expect(redirectHome.mock.calls[0][0]).toContain("別の端末");
   });
 
   it("ログイン中の通常の 401 は、期限切れとしてホームへ戻す", async () => {
@@ -128,9 +151,8 @@ describe("401 のとき", () => {
     respondWith(() => ({ status: 401 }));
 
     void api.get("/hymns");
-    await vi.waitFor(() =>
-      expect(hardRedirectHome).toHaveBeenCalledWith("期限切れ"),
-    );
+    await setImmediate();
+    expect(redirectHome).toHaveBeenCalledWith(session.SESSION_EXPIRED_MESSAGE);
   });
 
   it("未ログインの閲覧では、エラーをそのまま返す", async () => {
@@ -139,7 +161,7 @@ describe("401 のとき", () => {
     await expect(api.get("/hymns")).rejects.toMatchObject({
       response: { status: 401 },
     });
-    expect(hardRedirectHome).not.toHaveBeenCalled();
+    expect(redirectHome).not.toHaveBeenCalled();
   });
 
   it("ログイン失敗(/login)とログイン確認(/common/me)では戻さない", async () => {
@@ -152,6 +174,6 @@ describe("401 のとき", () => {
     await expect(api.get("/common/me")).rejects.toMatchObject({
       response: { status: 401 },
     });
-    expect(hardRedirectHome).not.toHaveBeenCalled();
+    expect(redirectHome).not.toHaveBeenCalled();
   });
 });

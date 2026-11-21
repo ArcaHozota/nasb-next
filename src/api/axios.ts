@@ -61,7 +61,9 @@ api.interceptors.response.use(
         (error.response.data as { error?: string } | undefined)?.error ===
         "SESSION_INVALIDATED"
       ) {
-        hardRedirectHome("別の端末でログインされたため、ログアウトされました。");
+        hardRedirectHome(
+          "別の端末でログインされたため、ログアウトされました。",
+        );
         // ページ遷移するので、この先のエラーハンドラ(トースト表示等)は走らせない。
         return new Promise(() => {});
       }

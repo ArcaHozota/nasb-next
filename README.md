@@ -53,12 +53,12 @@ pnpm dev                 # 開発サーバー(http://localhost:3000)
 
 ## テスト
 
-| コマンド          | 内容                                       |
-| ----------------- | ------------------------------------------ |
-| `pnpm test`       | ユニットテスト(Vitest)。`src/**/*.test.ts` |
-| `pnpm test:watch` | ユニットテストを変更のたびに実行           |
-| `pnpm e2e`        | 画面を通したテスト(Playwright)。`e2e/`     |
-| `pnpm typecheck`  | 型チェック(`tsc --noEmit`)                 |
+| コマンド          | 内容                                                |
+| ----------------- | --------------------------------------------------- |
+| `pnpm test`       | Jest でユニットテストを一括実行。`src/**/*.test.ts` |
+| `pnpm test:watch` | ユニットテストを変更のたびに実行                    |
+| `pnpm e2e`        | 画面を通したテスト(Playwright)。`e2e/`              |
+| `pnpm typecheck`  | 型チェック(`tsc --noEmit`)                          |
 
 - E2E はバックエンドを起動しません。ブラウザから出る `/api/**` を `e2e/mock-api.ts` が受けて応答します。
 - `pnpm e2e` は本番ビルド(`pnpm build`)をしてから、Dockerfile と同じ standalone のサーバーをポート 3100 で起動します。

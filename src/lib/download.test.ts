@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "@jest/globals";
 import { extractBlobErrorMessage } from "./download";
 
 const FALLBACK = "楽譜の取得に失敗しました";
@@ -39,7 +39,7 @@ describe("extractBlobErrorMessage", () => {
       "123",
       '""',
     ]) {
-      expect(await extractBlobErrorMessage(blobError(body), FALLBACK), body).toBe(
+      expect(await extractBlobErrorMessage(blobError(body), FALLBACK)).toBe(
         FALLBACK,
       );
     }

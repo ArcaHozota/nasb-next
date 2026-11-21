@@ -1,14 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const { post, get } = vi.hoisted(() => ({ post: vi.fn(), get: vi.fn() }));
-vi.mock("@/api/axios", () => ({ default: { post, get } }));
-
 import {
-  createPlaylistAndWait,
-  getYoutubeReauthConfirmText,
-  PlaylistError,
-  type PlaylistStatus,
-} from "./youtube";
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from "@jest/globals";
+import type { PlaylistStatus } from "./youtube";
+
+type Api = typeof import("@/api/axios").default;
+const post = jest.fn<Api["post"]>();
+const get = jest.fn<Api["get"]>();
+jest.doMock("@/api/axios", () => ({
+  __esModule: true,
+  default: { post, get },
+}));
+
+const { createPlaylistAndWait, getYoutubeReauthConfirmText, PlaylistError } =
+  jest.requireActual<typeof import("./youtube")>("./youtube");
 
 const status = (s: Partial<PlaylistStatus>): PlaylistStatus => ({
   playlistId: "PL1",
@@ -29,7 +38,9 @@ describe("getYoutubeReauthConfirmText", () => {
   });
 
   it("未連携(本文なしの409)やほかの状態は null", () => {
-    expect(getYoutubeReauthConfirmText({ response: { status: 409 } })).toBeNull();
+    expect(
+      getYoutubeReauthConfirmText({ response: { status: 409 } }),
+    ).toBeNull();
     expect(
       getYoutubeReauthConfirmText({
         response: { status: 500, data: "YouTube連携の再認証が必要です。" },
@@ -44,7 +55,11 @@ describe("createPlaylistAndWait", () => {
   beforeEach(() => {
     post.mockReset();
     get.mockReset();
-    vi.useFakeTimers();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it("完了(done)になるまで状態を問い合わせ、進捗を知らせる", async () => {
@@ -57,7 +72,7 @@ describe("createPlaylistAndWait", () => {
     const promise = createPlaylistAndWait({ hymnIds: ["1", "2", "3"] }, (s) =>
       progress.push(s.added),
     );
-    await vi.advanceTimersByTimeAsync(3000);
+    await jest.advanceTimersByTimeAsync(3000);
 
     await expect(promise).resolves.toMatchObject({ state: "done", added: 3 });
     expect(post).toHaveBeenCalledWith("/youtube/create-playlist", {
@@ -90,7 +105,7 @@ describe("createPlaylistAndWait", () => {
     const assertion = expect(promise).rejects.toThrow(
       new PlaylistError("上限に達しました"),
     );
-    await vi.advanceTimersByTimeAsync(1500);
+    await jest.advanceTimersByTimeAsync(1500);
     await assertion;
   });
 
@@ -106,7 +121,7 @@ describe("createPlaylistAndWait", () => {
 
     const promise = createPlaylistAndWait({ hymnIds: ["1"] });
     const assertion = expect(promise).rejects.toBeInstanceOf(PlaylistError);
-    await vi.advanceTimersByTimeAsync(10 * 60 * 1000 + 3000);
+    await jest.advanceTimersByTimeAsync(10 * 60 * 1000 + 3000);
     await assertion;
   });
 });
