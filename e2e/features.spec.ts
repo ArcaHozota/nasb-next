@@ -126,6 +126,10 @@ test.describe("確認ダイアログ(タイトルと「いいえ」「はい」�
     await expect(title).toHaveCSS("font-family", /^"Noto Serif JP"/);
     await expect(title).toHaveCSS("font-weight", "700");
     await expect(confirm).toContainText("ログアウトしますか？");
+    await expect(
+      confirm.locator('[data-slot="alert-dialog-footer"]'),
+    ).toHaveCount(0);
+    await expect(confirm.getByRole("button", { name: "はい" })).toBeVisible();
     await confirm.getByRole("button", { name: "いいえ" }).click();
     await expect(confirm).toHaveCount(0);
     await expect(page).toHaveURL(/\/mainmenu$/);

@@ -16,7 +16,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -51,7 +50,7 @@ export default function ConfirmDialog({
           <AlertDialogTitle className="font-bold">{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <AlertDialogCancel onClick={onCancel}>
             {CANCEL_LABEL}
           </AlertDialogCancel>
@@ -63,7 +62,7 @@ export default function ConfirmDialog({
           >
             {CONFIRM_LABEL}
           </AlertDialogAction>
-        </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );

@@ -205,7 +205,7 @@ Noto 系は [src/app/fonts.ts](../src/app/fonts.ts) で Fontsource の CSS を�
 
 ### 8.2 確認ダイアログ
 
-[ConfirmDialog.tsx](../src/components/ConfirmDialog.tsx) の AlertDialog を共通で使用する。書体は `.noto-serif` とし、タイトルは Noto Serif JP の太字（700）で表示する。shadcn/ui の標準的なタイトル・説明・下部の操作の構造とし、タイトルごとの色付きの線や別のボタン色は設けない。標準配置は狭い画面で中央揃え、`sm` 以上で左揃えとする。
+[ConfirmDialog.tsx](../src/components/ConfirmDialog.tsx) の AlertDialog を共通で使用する。書体は `.noto-serif` とし、タイトルは Noto Serif JP の太字（700）で表示する。操作ボタンはタイトル・説明に続けてダイアログ本体の中に配置する。狭い画面ではタイトルと説明を中央に揃え、ボタンを縦に並べる。`sm` 以上ではタイトルと説明を左に揃え、ボタンを右寄せで横に並べる。
 
 | 場面                                         | タイトル     | ボタン       |
 | -------------------------------------------- | ------------ | ------------ |
