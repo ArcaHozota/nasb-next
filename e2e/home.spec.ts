@@ -70,8 +70,8 @@ test("取得済みの見開きを保ったまま待ち、前後に紙をめく�
   const pager = page.getByRole("navigation", { name: "ページ送り" });
   const next = pager.getByRole("button", { name: "次 →" });
   const previous = pager.getByRole("button", { name: "← 前" });
-  const first = page.getByRole("heading", { name: /^01.*賛美歌1$/ });
-  const second = page.getByRole("heading", { name: /^11.*賛美歌11$/ });
+  const first = page.getByRole("heading", { name: "賛美歌1", exact: true });
+  const second = page.getByRole("heading", { name: "賛美歌11", exact: true });
 
   try {
     await expect(first).toBeVisible();
@@ -151,7 +151,7 @@ test("動きを減らす設定では紙をめくらずページを切り替え�
   await pager.getByRole("button", { name: "次 →" }).click();
   await expect(pager).toContainText("2 / 2");
   await expect(
-    page.getByRole("heading", { name: /^11.*賛美歌11$/ }),
+    page.getByRole("heading", { name: "賛美歌11", exact: true }),
   ).toBeVisible();
   await expect(page.locator("[data-motion-observed]")).toHaveCount(0);
 });
@@ -173,13 +173,59 @@ test("ページの取得に失敗しても現在の目次を保ち、再試行�
   ).toBeVisible();
   await expect(pager).toContainText("1 / 2");
   await expect(
-    page.getByRole("heading", { name: /^01.*賛美歌1$/ }),
+    page.getByRole("heading", { name: "賛美歌1", exact: true }),
   ).toBeVisible();
 
   await page.unroute(isSecondPage);
   await next.click();
   await expect(pager).toContainText("2 / 2");
   await expect(
-    page.getByRole("heading", { name: /^11.*賛美歌11$/ }),
+    page.getByRole("heading", { name: "賛美歌11", exact: true }),
   ).toBeVisible();
 });
+
+test("右ページ: 曲名に番号を付けず、YouTube ボタンは曲名の長さによらず右上に置き、調ボタンは同じ大きさ", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const hymns = makeHymns(3);
+  hymns[1] = {
+    ...hymns[1],
+    nameJp: "山々が生まれる前から-詩編90編・とても長い曲名の折り返しを確かめる",
+  };
+  await mockApi(page, { hymns });
+  await page.route("**/api/hymns/*/score?keysOnly=true", (route) =>
+    route.fulfill({
+      json: [
+        { chord: "A", isOriginal: false },
+        { chord: "Bb", isOriginal: false },
+        { chord: "G", isOriginal: true },
+      ],
+    }),
+  );
+  await page.goto("/home");
+
+  const article = page.locator(".book-page--right");
+  const heading = article.getByRole("heading", { level: 1 });
+  const youtube = article.getByRole("link", { name: "YouTubeで聴く" });
+  await expect(heading).toHaveText("賛美歌1");
+  const short = await youtube.boundingBox();
+  const articleBox = await article.boundingBox();
+
+  // 調ボタンはオリジナルキーも含めて同じ大きさ
+  const keys = article.getByRole("group", { name: "調を選ぶ" }).getByRole("button");
+  await expect(keys).toHaveCount(3);
+  for (const key of await keys.all()) {
+    await expect(key).toHaveCSS("width", "44px");
+    await expect(key).toHaveCSS("height", "30px");
+  }
+  await expect(article.getByRole("button", { name: /^G\s*\(オリジナルキー\)$/ })).toBeVisible();
+
+  // 長い曲名に切り替えても、YouTube ボタンは同じ右上の位置のまま
+  await page.locator("button[data-hymn-row]").nth(1).click();
+  await expect(heading).toHaveText(/^山々が生まれる前から/);
+  const long = await youtube.boundingBox();
+  expect(long).toEqual(short);
+  expect(short!.y - articleBox!.y).toBeLessThan(40);
+});
+

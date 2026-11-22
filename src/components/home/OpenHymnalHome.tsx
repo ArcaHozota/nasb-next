@@ -70,17 +70,22 @@ const hymnNo = (page: number, pageSize: number, i: number) =>
 // key={id} で曲ごとに作り直すので、選んだ調などの状態は曲を変えると初期化される
 function HymnPage({
   hymn,
-  no,
   terms,
   onDownload,
 }: {
   hymn: BookHymn;
-  no: string;
   terms: string[];
   onDownload: (id: string, chord?: string) => Promise<void>;
 }) {
-  const { keysQuery, keys, chord, isOriginal, staffState, setPicked, download } =
-    useHymnScore(hymn.id, onDownload);
+  const {
+    keysQuery,
+    keys,
+    chord,
+    isOriginal,
+    staffState,
+    setPicked,
+    download,
+  } = useHymnScore(hymn.id, onDownload);
   const lyricQuery = useQuery(lyricQueryOptions(hymn.id));
 
   const match = terms.length > 0 ? matchOf(hymn.lineNumber) : null;
@@ -92,7 +97,8 @@ function HymnPage({
       className="book-page book-page--right"
       aria-label={`${hymn.nameJp}の詳細`}
     >
-      <div className="book-song-heading flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      {/* 曲名は左の列で折り返し、「YouTubeで聴く」は右の列で常に右上に置く(曲名の長さで位置が変わらない) */}
+      <div className="book-song-heading grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4">
         <div className="min-w-0">
           {match && (
             <span className={cn("text-xs tracking-wider", match.tone)}>
@@ -100,7 +106,7 @@ function HymnPage({
             </span>
           )}
           <h1 className="mt-1 text-[30px] leading-tight font-bold text-(--book-accent) wrap-anywhere">
-            {no}　{hymn.nameJp}
+            {hymn.nameJp}
           </h1>
           <p className="noto-serif-kr mt-0.5 text-[17px] text-[#5a4630]">
             {hymn.nameKr}
@@ -145,13 +151,24 @@ function HymnPage({
             className="flex-wrap gap-2"
           >
             {keys.map((k) => (
+              // 調ボタンはどれも同じ大きさ(44×30px)。オリジナルキーの「＊」は幅を取らないよう右上に小さく重ねる
               <ToggleGroupItem
                 key={k.chord}
                 value={k.chord}
-                className="h-7.5 min-w-11 rounded-lg! border border-(--book-rule) bg-transparent px-3 text-[13px] font-normal text-[#2b1d14] hover:bg-(--book-hover) hover:text-[#2b1d14] data-pressed:border-(--book-accent) data-pressed:bg-(--book-accent) data-pressed:text-white"
+                className="relative h-7.5 w-11 rounded-lg! border border-(--book-rule) bg-transparent px-0 text-[13px] font-normal text-[#2b1d14] hover:bg-(--book-hover) hover:text-[#2b1d14] data-pressed:border-(--book-accent) data-pressed:bg-(--book-accent) data-pressed:text-white"
               >
                 {keyLabel(k.chord)}
-                {k.isOriginal ? "＊" : ""}
+                {k.isOriginal && (
+                  <>
+                    <span
+                      className="absolute top-0.5 right-1 text-[10px] leading-none"
+                      aria-hidden="true"
+                    >
+                      ＊
+                    </span>
+                    <span className="sr-only">(オリジナルキー)</span>
+                  </>
+                )}
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
@@ -555,7 +572,6 @@ export default function OpenHymnalHome({
             <HymnPage
               key={selected.id}
               hymn={selected}
-              no={hymnNo(page, pageSize, selectedIndex)}
               terms={terms}
               onDownload={onDownload}
             />
