@@ -91,16 +91,11 @@ test("取得済みの見開きを保ったまま待ち、前後に紙をめく�
   const forward = page.locator('.book-turn[data-direction="next"]');
   await expect(forward).toBeAttached();
   await expect(forward).toHaveAttribute("inert", "");
-  // 表(めくる前の右ページ)が起き上がり、裏(めくった先の新しい目次)が左へ倒れる
-  await expect(forward.locator(".book-turn-front")).toHaveCSS(
-    "animation-name",
-    "book-turn-rise-next",
+  // 紙は折り目で折れる(StPageFlip の soft ページ)。表はめくる前の右ページ、裏はめくった先の新しい目次
+  await expect(forward.locator(".book-turn-front")).toContainText("賛美歌1");
+  await expect(forward.locator(".book-turn-back").first()).toContainText(
+    "賛美歌11",
   );
-  await expect(forward.locator(".book-turn-back")).toHaveCSS(
-    "animation-name",
-    "book-turn-land-next",
-  );
-  await expect(forward.locator(".book-turn-back")).toContainText("賛美歌11");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
     780,
   );
@@ -229,3 +224,104 @@ test("右ページ: 曲名に番号を付けず、YouTube ボタンは曲名の�
   expect(short!.y - articleBox!.y).toBeLessThan(40);
 });
 
+
+// ===== 角に乗る・角をつかむ(StPageFlip の soft ページと同じ操作) =====
+
+/** 本の右下・左下の角の近く(表紙の枠の内側)の画面座標 */
+async function corners(page: import("@playwright/test").Page) {
+  const box = await page.locator(".book").boundingBox();
+  if (!box) throw new Error("見開きが見つかりません");
+  return {
+    box,
+    nextBottom: { x: box.x + box.width - 16, y: box.y + box.height - 18 },
+    previousBottom: { x: box.x + 16, y: box.y + box.height - 18 },
+  };
+}
+
+test("角に乗ると角が折れ、離れると元に戻る(最初のページでは左の角は折れない)", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await mockApi(page, { hymns: makeHymns(25) });
+  await page.goto("/home");
+  await expect(page.getByRole("heading", { name: "賛美歌1", exact: true })).toBeVisible();
+  const { nextBottom, previousBottom } = await corners(page);
+
+  await page.mouse.move(previousBottom.x, previousBottom.y);
+  await expect(page.locator(".book-turn")).toHaveCount(0);
+
+  await page.mouse.move(nextBottom.x, nextBottom.y);
+  const fold = page.locator('.book-turn[data-direction="next"]');
+  await expect(fold).toBeAttached();
+  await expect(fold).toHaveAttribute("inert", "");
+  // まだ次のページを取得していないので、折れた所は白紙
+  await expect(fold.locator(".book-turn-blank").first()).toBeAttached();
+  await expect(page.locator(".book")).toHaveAttribute("data-corner", "grab");
+
+  await page.mouse.move(nextBottom.x - 500, nextBottom.y - 300);
+  await expect(page.locator(".book-turn")).toHaveCount(0);
+  await expect(page.locator(".book")).not.toHaveAttribute("data-corner");
+});
+
+test("角を押すだけでも、綴じ目の向こうまでドラッグしてもめくれる", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await mockApi(page, { hymns: makeHymns(25) });
+  await page.goto("/home");
+  const pager = page.getByRole("navigation", { name: "ページ送り" });
+  await expect(pager).toContainText("1 / 3");
+  const { box, nextBottom, previousBottom } = await corners(page);
+
+  // 押すだけ(クリック)
+  await page.mouse.move(nextBottom.x, nextBottom.y);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(pager).toContainText("2 / 3");
+  await expect(page.locator(".book-turn")).toHaveCount(0);
+
+  // 右下の角を、綴じ目の向こう(左ページの上)までドラッグして離す
+  await page.mouse.move(nextBottom.x, nextBottom.y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 200, nextBottom.y - 40, { steps: 12 });
+  await expect(page.locator(".book-turn-front")).toBeAttached();
+  await page.mouse.up();
+  await expect(pager).toContainText("3 / 3");
+  await expect(page.locator(".book-turn")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "賛美歌21", exact: true }),
+  ).toBeVisible();
+
+  // 最後のページでは右の角はめくれない。左下の角を押すと前のページへ戻る
+  await page.mouse.move(nextBottom.x, nextBottom.y);
+  await expect(page.locator(".book-turn")).toHaveCount(0);
+  await page.mouse.move(previousBottom.x, previousBottom.y);
+  await page.mouse.down();
+  await page.mouse.up();
+  await expect(pager).toContainText("2 / 3");
+});
+
+test("角を綴じ目の手前までしか動かさずに離すと、元のページと選んでいた曲に戻る", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const api = await mockApi(page, { hymns: makeHymns(25) });
+  await page.goto("/home");
+  const pager = page.getByRole("navigation", { name: "ページ送り" });
+  await page.getByRole("button", { name: /賛美歌3/ }).click();
+  await expect(page.getByRole("heading", { name: "賛美歌3", exact: true })).toBeVisible();
+  const { nextBottom } = await corners(page);
+
+  await page.mouse.move(nextBottom.x, nextBottom.y);
+  await page.mouse.down();
+  await page.mouse.move(nextBottom.x - 250, nextBottom.y - 60, { steps: 8 });
+  // 紙が折れて、裏(次のページの目次)が見えている
+  await expect(page.locator(".book-turn-back").first()).toContainText("賛美歌11");
+  await page.mouse.up();
+
+  await expect(page.locator(".book-turn")).toHaveCount(0);
+  await expect(pager).toContainText("1 / 3");
+  await expect(page.getByRole("heading", { name: "賛美歌3", exact: true })).toBeVisible();
+  // 次のページは取得したが、表示は元のページのまま
+  expect(
+    api.calls.filter((c) => c.path === "/hymns").map((c) => c.query.pageNum),
+  ).toContain("2");
+});

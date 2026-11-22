@@ -497,73 +497,43 @@ a.glass-item:hover {
   line-height: 1.1;
 }
 
-/* 「前」「次」で紙をめくる演出(components/home/BookPageTurn.tsx)。軽く動くよう 2 段階で回す。
-   前半: 表(めくる前のページ)が綴じ目を軸に起き上がって真横を向く。
-   後半: 裏(新しいページ)が真横から反対側へ倒れて着地する。動かすのは transform と影の濃さだけ。
+/* 紙をめくる演出(components/home/BookPageTurn.tsx)。StPageFlip の「soft」ページと同じく、
+   角の位置で紙を折り返し、折れた部分に紙の裏を、持ち上がった所に下の紙を見せる。
+   形(clip-path)と位置(transform)は JS が角の位置に合わせて毎フレーム決める。
    実際のページは、この下で先に新しいページへ差し替わっている。 */
 .book-turn {
-  --turn-duration: 760ms;
-  --turn-half: calc(var(--turn-duration) / 2);
   position: absolute;
   z-index: 2;
   inset: 0;
   pointer-events: none;
-  perspective: 1800px;
-  perspective-origin: var(--book-contents-width) 45%;
 }
 
-.book-turn-underneath,
+/* 本の座標で切り取る入れ物(下の紙と影、折れた紙) */
+.book-turn-clip {
+  position: absolute;
+  inset: 0;
+}
+
+/* ページの位置に置く複製(表、着地する側の旧ページ、角に乗ったときの下の白紙) */
 .book-turn-front,
-.book-turn-back {
+.book-turn-landing,
+.book-turn-under {
   position: absolute;
   overflow: hidden;
 }
 
-.book-turn-front,
-.book-turn-back {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  will-change: transform;
-}
-
-/* 持ち上がった紙の陰り(真横に近いほど濃い) */
-.book-turn-front::after,
-.book-turn-back::after {
+/* 折り目で裏返した紙の裏と影。transform で本の座標へ移すので、左上を基準にする */
+.book-turn-back,
+.book-turn-shadow {
   position: absolute;
-  inset: 0;
-  background: #3c2814;
-  pointer-events: none;
-  content: "";
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  transform-origin: 0 0;
 }
 
-/* 「次」: 右ページが左の綴じ目を軸に起き上がり、新しい左ページが右の綴じ目を軸に倒れる */
-.book-turn[data-direction="next"] .book-turn-front {
-  transform-origin: left center;
-  animation: book-turn-rise-next var(--turn-half) cubic-bezier(0.45, 0, 0.9, 0.6) both;
-}
-
-.book-turn[data-direction="next"] .book-turn-back {
-  transform-origin: right center;
-  animation: book-turn-land-next var(--turn-half) cubic-bezier(0.1, 0.4, 0.55, 1) var(--turn-half) both;
-}
-
-/* 「前」: 左ページが右の綴じ目を軸に起き上がり、新しい右ページが左の綴じ目を軸に倒れる */
-.book-turn[data-direction="previous"] .book-turn-front {
-  transform-origin: right center;
-  animation: book-turn-rise-previous var(--turn-half) cubic-bezier(0.45, 0, 0.9, 0.6) both;
-}
-
-.book-turn[data-direction="previous"] .book-turn-back {
-  transform-origin: left center;
-  animation: book-turn-land-previous var(--turn-half) cubic-bezier(0.1, 0.4, 0.55, 1) var(--turn-half) both;
-}
-
-.book-turn-front::after {
-  animation: book-turn-shade-rise var(--turn-half) ease-in both;
-}
-
-.book-turn-back::after {
-  animation: book-turn-shade-land var(--turn-half) ease-out var(--turn-half) both;
+.book-turn .book-turn-blank {
+  position: absolute;
 }
 
 .book-turn-copy {
@@ -571,64 +541,13 @@ a.glass-item:hover {
   height: 100%;
 }
 
-@keyframes book-turn-rise-next {
-  from {
-    transform: rotateY(0);
-  }
-
-  to {
-    transform: rotateY(-90deg);
-  }
+/* 角(つかんでめくる所)に乗ったとき・つかんでいるときのカーソル */
+.book[data-corner="grab"] {
+  cursor: grab;
 }
 
-@keyframes book-turn-land-next {
-  from {
-    transform: rotateY(90deg);
-  }
-
-  to {
-    transform: rotateY(0);
-  }
-}
-
-@keyframes book-turn-rise-previous {
-  from {
-    transform: rotateY(0);
-  }
-
-  to {
-    transform: rotateY(90deg);
-  }
-}
-
-@keyframes book-turn-land-previous {
-  from {
-    transform: rotateY(-90deg);
-  }
-
-  to {
-    transform: rotateY(0);
-  }
-}
-
-@keyframes book-turn-shade-rise {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 0.35;
-  }
-}
-
-@keyframes book-turn-shade-land {
-  from {
-    opacity: 0.35;
-  }
-
-  to {
-    opacity: 0;
-  }
+.book[data-corner="grabbing"] {
+  cursor: grabbing;
 }
 
 @media (width < 960px) {

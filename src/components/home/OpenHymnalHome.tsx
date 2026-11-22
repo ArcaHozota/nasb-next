@@ -6,14 +6,26 @@
 //   右ページ: 左で選んだ曲。調を選ぶと五線譜の調号が変わり、五線譜を押すとその調の楽譜をダウンロード。
 //            歌詞は検索した語を下線で強調して表示する(歌詞の照合)。
 // モバイル版(カルーセル)は page.tsx 側のまま。データ取得・検索・ページ送りの状態も page.tsx が持つ。
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, LogIn, Search, SquarePlay } from "lucide-react";
 import Highlighted from "@/components/Highlighted";
 import JerusalemCross from "@/components/JerusalemCross";
-import BookPageTurn, {
-  captureBookTurn,
-  type BookTurn,
+import {
+  animateCorner,
+  captureTurnPages,
+  copyPage,
+  HOVER_FOLD_PX,
+  livePages,
+  SoftPage,
+  type Corner,
+  type Direction,
 } from "@/components/home/BookPageTurn";
 import KeyStaff from "@/components/home/KeyStaff";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -38,6 +50,61 @@ import { useFeedbackStore } from "@/stores/feedback";
 import type { HymnSummary } from "@/api/hymns";
 
 type BookHymn = HymnSummary;
+
+type Pt = { x: number; y: number };
+
+/** めくっている紙の状態(描くたびに React を通さないよう ref に持つ) */
+type FlipState = {
+  direction: Direction;
+  corner: Corner;
+  /** hover: 角に乗って折れているだけ / drag: 角をつかんでいる / auto: 最後まで自動でめくる */
+  mode: "hover" | "drag" | "auto";
+  soft: SoftPage | null;
+  /** 紙の角の今の位置(めくる紙の座標) */
+  point: Pt | null;
+  /** 指・マウスの位置(本の中の座標)と、押した位置 */
+  pointer: Pt | null;
+  down: Pt;
+  moved: boolean;
+  released: boolean;
+  /** 角に乗ったときの折り返しが終わった */
+  folded: boolean;
+  /** 紙の中身が、移動先のページの複製になった */
+  ready: boolean;
+  captured: ReturnType<typeof captureTurnPages>;
+  target: number;
+  /** めくる前のページと選んでいた曲(途中でやめたとき、ここへ戻す) */
+  from: { page: number; selectedId: string | null } | null;
+  stop: (() => void) | null;
+  onReady: (() => void) | null;
+};
+
+const newFlip = (
+  direction: Direction,
+  corner: Corner,
+  mode: FlipState["mode"],
+): FlipState => ({
+  direction,
+  corner,
+  mode,
+  soft: null,
+  point: null,
+  pointer: null,
+  down: { x: 0, y: 0 },
+  moved: false,
+  released: false,
+  folded: false,
+  ready: false,
+  captured: null,
+  target: 0,
+  from: null,
+  stop: null,
+  onReady: null,
+});
+
+/** 角の範囲にあっても、押したときに紙をめくらない(本来の操作を優先する)要素 */
+const INTERACTIVE =
+  "button, a, input, textarea, select, label, [role=button], [role=radio], [role=option], [data-slot=scroll-area-scrollbar]";
 
 /** 一致度(lineNumber)ごとの◆表示。検索していないときは出さない */
 const MATCH: Record<string, { label: string; mark: string; tone: string }> = {
@@ -281,33 +348,158 @@ export default function OpenHymnalHome({
   const bookRef = useRef<HTMLDivElement>(null);
   const turnRequest = useRef<symbol | null>(null);
   const [preparingPage, setPreparingPage] = useState(false);
-  const [bookTurn, setBookTurn] = useState<BookTurn | null>(null);
-  const finishTurn = useCallback(() => {
+  // 紙をめくっている(ボタン・角のクリック・ドラッグ)間は true。角に乗って少し折れているだけのときは false
+  const [turning, setTurning] = useState(false);
+  // めくる紙を描く層。key が変わると描き直す
+  const [flipView, setFlipView] = useState<{
+    direction: Direction;
+    key: number;
+  } | null>(null);
+  const layerRef = useRef<HTMLDivElement>(null);
+  const flip = useRef<FlipState | null>(null);
+  const flipKey = useRef(0);
+  // めくるのを途中でやめて元のページへ戻したときに、選び直す曲
+  const [restoreId, setRestoreId] = useState<string | null>(null);
+
+  const reduceMotion = () =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const setCursor = (cursor: "grab" | "grabbing" | null) => {
+    const book = bookRef.current;
+    if (!book) return;
+    if (cursor) book.dataset.corner = cursor;
+    else delete book.dataset.corner;
+  };
+
+  /** 検索・ロゴでのリセット時: 待っていたページ送りや、めくっている紙をすべて取り消す */
+  const stopPaging = () => {
+    flip.current?.stop?.();
+    flip.current = null;
+    setFlipView(null);
+    setCursor(null);
     turnRequest.current = null;
+    setTurning(false);
     setPreparingPage(false);
-    setBookTurn(null);
-  }, []);
+  };
+
+  /** めくる紙を片付ける。completed=false(途中でやめた)なら、めくる前のページと曲へ戻す */
+  const endFlip = useCallback(
+    (completed: boolean) => {
+      const f = flip.current;
+      f?.stop?.();
+      flip.current = null;
+      setFlipView(null);
+      setCursor(null);
+      if (!f || f.mode === "hover") return;
+      turnRequest.current = null;
+      setTurning(false);
+      setPreparingPage(false);
+      if (!completed && f.from && f.ready) {
+        setRestoreId(f.from.selectedId);
+        onPageChange(f.from.page);
+      }
+    },
+    [onPageChange],
+  );
 
   useEffect(
     () => () => {
       // 画面幅の切り替えや画面離脱後に、待機していた応答でページを変更しない。
       turnRequest.current = null;
+      flip.current?.stop?.();
+      flip.current = null;
     },
     [],
   );
 
-  const turnPage = async (targetPage: number) => {
+  /** 紙の角を to まで動かし、終わったら done を呼ぶ */
+  const moveCorner = (f: FlipState, to: Pt, done: () => void) => {
+    const soft = f.soft;
+    if (!soft) return;
+    f.stop?.();
+    f.stop = animateCorner(
+      f.point ?? soft.start,
+      to,
+      (p) => {
+        f.point = p;
+        soft.render(p);
+      },
+      () => {
+        f.stop = null;
+        done();
+      },
+    );
+  };
+
+  /** 紙の用意や指を離したことなど、たまっていた操作を進める */
+  const advance = (f: FlipState) => {
+    const soft = f.soft;
+    if (!soft || !f.ready || f.stop) return;
+    const yDest = f.corner === "top" ? 0 : soft.H;
+    if (f.mode === "auto") {
+      // 最後までめくる(StPageFlip の flip: 角を綴じ目の向こう、紙の幅だけ先まで動かす)
+      moveCorner(f, { x: -soft.W, y: yDest }, () => endFlip(true));
+      return;
+    }
+    if (f.mode === "drag" && f.released) {
+      // 動かさずに離した(クリック)なら最後までめくる。動かしたなら、角が綴じ目を越えていればめくり、
+      // 越えていなければ元へ戻す(StPageFlip の stopMove と同じ)
+      const complete = !f.moved || (f.point?.x ?? soft.W) <= 0;
+      moveCorner(f, { x: complete ? -soft.W : soft.W, y: yDest }, () =>
+        endFlip(complete),
+      );
+    }
+  };
+
+  // めくる紙の層ができたら紙を作り、移動先のページに差し替わったら紙の中身を本物に入れ替える
+  useLayoutEffect(() => {
+    const f = flip.current;
+    const layer = layerRef.current;
+    const book = bookRef.current;
+    if (!f || !layer || !book || !flipView) return;
+    if (!f.soft) {
+      f.soft = new SoftPage(layer, book, f.direction, f.corner);
+      f.soft.setContent({ kind: "blank" });
+      f.point ??= f.soft.start;
+      if (f.pointer) f.point = f.soft.limit(f.soft.fromBook(f.pointer));
+      f.soft.render(f.point);
+      f.onReady?.();
+      f.onReady = null;
+    }
+    if (f.captured && page === f.target && !f.ready) {
+      const pages = livePages(book);
+      if (pages) {
+        const landing = f.direction === "next" ? pages.left : pages.right;
+        f.soft.setContent({
+          kind: "pages",
+          front: f.captured.front,
+          landing: f.captured.landing,
+          back: copyPage(landing),
+        });
+        f.ready = true;
+        f.soft.render(f.point ?? f.soft.start);
+      }
+    }
+    advance(f);
+  });
+
+  const turnPage = async (targetPage: number, viaCorner = false) => {
     if (turnRequest.current || targetPage < 1 || targetPage > totalPages)
       return;
+    const direction: Direction = targetPage > page ? "next" : "previous";
     const request = Symbol();
     turnRequest.current = request;
     setPreparingPage(true);
+    setTurning(true);
 
     try {
       await onPreparePage(targetPage);
     } catch (error) {
       if (turnRequest.current === request) {
-        finishTurn();
+        endFlip(false);
+        turnRequest.current = null;
+        setTurning(false);
+        setPreparingPage(false);
         toast(
           extractErrorMessage(
             error,
@@ -319,25 +511,171 @@ export default function OpenHymnalHome({
     }
     if (turnRequest.current !== request) return;
 
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    const turn = reduceMotion
+    const captured = reduceMotion()
       ? null
-      : captureBookTurn(
-          bookRef.current,
-          targetPage > page ? "next" : "previous",
-        );
-    if (turn) {
+      : captureTurnPages(bookRef.current, direction);
+    if (!captured) {
+      // 動きを減らす設定では、紙をめくらずにページを切り替える
+      flip.current?.stop?.();
+      flip.current = null;
+      setFlipView(null);
+      setCursor(null);
+      turnRequest.current = null;
+      setTurning(false);
       setPreparingPage(false);
-      setBookTurn(turn);
-    } else {
-      finishTurn();
+      onPageChange(targetPage);
+      return;
     }
+    let f = flip.current;
+    if (!viaCorner || !f || f.direction !== direction) {
+      // ボタンでめくる: 上の角から(StPageFlip の flipNext / flipPrev の既定)。
+      // 角に乗って折れていた紙があれば、作り直す
+      f?.stop?.();
+      f = newFlip(direction, "top", "auto");
+      flip.current = f;
+      flipKey.current += 1;
+    }
+    Object.assign(f, {
+      captured,
+      target: targetPage,
+      from: { page, selectedId },
+    });
+    setPreparingPage(false);
+    setFlipView({ direction, key: flipKey.current });
     onPageChange(targetPage);
   };
 
-  const paging = preparingPage || bookTurn !== null;
+  // ===== 角に乗る・角をつかむ(StPageFlip の showCorner / start・do・stopMove) =====
+  /** 本の中の座標(表紙の枠の内側が原点) */
+  const bookPoint = (e: React.PointerEvent) => {
+    const book = bookRef.current!;
+    const rect = book.getBoundingClientRect();
+    return {
+      x: e.clientX - rect.left - book.clientLeft,
+      y: e.clientY - rect.top - book.clientTop,
+    };
+  };
+  /** 角の、つかめる範囲(StPageFlip と同じく、紙の対角線の 1/5)にあるか */
+  const cornerAt = (
+    e: React.PointerEvent,
+  ): { direction: Direction; corner: Corner } | null => {
+    const book = bookRef.current;
+    const pages = livePages(book);
+    if (!book || !pages) return null;
+    if ((e.target as Element).closest(INTERACTIVE)) return null;
+    const p = bookPoint(e);
+    const H = pages.left.offsetHeight;
+    const width = book.clientWidth;
+    if (p.x <= 0 || p.y <= 0 || p.x >= width || p.y >= H) return null;
+    const dPrev = Math.hypot(pages.left.offsetWidth, H) / 5;
+    const dNext = Math.hypot(pages.right.offsetWidth, H) / 5;
+    const direction: Direction | null =
+      p.x < dPrev && page > 1
+        ? "previous"
+        : p.x > width - dNext && page < totalPages
+          ? "next"
+          : null;
+    if (!direction) return null;
+    const d = direction === "next" ? dNext : dPrev;
+    if (p.y >= d && p.y <= H - d) return null;
+    return { direction, corner: p.y < H / 2 ? "top" : "bottom" };
+  };
+
+  /** 角に乗ったら、角を 50px 折り返す。そのあとは角がマウスについてくる */
+  const onBookPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const f = flip.current;
+    if (f && f.mode === "drag") {
+      if (f.released) return;
+      const p = bookPoint(e);
+      f.pointer = p;
+      if (Math.hypot(p.x - f.down.x, p.y - f.down.y) > 4) f.moved = true;
+      if (f.soft && !f.stop) {
+        f.point = f.soft.limit(f.soft.fromBook(p));
+        f.soft.render(f.point);
+      }
+      return;
+    }
+    if (turning || preparingPage || e.pointerType !== "mouse" || reduceMotion())
+      return;
+    const at = cornerAt(e);
+    if (f && f.mode === "hover") {
+      if (!at || at.direction !== f.direction || at.corner !== f.corner) {
+        leaveCorner();
+        return;
+      }
+      f.pointer = bookPoint(e);
+      if (f.soft && !f.stop && f.folded) {
+        f.point = f.soft.limit(f.soft.fromBook(f.pointer));
+        f.soft.render(f.point);
+      }
+      return;
+    }
+    if (!at) return;
+    const hover = newFlip(at.direction, at.corner, "hover");
+    hover.onReady = () => {
+      const soft = hover.soft!;
+      const y = at.corner === "top" ? HOVER_FOLD_PX : soft.H - HOVER_FOLD_PX;
+      hover.point = { x: soft.W - 1, y: at.corner === "top" ? 1 : soft.H - 1 };
+      moveCorner(hover, { x: soft.W - HOVER_FOLD_PX, y }, () => {
+        hover.folded = true;
+      });
+    };
+    flip.current = hover;
+    flipKey.current += 1;
+    setFlipView({ direction: at.direction, key: flipKey.current });
+    setCursor("grab");
+  };
+
+  /** 角から離れたら、折り返した角を戻して片付ける */
+  const leaveCorner = () => {
+    const f = flip.current;
+    if (!f || f.mode !== "hover") return;
+    if (!f.soft) {
+      endFlip(false);
+      return;
+    }
+    moveCorner(f, f.soft.start, () => endFlip(false));
+  };
+
+  const onBookPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || turning || preparingPage) return;
+    const at = cornerAt(e);
+    if (!at) return;
+    e.preventDefault();
+    const target = at.direction === "next" ? page + 1 : page - 1;
+    if (reduceMotion()) {
+      void turnPage(target);
+      return;
+    }
+    e.currentTarget.setPointerCapture(e.pointerId);
+    let f = flip.current;
+    if (!f || f.direction !== at.direction || f.corner !== at.corner) {
+      f?.stop?.();
+      f = newFlip(at.direction, at.corner, "drag");
+      flip.current = f;
+      flipKey.current += 1;
+      setFlipView({ direction: at.direction, key: flipKey.current });
+    }
+    f.stop?.();
+    const down = bookPoint(e);
+    Object.assign(f, { stop: null, mode: "drag", down, pointer: down });
+    if (f.soft) {
+      const point = f.soft.limit(f.soft.fromBook(down));
+      Object.assign(f, { point });
+      f.soft.render(point);
+    }
+    setCursor("grabbing");
+    void turnPage(target, true);
+  };
+
+  const onBookPointerUp = () => {
+    const f = flip.current;
+    if (!f || f.mode !== "drag" || f.released) return;
+    f.released = true;
+    advance(f);
+  };
+
+  const paging = preparingPage || turning;
   // 選んだ曲。ページや検索が変わってその曲が一覧に無くなったら、先頭の曲を表示する
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // ページや検索が変わったら目次の先頭へ。Effect ではなく描画中に state を調整する
@@ -346,7 +684,8 @@ export default function OpenHymnalHome({
   const [prevResetKey, setPrevResetKey] = useState(resetKey);
   if (prevResetKey !== resetKey) {
     setPrevResetKey(resetKey);
-    setSelectedId(null);
+    setSelectedId(restoreId);
+    if (restoreId !== null) setRestoreId(null);
   }
   const selectedIndex = Math.max(
     0,
@@ -387,7 +726,7 @@ export default function OpenHymnalHome({
           className="h-auto gap-2.5 p-0! font-normal text-[#f3e3c3] hover:bg-transparent hover:text-[#f3e3c3]"
           aria-label="ホーム(検索をリセット)"
           onClick={() => {
-            finishTurn();
+            stopPaging();
             onReload();
           }}
         >
@@ -401,7 +740,7 @@ export default function OpenHymnalHome({
           className="contents"
           onSubmit={(e) => {
             e.preventDefault();
-            finishTurn();
+            stopPaging();
             onSearch();
           }}
         >
@@ -440,7 +779,17 @@ export default function OpenHymnalHome({
       </header>
 
       <main className="open-hymnal-main">
-        <div className="book" ref={bookRef}>
+        {/* 角に乗ると角が折れ、角をつかんでドラッグ・クリックすると紙をめくれる(StPageFlip の soft ページと同じ)。
+            キーボードでは下の「← 前」「次 →」を使う */}
+        <div
+          className="book"
+          ref={bookRef}
+          onPointerMove={onBookPointerMove}
+          onPointerLeave={leaveCorner}
+          onPointerDown={onBookPointerDown}
+          onPointerUp={onBookPointerUp}
+          onPointerCancel={onBookPointerUp}
+        >
           {/* ===== 左ページ: 目次 ===== */}
           <section className="book-page book-page--left" aria-label="目次">
             <p className="book-caption">{caption}</p>
@@ -586,11 +935,14 @@ export default function OpenHymnalHome({
               )}
             </article>
           )}
-          {bookTurn && (
-            <BookPageTurn
-              turn={bookTurn}
-              bookRef={bookRef}
-              onFinish={finishTurn}
+          {flipView && (
+            <div
+              key={flipView.key}
+              ref={layerRef}
+              className="book-turn"
+              data-direction={flipView.direction}
+              aria-hidden="true"
+              inert
             />
           )}
         </div>
