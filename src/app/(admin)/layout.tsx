@@ -394,28 +394,25 @@ function AdminSidebar({
   return (
     <Sidebar collapsible="icon" className="border-sidebar-border">
       {/* ===== ブランド ===== */}
-      <SidebarHeader className="border-b border-sidebar-border p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              render={<Button variant="ghost" />}
-              size="lg"
-              aria-label="メインメニューへ"
-              className="h-auto justify-start gap-2.5 border-0 py-3 font-normal transition-[width,height,padding,translate] group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
-              onClick={() => {
-                onBrand();
-                closeOnMobile();
-              }}
-            >
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary group-data-[collapsible=icon]:size-8">
-                <JerusalemCross className="size-7! text-primary group-data-[collapsible=icon]:size-5!" />
-              </span>
-              <span className="font-[family-name:var(--font-niconne),cursive] text-[1.6rem] leading-none whitespace-nowrap text-primary">
-                NASB1995
-              </span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      {/* 形と大きさは nasb-vue の管理画面(AdminLayout.vue の .admin-brand)と同じ。色だけこちらの配色(臙脂):
+          幅いっぱいのボタン、上下20px・左右16pxの余白、十字44pxと文字の間8px、文字1.75rem・行高1、下に1pxの線。
+          折りたたみ時は十字33pxを中央に置き、上下12pxの余白で文字を隠す */}
+      <SidebarHeader className="gap-0 border-b border-sidebar-border p-0">
+        <Button
+          variant="ghost"
+          type="button"
+          aria-label="メインメニューへ"
+          className="h-auto w-full justify-start gap-2 rounded-none border-0 px-4 py-5 font-normal hover:bg-sidebar-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-3"
+          onClick={() => {
+            onBrand();
+            closeOnMobile();
+          }}
+        >
+          <JerusalemCross className="size-11! shrink-0 text-primary group-data-[collapsible=icon]:size-[33px]!" />
+          <span className="font-[family-name:var(--font-niconne),cursive] text-[1.75rem] leading-none whitespace-nowrap text-primary group-data-[collapsible=icon]:hidden">
+            NASB1995
+          </span>
+        </Button>
       </SidebarHeader>
 
       {/* ===== メインナビ ===== */}
