@@ -426,6 +426,8 @@ a.glass-item:hover {
 
 .book-page--right {
   flex: 1;
+  /* 五線譜(.book-staff)の大きさを、このページの幅を基準に決めるため */
+  container-type: inline-size;
   gap: 10px;
   padding: 28px 48px 20px 44px;
   background-color: var(--book-right);
@@ -471,8 +473,11 @@ a.glass-item:hover {
   color: var(--book-accent);
 }
 
+/* 五線譜は 300×72 が原寸。大きさは右ページの幅(cqi)だけで決め、横の調名の長さ
+   (「・オリジナルキー」の有無など)では変えない。右ページが狭いときだけ、その幅の半分まで縮める */
 .book-staff>svg {
-  width: min(300px, 55%);
+  flex-shrink: 0;
+  width: min(300px, 50cqi);
   height: auto;
 }
 

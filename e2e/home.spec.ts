@@ -325,3 +325,35 @@ test("角を綴じ目の手前までしか動かさずに離すと、元のペ�
     api.calls.filter((c) => c.path === "/hymns").map((c) => c.query.pageNum),
   ).toContain("2");
 });
+
+test("五線譜は、オリジナルキーを選んでも他の調と同じ大きさ", async ({ page }) => {
+  await mockApi(page, { hymns: makeHymns(3) });
+  await page.route("**/api/hymns/*/score?keysOnly=true", (route) =>
+    route.fulfill({
+      json: [
+        { chord: "E", isOriginal: true },
+        { chord: "F", isOriginal: false },
+      ],
+    }),
+  );
+  const staffSize = async () => {
+    const box = await page.locator(".book-staff > svg").boundingBox();
+    if (!box) throw new Error("五線譜が表示されていません");
+    return { width: box.width, height: box.height };
+  };
+  const keys = page.getByRole("group", { name: "調を選ぶ" });
+  const title = page.locator(".book-staff");
+
+  for (const width of [1440, 800]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/home");
+    // 最初はオリジナルキー(E)が選ばれ、調名に「・オリジナルキー」が付く
+    await expect(title).toContainText("ホ長調（E）・オリジナルキー");
+    const original = await staffSize();
+    await keys.getByRole("button", { name: "F", exact: true }).click();
+    await expect(title).toContainText("ヘ長調（F）");
+    await expect(title).not.toContainText("オリジナルキー");
+    expect(await staffSize()).toEqual(original);
+    if (width === 1440) expect(original).toEqual({ width: 300, height: 72 });
+  }
+});
