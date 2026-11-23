@@ -63,14 +63,16 @@
   text-align: center;
 }
 
+/* 入力欄はラベルに少し寄せる(ラベルとの間 6px)。その分、欄の下を 22px にして、
+   次のラベルやログインボタンの位置は変えない */
 .field {
   display: block;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: white;
   font-size: 0.75rem;
   font-weight: 700;

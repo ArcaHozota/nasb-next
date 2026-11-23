@@ -242,6 +242,29 @@ test("入力欄: サーバーエラー(500)では赤枠にしない", async ({ p
   }
 });
 
+test("入力欄: ラベルとの間は6px、欄の下は22px", async ({ page }) => {
+  await mockApi(page, {});
+  await page.goto("/login");
+  const card = page.locator("[data-login-card]");
+  const box = async (l: import("@playwright/test").Locator) => {
+    const b = await l.boundingBox();
+    if (!b) throw new Error("要素が表示されていません");
+    return b;
+  };
+  const [label1, label2] = await card.locator("label").all();
+  const input1 = await box(page.getByLabel("ユーザ名"));
+  const input2 = await box(page.getByLabel("パスワード"));
+  const l1 = await box(label1);
+  const l2 = await box(label2);
+  const submit = await box(
+    page.getByRole("button", { name: "ログイン", exact: true }),
+  );
+  expect(input1.y - (l1.y + l1.height)).toBeCloseTo(6, 1);
+  expect(input2.y - (l2.y + l2.height)).toBeCloseTo(6, 1);
+  expect(l2.y - (input1.y + input1.height)).toBeCloseTo(22, 1);
+  expect(submit.y - (input2.y + input2.height)).toBeCloseTo(22, 1);
+});
+
 test("未ログインで管理画面を開くとホームへ戻る", async ({ page }) => {
   await mockApi(page, { loggedIn: false });
   await page.goto("/hymns");
