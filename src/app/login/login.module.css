@@ -63,16 +63,20 @@
   text-align: center;
 }
 
-/* 入力欄はラベルに少し寄せる(ラベルとの間 6px)。その分、欄の下を 22px にして、
+/* 入力欄はラベルに寄せる(ラベルとの間 4px)。その分、欄の下を 24px にして、
    次のラベルやログインボタンの位置は変えない */
 .field {
   display: block;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 
+/* ラベルは見た目だけ 1px 上へずらす(レイアウトは変えないので、入力欄の位置には影響しない)。
+   見た目のラベルと入力欄の間は 5px になる */
 .label {
+  position: relative;
+  top: -1px;
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   color: white;
   font-size: 0.75rem;
   font-weight: 700;

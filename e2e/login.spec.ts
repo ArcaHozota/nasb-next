@@ -242,7 +242,7 @@ test("入力欄: サーバーエラー(500)では赤枠にしない", async ({ p
   }
 });
 
-test("入力欄: ラベルとの間は6px、欄の下は22px", async ({ page }) => {
+test("入力欄: ラベルとの間は5px、欄の下は次のラベルまで23px・ボタンまで24px", async ({ page }) => {
   await mockApi(page, {});
   await page.goto("/login");
   const card = page.locator("[data-login-card]");
@@ -259,10 +259,12 @@ test("入力欄: ラベルとの間は6px、欄の下は22px", async ({ page }) 
   const submit = await box(
     page.getByRole("button", { name: "ログイン", exact: true }),
   );
-  expect(input1.y - (l1.y + l1.height)).toBeCloseTo(6, 1);
-  expect(input2.y - (l2.y + l2.height)).toBeCloseTo(6, 1);
-  expect(l2.y - (input1.y + input1.height)).toBeCloseTo(22, 1);
-  expect(submit.y - (input2.y + input2.height)).toBeCloseTo(22, 1);
+  // ラベルは見た目だけ 1px 上へずらしている(レイアウト上の間は 4px)
+  expect(input1.y - (l1.y + l1.height)).toBeCloseTo(5, 1);
+  expect(input2.y - (l2.y + l2.height)).toBeCloseTo(5, 1);
+  expect(l2.y - (input1.y + input1.height)).toBeCloseTo(23, 1);
+  expect(submit.y - (input2.y + input2.height)).toBeCloseTo(24, 1);
+  await expect(card.locator("label").first()).toHaveCSS("top", "-1px");
 });
 
 test("未ログインで管理画面を開くとホームへ戻る", async ({ page }) => {
