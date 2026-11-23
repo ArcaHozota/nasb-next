@@ -502,7 +502,7 @@ a.glass-item:hover {
   line-height: 1.1;
 }
 
-/* 紙をめくる演出(components/home/BookPageTurn.tsx)。StPageFlip の「soft」ページと同じく、
+/* 「前」「次」で紙をめくる演出(components/home/BookPageTurn.tsx)。StPageFlip の「soft」ページと同じく、
    角の位置で紙を折り返し、折れた部分に紙の裏を、持ち上がった所に下の紙を見せる。
    形(clip-path)と位置(transform)は JS が角の位置に合わせて毎フレーム決める。
    実際のページは、この下で先に新しいページへ差し替わっている。 */
@@ -519,10 +519,9 @@ a.glass-item:hover {
   inset: 0;
 }
 
-/* ページの位置に置く複製(表、着地する側の旧ページ、角に乗ったときの下の白紙) */
+/* ページの位置に置く複製(表、着地する側の旧ページ) */
 .book-turn-front,
-.book-turn-landing,
-.book-turn-under {
+.book-turn-landing {
   position: absolute;
   overflow: hidden;
 }
@@ -537,22 +536,9 @@ a.glass-item:hover {
   transform-origin: 0 0;
 }
 
-.book-turn .book-turn-blank {
-  position: absolute;
-}
-
 .book-turn-copy {
   width: 100%;
   height: 100%;
-}
-
-/* 角(つかんでめくる所)に乗ったとき・つかんでいるときのカーソル */
-.book[data-corner="grab"] {
-  cursor: grab;
-}
-
-.book[data-corner="grabbing"] {
-  cursor: grabbing;
 }
 
 @media (width < 960px) {
